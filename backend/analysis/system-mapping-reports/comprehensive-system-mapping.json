@@ -1,0 +1,1406 @@
+{
+  "timestamp": "2025-08-24T09:29:54.247Z",
+  "summary": {
+    "total_pages": 8,
+    "total_ui_components": 15,
+    "total_backend_services": 9,
+    "total_database_tables": 5,
+    "total_integrations": 7
+  },
+  "detailed_mappings": {
+    "pages": [
+      {
+        "name": "Landing Page",
+        "file": "src/pages/landing/fluent-landing-page.jsx",
+        "route": "/",
+        "components": [
+          "LandingHeader",
+          "FeatureCards",
+          "ActionButtons"
+        ],
+        "services": [
+          "SystemConfig",
+          "NotificationService"
+        ],
+        "description": "Main entry point with system overview"
+      },
+      {
+        "name": "Main Dashboard",
+        "file": "src/pages/dashboard/fluent-main-dashboard.jsx",
+        "route": "/dashboard",
+        "components": [
+          "PageHeader",
+          "DashboardContent",
+          "AnalyticsContent",
+          "GettingStartedPanel",
+          "SmartSuggestionsPanel",
+          "UserFriendlyMetricCard",
+          "UserFriendlyStatusIndicator"
+        ],
+        "services": [
+          "DashboardDataUtils",
+          "DashboardUIUtils",
+          "SystemConfig"
+        ],
+        "description": "Primary dashboard with metrics and analytics"
+      },
+      {
+        "name": "Graph Explorer",
+        "file": "src/pages/graph/fluent-graph-explorer-final.jsx",
+        "route": "/graph",
+        "components": [
+          "GraphHeader",
+          "GraphCanvas",
+          "GraphControls",
+          "GraphChatPanel",
+          "GraphStatsPanel",
+          "GraphDataTable"
+        ],
+        "services": [
+          "GraphExplorerService",
+          "GraphChatService",
+          "useGraphData"
+        ],
+        "description": "Interactive graph visualization and exploration"
+      },
+      {
+        "name": "PLM Orchestrator",
+        "file": "src/pages/orchestrator/PLMOrchestratorPage.jsx",
+        "route": "/orchestrator",
+        "components": [
+          "WorkflowDesigner",
+          "EnhancedAgentCanvas",
+          "StateMachineWorkflowEngine",
+          "WorkflowInstancesManager",
+          "SourceDataInsightsDashboard"
+        ],
+        "services": [
+          "WorkflowService",
+          "AgenticETLService",
+          "StateMachineService"
+        ],
+        "description": "Workflow orchestration and agent management"
+      },
+      {
+        "name": "AI ETL Pipeline",
+        "file": "src/pages/ai-etl/AIETLPipelinePage.jsx",
+        "route": "/ai-etl",
+        "components": [
+          "ETLPipelineBuilder",
+          "DataFlowCanvas",
+          "AgentConfiguration",
+          "PipelineMonitoring",
+          "QualityDashboard"
+        ],
+        "services": [
+          "AIETLService",
+          "DataQualityService",
+          "PipelineManager"
+        ],
+        "description": "AI-powered ETL pipeline configuration"
+      },
+      {
+        "name": "Data Mapping",
+        "file": "src/pages/data-mapping/fluent-data-mapping-page.jsx",
+        "route": "/data-mapping",
+        "components": [
+          "MappingCanvas",
+          "SchemaViewer",
+          "TransformationRules",
+          "DataPreview",
+          "ValidationResults"
+        ],
+        "services": [
+          "DataMappingService",
+          "SchemaService",
+          "ValidationService"
+        ],
+        "description": "Data mapping and transformation configuration"
+      },
+      {
+        "name": "System Settings",
+        "file": "src/pages/settings/ModularSystemSettingsPage.jsx",
+        "route": "/settings",
+        "components": [
+          "DataSourceDialog",
+          "AIServiceDialog",
+          "SchemaDialog",
+          "ConfigurationPanel",
+          "ServiceStatus"
+        ],
+        "services": [
+          "ConfigurationService",
+          "DataSourceService",
+          "AIServiceManager"
+        ],
+        "description": "System configuration and settings management"
+      },
+      {
+        "name": "Monitoring Dashboard",
+        "file": "src/pages/monitoring/fluent-monitoring-page.jsx",
+        "route": "/monitoring",
+        "components": [
+          "MetricsOverview",
+          "AlertsPanel",
+          "PerformanceCharts",
+          "ServiceHealthStatus",
+          "LogViewer"
+        ],
+        "services": [
+          "MonitoringService",
+          "AlertService",
+          "MetricsCollector"
+        ],
+        "description": "System monitoring and health tracking"
+      }
+    ],
+    "uiComponents": [
+      {
+        "category": "Navigation & Layout",
+        "components": [
+          {
+            "name": "SideMenu",
+            "file": "src/components/shared/SideMenu.jsx",
+            "elements": [
+              "sideMenu",
+              "navSection",
+              "menuItem",
+              "menuItemCollapsed"
+            ],
+            "props": [
+              "isCollapsed",
+              "activeItem",
+              "onNavigate"
+            ],
+            "description": "Main navigation sidebar with collapsible design"
+          },
+          {
+            "name": "PageHeader",
+            "file": "src/components/common/PageHeader.jsx",
+            "elements": [
+              "header",
+              "title",
+              "subtitle",
+              "actions"
+            ],
+            "props": [
+              "title",
+              "subtitle",
+              "icon",
+              "actions"
+            ],
+            "description": "Consistent page header component"
+          },
+          {
+            "name": "DashboardNavigation",
+            "file": "src/pages/dashboard/components/dashboard-navigation.css",
+            "elements": [
+              "dashboard-navigation",
+              "nav-header",
+              "nav-panels",
+              "nav-panel"
+            ],
+            "props": [
+              "panels",
+              "activePanel",
+              "onPanelClick"
+            ],
+            "description": "Dashboard-specific navigation panels"
+          }
+        ]
+      },
+      {
+        "category": "Dashboard Components",
+        "components": [
+          {
+            "name": "DashboardContent",
+            "file": "src/components/dashboard/DashboardContent.jsx",
+            "elements": [
+              "metricsGrid",
+              "statusCard",
+              "progressIndicator"
+            ],
+            "props": [
+              "systemStatus",
+              "pipelineMetrics",
+              "agentStatus",
+              "phaseProgress"
+            ],
+            "description": "Main dashboard content with metrics and status"
+          },
+          {
+            "name": "UserExperienceEnhancements",
+            "file": "src/components/common/UserExperienceEnhancements.jsx",
+            "elements": [
+              "enhancedCard",
+              "statusIndicator",
+              "statusSuccess",
+              "statusWarning"
+            ],
+            "props": [
+              "status",
+              "message",
+              "actions",
+              "severity"
+            ],
+            "description": "Enhanced UX components for better user interaction"
+          },
+          {
+            "name": "GettingStartedPanel",
+            "file": "src/components/common/UserExperienceEnhancements.jsx",
+            "elements": [
+              "guidanceCard",
+              "stepIndicator",
+              "actionButton"
+            ],
+            "props": [
+              "steps",
+              "currentStep",
+              "onStepComplete"
+            ],
+            "description": "User onboarding and guidance panel"
+          }
+        ]
+      },
+      {
+        "category": "Graph & Visualization",
+        "components": [
+          {
+            "name": "GraphCanvas",
+            "file": "src/pages/graph/components/GraphCanvas.jsx",
+            "elements": [
+              "graphContainer",
+              "cytoscape",
+              "nodeLabel",
+              "edgeLabel"
+            ],
+            "props": [
+              "nodes",
+              "edges",
+              "layout",
+              "style",
+              "onNodeClick"
+            ],
+            "description": "Main graph visualization using Cytoscape.js"
+          },
+          {
+            "name": "GraphControls",
+            "file": "src/pages/graph/components/GraphControls.jsx",
+            "elements": [
+              "controlPanel",
+              "layoutSelector",
+              "filterControls"
+            ],
+            "props": [
+              "layout",
+              "filters",
+              "onLayoutChange",
+              "onFilterChange"
+            ],
+            "description": "Graph manipulation and control interface"
+          },
+          {
+            "name": "GraphChatPanel",
+            "file": "src/pages/graph/components/GraphChatPanel.jsx",
+            "elements": [
+              "chatContainer",
+              "messageList",
+              "inputArea"
+            ],
+            "props": [
+              "messages",
+              "onSendMessage",
+              "isLoading"
+            ],
+            "description": "Interactive chat interface for graph queries"
+          }
+        ]
+      },
+      {
+        "category": "Workflow & Orchestration",
+        "components": [
+          {
+            "name": "WorkflowDesigner",
+            "file": "src/pages/orchestrator/components/workflow-designer/WorkflowDesigner.jsx",
+            "elements": [
+              "container",
+              "canvasArea",
+              "nodePanel",
+              "propertiesPanel"
+            ],
+            "props": [
+              "nodes",
+              "edges",
+              "selectedNode",
+              "onNodeAdd",
+              "onConnection"
+            ],
+            "description": "Visual workflow design interface"
+          },
+          {
+            "name": "EnhancedAgentCanvas",
+            "file": "src/pages/orchestrator/components/agent-canvas/EnhancedAgentCanvas.jsx",
+            "elements": [
+              "agentGrid",
+              "agentCard",
+              "connectionLines",
+              "configPanel"
+            ],
+            "props": [
+              "agents",
+              "connections",
+              "selectedAgent",
+              "onAgentSelect"
+            ],
+            "description": "Agent management and configuration canvas"
+          },
+          {
+            "name": "StateMachineWorkflowEngine",
+            "file": "src/pages/orchestrator/components/StateMachineWorkflowEngine.jsx",
+            "elements": [
+              "stateViewer",
+              "transitionMap",
+              "statusIndicator"
+            ],
+            "props": [
+              "stateMachine",
+              "currentState",
+              "onStateChange"
+            ],
+            "description": "State machine visualization and control"
+          }
+        ]
+      },
+      {
+        "category": "Data Management",
+        "components": [
+          {
+            "name": "DataSourceDialog",
+            "file": "src/pages/settings/FluentDataSourceDialog.jsx",
+            "elements": [
+              "dialogContainer",
+              "formFields",
+              "testConnection",
+              "saveButton"
+            ],
+            "props": [
+              "dataSource",
+              "onSave",
+              "onCancel",
+              "isEditing"
+            ],
+            "description": "Data source configuration dialog"
+          },
+          {
+            "name": "SchemaViewer",
+            "file": "src/pages/settings/DataSourceSchemaDialog.jsx",
+            "elements": [
+              "schemaTree",
+              "tableList",
+              "columnDetails"
+            ],
+            "props": [
+              "schema",
+              "selectedTable",
+              "onTableSelect"
+            ],
+            "description": "Database schema exploration interface"
+          },
+          {
+            "name": "XMLMapperDialog",
+            "file": "src/pages/orchestrator/components/dialogs/XmlMapperDialog.jsx",
+            "elements": [
+              "xmlPreview",
+              "mappingRules",
+              "transformationPanel"
+            ],
+            "props": [
+              "xmlData",
+              "mappings",
+              "onMappingChange"
+            ],
+            "description": "XML data mapping and transformation dialog"
+          }
+        ]
+      }
+    ],
+    "backendServices": [
+      {
+        "name": "Main API Server",
+        "file": "main.py",
+        "port": 8003,
+        "endpoints": [
+          "/api/health",
+          "/api/data-sources",
+          "/api/workflows",
+          "/api/graph",
+          "/api/audit-trail",
+          "/api/config"
+        ],
+        "dependencies": [
+          "PostgreSQL",
+          "Neo4j",
+          "FastAPI"
+        ],
+        "description": "Primary API server handling core application logic"
+      },
+      {
+        "name": "SODA Quality Service",
+        "file": "services/soda_quality_service.py",
+        "port": 8004,
+        "endpoints": [
+          "/api/quality/scan",
+          "/api/quality/reports",
+          "/api/quality/rules",
+          "/api/quality/metrics"
+        ],
+        "dependencies": [
+          "SODA Core",
+          "PostgreSQL",
+          "Data Quality Framework"
+        ],
+        "description": "Data quality validation and monitoring service"
+      },
+      {
+        "name": "PLM XML Data Service",
+        "file": "services/plm_xml_data_service.py",
+        "port": 8005,
+        "endpoints": [
+          "/api/plm/parse",
+          "/api/plm/transform",
+          "/api/plm/validate",
+          "/api/plm/export"
+        ],
+        "dependencies": [
+          "XML Parser",
+          "PLM Libraries",
+          "Schema Validators"
+        ],
+        "description": "PLM XML data processing and transformation"
+      },
+      {
+        "name": "Analytics Storage Service",
+        "file": "services/analytics_storage_service.py",
+        "port": 8006,
+        "endpoints": [
+          "/api/analytics/store",
+          "/api/analytics/query",
+          "/api/analytics/aggregate",
+          "/api/analytics/export"
+        ],
+        "dependencies": [
+          "Time Series DB",
+          "Analytics Engine",
+          "Data Warehouse"
+        ],
+        "description": "Analytics data storage and retrieval service"
+      },
+      {
+        "name": "Advanced Migration Engine",
+        "file": "services/advanced_migration_engine.py",
+        "port": 8007,
+        "endpoints": [
+          "/api/migration/start",
+          "/api/migration/status",
+          "/api/migration/rollback",
+          "/api/migration/monitoring"
+        ],
+        "dependencies": [
+          "Migration Framework",
+          "Rollback Manager",
+          "Progress Monitor"
+        ],
+        "description": "Advanced data migration with rollback capabilities"
+      },
+      {
+        "name": "Code Graph Service",
+        "file": "services/code_graph_service.py",
+        "port": 8008,
+        "endpoints": [
+          "/api/codegraph/analyze",
+          "/api/codegraph/dependencies",
+          "/api/codegraph/metrics",
+          "/api/codegraph/visualization"
+        ],
+        "dependencies": [
+          "AST Parser",
+          "Graph Database",
+          "Code Analysis Tools"
+        ],
+        "description": "Code analysis and dependency graph generation"
+      },
+      {
+        "name": "Enhanced Audit Trail System",
+        "file": "services/enhanced_audit_trail_system.py",
+        "port": "N/A (Internal)",
+        "endpoints": [
+          "Internal API only"
+        ],
+        "dependencies": [
+          "Audit Database",
+          "Event Logger",
+          "Compliance Framework"
+        ],
+        "description": "Comprehensive audit logging and compliance tracking"
+      },
+      {
+        "name": "Enterprise Configuration Manager",
+        "file": "services/enterprise_config_manager.py",
+        "port": "N/A (Internal)",
+        "endpoints": [
+          "Internal API only"
+        ],
+        "dependencies": [
+          "Configuration Store",
+          "Security Manager",
+          "Validation Engine"
+        ],
+        "description": "Enterprise-level configuration management"
+      },
+      {
+        "name": "Workflow State Manager",
+        "file": "services/workflow_state_manager.py",
+        "port": "N/A (Internal)",
+        "endpoints": [
+          "Internal API only"
+        ],
+        "dependencies": [
+          "State Machine",
+          "Persistence Layer",
+          "Event Bus"
+        ],
+        "description": "Workflow state management and persistence"
+      }
+    ],
+    "schema": {
+      "postgresql": {
+        "host": "localhost",
+        "port": 5432,
+        "database": "graphtrace_db",
+        "tables": [
+          {
+            "name": "data_sources",
+            "purpose": "Store data source configurations",
+            "columns": [
+              {
+                "name": "id",
+                "type": "SERIAL PRIMARY KEY",
+                "description": "Unique identifier"
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "description": "Data source name"
+              },
+              {
+                "name": "type",
+                "type": "VARCHAR(50)",
+                "description": "Source type (postgresql, mysql, etc.)"
+              },
+              {
+                "name": "connection_config",
+                "type": "JSONB",
+                "description": "Connection configuration"
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "description": "Active/Inactive status"
+              },
+              {
+                "name": "created_at",
+                "type": "TIMESTAMP",
+                "description": "Creation timestamp"
+              },
+              {
+                "name": "updated_at",
+                "type": "TIMESTAMP",
+                "description": "Last update timestamp"
+              }
+            ]
+          },
+          {
+            "name": "services",
+            "purpose": "Track backend service configurations",
+            "columns": [
+              {
+                "name": "id",
+                "type": "SERIAL PRIMARY KEY",
+                "description": "Unique identifier"
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "description": "Service name"
+              },
+              {
+                "name": "type",
+                "type": "VARCHAR(50)",
+                "description": "Service type"
+              },
+              {
+                "name": "port",
+                "type": "INTEGER",
+                "description": "Service port number"
+              },
+              {
+                "name": "config",
+                "type": "JSONB",
+                "description": "Service configuration"
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "description": "Service health status"
+              },
+              {
+                "name": "last_health_check",
+                "type": "TIMESTAMP",
+                "description": "Last health check time"
+              }
+            ]
+          },
+          {
+            "name": "workflows",
+            "purpose": "Store workflow definitions and state",
+            "columns": [
+              {
+                "name": "id",
+                "type": "UUID PRIMARY KEY",
+                "description": "Unique workflow identifier"
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "description": "Workflow name"
+              },
+              {
+                "name": "definition",
+                "type": "JSONB",
+                "description": "Workflow definition (nodes, edges)"
+              },
+              {
+                "name": "state",
+                "type": "VARCHAR(50)",
+                "description": "Current workflow state"
+              },
+              {
+                "name": "created_by",
+                "type": "VARCHAR(255)",
+                "description": "Creator user"
+              },
+              {
+                "name": "execution_history",
+                "type": "JSONB",
+                "description": "Execution history and logs"
+              }
+            ]
+          },
+          {
+            "name": "audit_log",
+            "purpose": "Comprehensive audit trail for compliance",
+            "columns": [
+              {
+                "name": "id",
+                "type": "BIGSERIAL PRIMARY KEY",
+                "description": "Unique log entry identifier"
+              },
+              {
+                "name": "event_type",
+                "type": "VARCHAR(100)",
+                "description": "Type of audited event"
+              },
+              {
+                "name": "user_id",
+                "type": "VARCHAR(255)",
+                "description": "User performing action"
+              },
+              {
+                "name": "resource_type",
+                "type": "VARCHAR(100)",
+                "description": "Type of resource affected"
+              },
+              {
+                "name": "resource_id",
+                "type": "VARCHAR(255)",
+                "description": "Identifier of affected resource"
+              },
+              {
+                "name": "event_data",
+                "type": "JSONB",
+                "description": "Detailed event information"
+              },
+              {
+                "name": "timestamp",
+                "type": "TIMESTAMP WITH TIME ZONE",
+                "description": "Event timestamp"
+              }
+            ]
+          },
+          {
+            "name": "quality_reports",
+            "purpose": "Store data quality assessment results",
+            "columns": [
+              {
+                "name": "id",
+                "type": "UUID PRIMARY KEY",
+                "description": "Unique report identifier"
+              },
+              {
+                "name": "data_source_id",
+                "type": "INTEGER REFERENCES data_sources(id)",
+                "description": "Associated data source"
+              },
+              {
+                "name": "scan_type",
+                "type": "VARCHAR(50)",
+                "description": "Type of quality scan"
+              },
+              {
+                "name": "results",
+                "type": "JSONB",
+                "description": "Quality assessment results"
+              },
+              {
+                "name": "score",
+                "type": "DECIMAL(5,2)",
+                "description": "Overall quality score"
+              },
+              {
+                "name": "scan_timestamp",
+                "type": "TIMESTAMP",
+                "description": "When scan was performed"
+              }
+            ]
+          }
+        ]
+      },
+      "neo4j": {
+        "host": "localhost",
+        "port": 7687,
+        "database": "neo4j",
+        "node_types": [
+          {
+            "label": "DataSource",
+            "purpose": "Represent data sources in graph",
+            "properties": [
+              "name",
+              "type",
+              "status",
+              "metadata"
+            ]
+          },
+          {
+            "label": "Table",
+            "purpose": "Database tables and their relationships",
+            "properties": [
+              "name",
+              "schema",
+              "row_count",
+              "data_types"
+            ]
+          },
+          {
+            "label": "Column",
+            "purpose": "Table columns and their metadata",
+            "properties": [
+              "name",
+              "data_type",
+              "nullable",
+              "constraints"
+            ]
+          },
+          {
+            "label": "Workflow",
+            "purpose": "Workflow processes and dependencies",
+            "properties": [
+              "name",
+              "type",
+              "status",
+              "definition"
+            ]
+          },
+          {
+            "label": "Agent",
+            "purpose": "AI agents and their capabilities",
+            "properties": [
+              "name",
+              "type",
+              "capabilities",
+              "configuration"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "CONTAINS",
+            "description": "DataSource contains Tables"
+          },
+          {
+            "type": "HAS_COLUMN",
+            "description": "Table has Columns"
+          },
+          {
+            "type": "REFERENCES",
+            "description": "Foreign key relationships"
+          },
+          {
+            "type": "PROCESSES",
+            "description": "Workflow processes DataSource"
+          },
+          {
+            "type": "EXECUTES",
+            "description": "Agent executes Workflow"
+          }
+        ]
+      }
+    },
+    "integrations": [
+      {
+        "frontend_component": "DashboardContent",
+        "backend_services": [
+          "Main API Server (8003)",
+          "Analytics Storage Service (8006)"
+        ],
+        "api_endpoints": [
+          "/api/health",
+          "/api/analytics/query"
+        ],
+        "data_flow": "Component fetches system metrics and analytics data for display",
+        "database_tables": [
+          "services",
+          "quality_reports",
+          "audit_log"
+        ]
+      },
+      {
+        "frontend_component": "GraphCanvas",
+        "backend_services": [
+          "Code Graph Service (8008)",
+          "Main API Server (8003)"
+        ],
+        "api_endpoints": [
+          "/api/codegraph/visualization",
+          "/api/graph"
+        ],
+        "data_flow": "Fetches graph data and renders using Cytoscape.js",
+        "database_tables": [
+          "Neo4j nodes and relationships"
+        ]
+      },
+      {
+        "frontend_component": "WorkflowDesigner",
+        "backend_services": [
+          "Main API Server (8003)",
+          "Advanced Migration Engine (8007)"
+        ],
+        "api_endpoints": [
+          "/api/workflows",
+          "/api/migration/start"
+        ],
+        "data_flow": "Creates/edits workflows and triggers execution",
+        "database_tables": [
+          "workflows",
+          "audit_log"
+        ]
+      },
+      {
+        "frontend_component": "DataSourceDialog",
+        "backend_services": [
+          "Main API Server (8003)",
+          "SODA Quality Service (8004)"
+        ],
+        "api_endpoints": [
+          "/api/data-sources",
+          "/api/quality/scan"
+        ],
+        "data_flow": "Manages data source configuration and triggers quality scans",
+        "database_tables": [
+          "data_sources",
+          "quality_reports"
+        ]
+      },
+      {
+        "frontend_component": "EnhancedAgentCanvas",
+        "backend_services": [
+          "PLM XML Data Service (8005)",
+          "Analytics Storage Service (8006)"
+        ],
+        "api_endpoints": [
+          "/api/plm/parse",
+          "/api/analytics/store"
+        ],
+        "data_flow": "Configures agents for PLM data processing and analytics",
+        "database_tables": [
+          "data_sources",
+          "workflows",
+          "services"
+        ]
+      },
+      {
+        "frontend_component": "XMLMapperDialog",
+        "backend_services": [
+          "PLM XML Data Service (8005)"
+        ],
+        "api_endpoints": [
+          "/api/plm/parse",
+          "/api/plm/transform",
+          "/api/plm/validate"
+        ],
+        "data_flow": "Handles XML mapping, transformation, and validation",
+        "database_tables": [
+          "data_sources",
+          "audit_log"
+        ]
+      },
+      {
+        "frontend_component": "SystemSettingsPage",
+        "backend_services": [
+          "Main API Server (8003)",
+          "All Services (Health Check)"
+        ],
+        "api_endpoints": [
+          "/api/config",
+          "/api/health (all services)"
+        ],
+        "data_flow": "System configuration management and service health monitoring",
+        "database_tables": [
+          "services",
+          "data_sources",
+          "audit_log"
+        ]
+      }
+    ]
+  },
+  "cross_reference_matrix": {
+    "pages_to_services": [
+      {
+        "page": "Landing Page",
+        "backend_services": [
+          "SystemConfig",
+          "NotificationService"
+        ],
+        "ui_components": [
+          "LandingHeader",
+          "FeatureCards",
+          "ActionButtons"
+        ]
+      },
+      {
+        "page": "Main Dashboard",
+        "backend_services": [
+          "DashboardDataUtils",
+          "DashboardUIUtils",
+          "SystemConfig"
+        ],
+        "ui_components": [
+          "PageHeader",
+          "DashboardContent",
+          "AnalyticsContent",
+          "GettingStartedPanel",
+          "SmartSuggestionsPanel",
+          "UserFriendlyMetricCard",
+          "UserFriendlyStatusIndicator"
+        ]
+      },
+      {
+        "page": "Graph Explorer",
+        "backend_services": [
+          "GraphExplorerService",
+          "GraphChatService",
+          "useGraphData"
+        ],
+        "ui_components": [
+          "GraphHeader",
+          "GraphCanvas",
+          "GraphControls",
+          "GraphChatPanel",
+          "GraphStatsPanel",
+          "GraphDataTable"
+        ]
+      },
+      {
+        "page": "PLM Orchestrator",
+        "backend_services": [
+          "WorkflowService",
+          "AgenticETLService",
+          "StateMachineService"
+        ],
+        "ui_components": [
+          "WorkflowDesigner",
+          "EnhancedAgentCanvas",
+          "StateMachineWorkflowEngine",
+          "WorkflowInstancesManager",
+          "SourceDataInsightsDashboard"
+        ]
+      },
+      {
+        "page": "AI ETL Pipeline",
+        "backend_services": [
+          "AIETLService",
+          "DataQualityService",
+          "PipelineManager"
+        ],
+        "ui_components": [
+          "ETLPipelineBuilder",
+          "DataFlowCanvas",
+          "AgentConfiguration",
+          "PipelineMonitoring",
+          "QualityDashboard"
+        ]
+      },
+      {
+        "page": "Data Mapping",
+        "backend_services": [
+          "DataMappingService",
+          "SchemaService",
+          "ValidationService"
+        ],
+        "ui_components": [
+          "MappingCanvas",
+          "SchemaViewer",
+          "TransformationRules",
+          "DataPreview",
+          "ValidationResults"
+        ]
+      },
+      {
+        "page": "System Settings",
+        "backend_services": [
+          "ConfigurationService",
+          "DataSourceService",
+          "AIServiceManager"
+        ],
+        "ui_components": [
+          "DataSourceDialog",
+          "AIServiceDialog",
+          "SchemaDialog",
+          "ConfigurationPanel",
+          "ServiceStatus"
+        ]
+      },
+      {
+        "page": "Monitoring Dashboard",
+        "backend_services": [
+          "MonitoringService",
+          "AlertService",
+          "MetricsCollector"
+        ],
+        "ui_components": [
+          "MetricsOverview",
+          "AlertsPanel",
+          "PerformanceCharts",
+          "ServiceHealthStatus",
+          "LogViewer"
+        ]
+      }
+    ],
+    "components_to_database": [
+      {
+        "component": "DashboardContent",
+        "database_tables": [
+          "services",
+          "quality_reports",
+          "audit_log"
+        ],
+        "api_endpoints": [
+          "/api/health",
+          "/api/analytics/query"
+        ]
+      },
+      {
+        "component": "GraphCanvas",
+        "database_tables": [
+          "Neo4j nodes and relationships"
+        ],
+        "api_endpoints": [
+          "/api/codegraph/visualization",
+          "/api/graph"
+        ]
+      },
+      {
+        "component": "WorkflowDesigner",
+        "database_tables": [
+          "workflows",
+          "audit_log"
+        ],
+        "api_endpoints": [
+          "/api/workflows",
+          "/api/migration/start"
+        ]
+      },
+      {
+        "component": "DataSourceDialog",
+        "database_tables": [
+          "data_sources",
+          "quality_reports"
+        ],
+        "api_endpoints": [
+          "/api/data-sources",
+          "/api/quality/scan"
+        ]
+      },
+      {
+        "component": "EnhancedAgentCanvas",
+        "database_tables": [
+          "data_sources",
+          "workflows",
+          "services"
+        ],
+        "api_endpoints": [
+          "/api/plm/parse",
+          "/api/analytics/store"
+        ]
+      },
+      {
+        "component": "XMLMapperDialog",
+        "database_tables": [
+          "data_sources",
+          "audit_log"
+        ],
+        "api_endpoints": [
+          "/api/plm/parse",
+          "/api/plm/transform",
+          "/api/plm/validate"
+        ]
+      },
+      {
+        "component": "SystemSettingsPage",
+        "database_tables": [
+          "services",
+          "data_sources",
+          "audit_log"
+        ],
+        "api_endpoints": [
+          "/api/config",
+          "/api/health (all services)"
+        ]
+      }
+    ],
+    "services_to_ports": [
+      {
+        "service": "Main API Server",
+        "port": 8003,
+        "dependencies": [
+          "PostgreSQL",
+          "Neo4j",
+          "FastAPI"
+        ]
+      },
+      {
+        "service": "SODA Quality Service",
+        "port": 8004,
+        "dependencies": [
+          "SODA Core",
+          "PostgreSQL",
+          "Data Quality Framework"
+        ]
+      },
+      {
+        "service": "PLM XML Data Service",
+        "port": 8005,
+        "dependencies": [
+          "XML Parser",
+          "PLM Libraries",
+          "Schema Validators"
+        ]
+      },
+      {
+        "service": "Analytics Storage Service",
+        "port": 8006,
+        "dependencies": [
+          "Time Series DB",
+          "Analytics Engine",
+          "Data Warehouse"
+        ]
+      },
+      {
+        "service": "Advanced Migration Engine",
+        "port": 8007,
+        "dependencies": [
+          "Migration Framework",
+          "Rollback Manager",
+          "Progress Monitor"
+        ]
+      },
+      {
+        "service": "Code Graph Service",
+        "port": 8008,
+        "dependencies": [
+          "AST Parser",
+          "Graph Database",
+          "Code Analysis Tools"
+        ]
+      },
+      {
+        "service": "Enhanced Audit Trail System",
+        "port": "N/A (Internal)",
+        "dependencies": [
+          "Audit Database",
+          "Event Logger",
+          "Compliance Framework"
+        ]
+      },
+      {
+        "service": "Enterprise Configuration Manager",
+        "port": "N/A (Internal)",
+        "dependencies": [
+          "Configuration Store",
+          "Security Manager",
+          "Validation Engine"
+        ]
+      },
+      {
+        "service": "Workflow State Manager",
+        "port": "N/A (Internal)",
+        "dependencies": [
+          "State Machine",
+          "Persistence Layer",
+          "Event Bus"
+        ]
+      }
+    ]
+  },
+  "architecture_overview": {
+    "frontend_architecture": {
+      "framework": "React 18 with Fluent UI",
+      "routing": "React Router v6",
+      "state_management": "React Context + Local State",
+      "styling": "Fluent UI + CSS Modules"
+    },
+    "backend_architecture": {
+      "framework": "FastAPI with Python 3.12",
+      "database": "PostgreSQL + Neo4j",
+      "microservices": 9,
+      "api_design": "RESTful APIs with OpenAPI documentation"
+    },
+    "data_architecture": {
+      "relational_db": "PostgreSQL for transactional data",
+      "graph_db": "Neo4j for relationships and graph queries",
+      "data_quality": "SODA Core for validation",
+      "analytics": "Custom analytics storage service"
+    }
+  },
+  "service_dependencies": [
+    {
+      "service": "Main API Server",
+      "port": 8003,
+      "internal_dependencies": [
+        "PostgreSQL",
+        "Neo4j",
+        "FastAPI"
+      ],
+      "frontend_consumers": [
+        "DashboardContent",
+        "GraphCanvas",
+        "WorkflowDesigner",
+        "DataSourceDialog",
+        "SystemSettingsPage"
+      ]
+    },
+    {
+      "service": "SODA Quality Service",
+      "port": 8004,
+      "internal_dependencies": [
+        "SODA Core",
+        "PostgreSQL",
+        "Data Quality Framework"
+      ],
+      "frontend_consumers": [
+        "DataSourceDialog"
+      ]
+    },
+    {
+      "service": "PLM XML Data Service",
+      "port": 8005,
+      "internal_dependencies": [
+        "XML Parser",
+        "PLM Libraries",
+        "Schema Validators"
+      ],
+      "frontend_consumers": [
+        "EnhancedAgentCanvas",
+        "XMLMapperDialog"
+      ]
+    },
+    {
+      "service": "Analytics Storage Service",
+      "port": 8006,
+      "internal_dependencies": [
+        "Time Series DB",
+        "Analytics Engine",
+        "Data Warehouse"
+      ],
+      "frontend_consumers": [
+        "DashboardContent",
+        "EnhancedAgentCanvas"
+      ]
+    },
+    {
+      "service": "Advanced Migration Engine",
+      "port": 8007,
+      "internal_dependencies": [
+        "Migration Framework",
+        "Rollback Manager",
+        "Progress Monitor"
+      ],
+      "frontend_consumers": [
+        "WorkflowDesigner"
+      ]
+    },
+    {
+      "service": "Code Graph Service",
+      "port": 8008,
+      "internal_dependencies": [
+        "AST Parser",
+        "Graph Database",
+        "Code Analysis Tools"
+      ],
+      "frontend_consumers": [
+        "GraphCanvas"
+      ]
+    },
+    {
+      "service": "Enhanced Audit Trail System",
+      "port": "N/A (Internal)",
+      "internal_dependencies": [
+        "Audit Database",
+        "Event Logger",
+        "Compliance Framework"
+      ],
+      "frontend_consumers": []
+    },
+    {
+      "service": "Enterprise Configuration Manager",
+      "port": "N/A (Internal)",
+      "internal_dependencies": [
+        "Configuration Store",
+        "Security Manager",
+        "Validation Engine"
+      ],
+      "frontend_consumers": []
+    },
+    {
+      "service": "Workflow State Manager",
+      "port": "N/A (Internal)",
+      "internal_dependencies": [
+        "State Machine",
+        "Persistence Layer",
+        "Event Bus"
+      ],
+      "frontend_consumers": []
+    }
+  ],
+  "recommendations": [
+    "🔧 Consider implementing API versioning for all backend services",
+    "📊 Add comprehensive monitoring and alerting for all microservices",
+    "🔒 Implement proper authentication and authorization across all services",
+    "📝 Add comprehensive API documentation using OpenAPI/Swagger",
+    "🧪 Implement automated testing for all component-service integrations",
+    "🔄 Consider implementing circuit breakers for external service calls",
+    "📈 Add performance monitoring and metrics collection",
+    "🔐 Implement proper secret management for database credentials",
+    "📋 Add comprehensive logging and audit trails",
+    "🚀 Consider containerization with Docker for deployment consistency"
+  ]
+}

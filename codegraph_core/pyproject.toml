@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codegraph-core"
+version = "0.1.0"
+description = "Portable dynamic code knowledge graph: scanners, in-memory graph, prompt packs"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{ name = "graphTrace" }]
+keywords = ["code graph", "knowledge graph", "static analysis", "prompt context"]
+
+[project.optional-dependencies]
+networkx = ["networkx>=3.0"]
+matplotlib = ["matplotlib>=3.7", "squarify>=0.4.3"]
+fastapi = ["fastapi>=0.111", "uvicorn>=0.30"]
+
+[project.scripts]
+codegraph = "codegraph_core.__main__:main"

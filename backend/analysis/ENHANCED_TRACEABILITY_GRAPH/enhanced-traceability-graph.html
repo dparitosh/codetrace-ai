@@ -1,0 +1,4888 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌳 GraphTrace Hierarchical Traceability Network</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-section {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-label {
+            font-size: 12px;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .controls button, .filter-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .controls button:hover, .filter-buttons button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .controls button.active, .filter-buttons button.active {
+            background: #3498db;
+        }
+        
+        .impact-analysis {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            width: 280px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .impact-result {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .risk-level {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .risk-low { background: #27ae60; }
+        .risk-medium { background: #f39c12; }
+        .risk-high { background: #e74c3c; }
+        .risk-critical { background: #8e44ad; }
+        
+        .graph-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        #graph {
+            width: 100%;
+            height: 700px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .hierarchy-panel {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            width: 250px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .level-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            border-left: 4px solid;
+        }
+        
+        .level-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+        }
+        
+        .level-info p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .stats {
+            margin-top: 20px;
+            text-align: center;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .node {
+            stroke: #fff;
+            stroke-width: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .node.collapsed {
+            opacity: 0.6;
+        }
+        
+        .node.expandable {
+            stroke-width: 3px;
+        }
+        
+        .node.expandable:hover {
+            stroke-width: 4px;
+            filter: brightness(1.2);
+        }
+        
+        .link {
+            stroke: rgba(255,255,255,0.4);
+            stroke-width: 1px;
+            marker-end: url(#arrowhead);
+            transition: all 0.3s ease;
+        }
+        
+        .link.hierarchical {
+            stroke: rgba(52, 152, 219, 0.6);
+            stroke-width: 2px;
+        }
+        
+        .link.hidden {
+            opacity: 0;
+        }
+        
+        .node-label {
+            font-size: 10px;
+            fill: white;
+            text-anchor: middle;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            font-weight: bold;
+        }
+        
+        .expand-icon {
+            font-size: 12px;
+            fill: white;
+            text-anchor: middle;
+            pointer-events: none;
+            font-weight: bold;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: 1px solid rgba(255,255,255,0.2);
+            max-width: 300px;
+        }
+        
+        .breadcrumb {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .hierarchy-panel {
+                position: relative;
+                left: auto;
+                top: auto;
+                transform: none;
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌳 GraphTrace Hierarchical Traceability</h1>
+        <p>Expandable network showing Pages → Capabilities → Files → UI Features → Services → Schema</p>
+    </div>
+    
+    <div class="breadcrumb">
+        <span id="breadcrumb-text">📍 Central Hub Active: Click nodes to expand/collapse • Double-click for impact analysis</span>
+    </div>
+    
+    <div class="filter-section">
+        <div class="filter-group">
+            <div class="filter-label">View Mode:</div>
+            <div class="filter-buttons">
+                <button onclick="showHubView()" class="active" id="hub-btn">🏠 Hub View</button>
+                <button onclick="showDirectRelationships()" id="direct-btn">🔗 Direct Only</button>
+                <button onclick="showAllRelationships()" id="all-btn">🌐 All Relations</button>
+            </div>
+        </div>
+        
+        <div class="filter-group">
+            <div class="filter-label">Filter by Type:</div>
+            <div class="filter-buttons">
+                <button onclick="filterByType('all')" class="active" id="filter-all">All Types</button>
+                <button onclick="filterByType('frontend_file')" id="filter-frontend">� Frontend Files</button>
+                <button onclick="filterByType('component')" id="filter-components">🧩 Components</button>
+                <button onclick="filterByType('service')" id="filter-services">⚙️ Services</button>
+                <button onclick="filterByType('method')" id="filter-methods">🔧 Methods</button>
+                <button onclick="filterByType('api_endpoint')" id="filter-apis">🔌 API Endpoints</button>
+                <button onclick="filterByType('backend_file')" id="filter-backend">� Backend Files</button>
+            </div>
+        </div>
+        
+        <div class="filter-group">
+            <div class="filter-label">Hierarchy Level:</div>
+            <div class="filter-buttons">
+                <button onclick="showLevel(0)" id="level-0">🏠 Hub</button>
+                <button onclick="showLevel(1)" id="level-1">📄 Pages</button>
+                <button onclick="showLevel(2)" id="level-2">📁 Files</button>
+                <button onclick="showLevel(3)" id="level-3">🧩 Components</button>
+                <button onclick="showLevel(4)" id="level-4">⚙️ Services</button>
+                <button onclick="showLevel(5)" id="level-5">🔧 Methods</button>
+                <button onclick="showLevel(6)" id="level-6">� APIs</button>
+                <button onclick="showLevel(7)" id="level-7">🐍 Backend</button>
+                <button onclick="showLevel(8)" id="level-8">🗄️ Schema</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="expandAll()">🔽 Expand All</button>
+        <button onclick="collapseAll()">🔼 Collapse All</button>
+        <button onclick="focusOnHub()">🎯 Focus Hub</button>
+        <button onclick="resetView()">🔄 Reset View</button>
+        <button onclick="exportHierarchy()">💾 Export</button>
+    </div>
+    
+    <div class="hierarchy-panel">
+        <h3>🗂️ Hierarchy Levels</h3>
+        
+            <div class="level-info" style="border-left-color: #e74c3c;">
+                <h4>0. Central Hub</h4>
+                <p>Main system navigation hub</p>
+            </div>
+        
+            <div class="level-info" style="border-left-color: #3498db;">
+                <h4>1. Pages</h4>
+                <p>Application pages and routes</p>
+            </div>
+        
+            <div class="level-info" style="border-left-color: #2ecc71;">
+                <h4>2. Frontend Files</h4>
+                <p>React component files</p>
+            </div>
+        
+            <div class="level-info" style="border-left-color: #f39c12;">
+                <h4>3. Components</h4>
+                <p>UI components and widgets</p>
+            </div>
+        
+            <div class="level-info" style="border-left-color: #9b59b6;">
+                <h4>4. Services</h4>
+                <p>Frontend service layer</p>
+            </div>
+        
+            <div class="level-info" style="border-left-color: #1abc9c;">
+                <h4>5. Methods</h4>
+                <p>Component methods and functions</p>
+            </div>
+        
+            <div class="level-info" style="border-left-color: #e67e22;">
+                <h4>6. API Endpoints</h4>
+                <p>REST API endpoints</p>
+            </div>
+        
+            <div class="level-info" style="border-left-color: #34495e;">
+                <h4>7. Backend Files</h4>
+                <p>Python FastAPI services</p>
+            </div>
+        
+            <div class="level-info" style="border-left-color: #95a5a6;">
+                <h4>8. Database Schema</h4>
+                <p>Database tables and structures</p>
+            </div>
+        
+    </div>
+    
+    <div class="graph-container">
+        <svg id="graph"></svg>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-value" id="visible-nodes">147</div>
+            <div class="stat-label">Visible Nodes</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="visible-edges">184</div>
+            <div class="stat-label">Visible Edges</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="max-level">6</div>
+            <div class="stat-label">Hierarchy Levels</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="expanded-nodes">8</div>
+            <div class="stat-label">Expanded Nodes</div>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Graph data
+        const graphData = {
+  "directed": true,
+  "multigraph": false,
+  "hierarchical": true,
+  "hasImpactAnalysis": true,
+  "graph": {
+    "name": "GraphTrace Enhanced Hierarchical Traceability with Impact Analysis",
+    "description": "Interactive expandable graph: Central Hub → Pages → Frontend Files → Components → Services → Methods → API Endpoints → Backend Files → Schema"
+  },
+  "nodes": [
+    {
+      "id": 1,
+      "label": "GraphTrace System Hub",
+      "type": "central_hub",
+      "group": 9,
+      "level": 9,
+      "size": 35,
+      "color": "#e74c3c",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "parent": null,
+      "isHub": true
+    },
+    {
+      "id": 2,
+      "label": "Landing Page",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        10,
+        11
+      ],
+      "parent": 1,
+      "route": "/",
+      "file": "fluent-landing-page.jsx"
+    },
+    {
+      "id": 3,
+      "label": "Main Dashboard",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        12
+      ],
+      "parent": 1,
+      "route": "/dashboard",
+      "file": "fluent-main-dashboard.jsx"
+    },
+    {
+      "id": 4,
+      "label": "Graph Explorer",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        13
+      ],
+      "parent": 1,
+      "route": "/graph",
+      "file": "fluent-graph-explorer-final.jsx"
+    },
+    {
+      "id": 5,
+      "label": "PLM Orchestrator",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        14
+      ],
+      "parent": 1,
+      "route": "/orchestrator",
+      "file": "PLMOrchestratorPage.jsx"
+    },
+    {
+      "id": 6,
+      "label": "AI ETL Pipeline",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        15
+      ],
+      "parent": 1,
+      "route": "/ai-etl",
+      "file": "AIETLPipelinePage.jsx"
+    },
+    {
+      "id": 7,
+      "label": "Data Mapping",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        16
+      ],
+      "parent": 1,
+      "route": "/data-mapping",
+      "file": "fluent-data-mapping-page.jsx"
+    },
+    {
+      "id": 8,
+      "label": "System Settings",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        17
+      ],
+      "parent": 1,
+      "route": "/settings",
+      "file": "ModularSystemSettingsPage.jsx"
+    },
+    {
+      "id": 9,
+      "label": "Monitoring Dashboard",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        18
+      ],
+      "parent": 1,
+      "route": "/monitoring",
+      "file": "fluent-monitoring-page.jsx"
+    },
+    {
+      "id": 10,
+      "label": "App.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        19,
+        20
+      ],
+      "parent": 2,
+      "components": [
+        "SideMenu",
+        "ErrorBoundary"
+      ]
+    },
+    {
+      "id": 11,
+      "label": "fluent-landing-page.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        21,
+        22,
+        23
+      ],
+      "parent": 2,
+      "components": [
+        "LandingHeader",
+        "FeatureCards",
+        "ActionButtons"
+      ]
+    },
+    {
+      "id": 12,
+      "label": "fluent-main-dashboard.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        24,
+        25,
+        26
+      ],
+      "parent": 3,
+      "components": [
+        "DashboardContent",
+        "AnalyticsContent",
+        "PageHeader"
+      ]
+    },
+    {
+      "id": 13,
+      "label": "fluent-graph-explorer-final.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        27,
+        28,
+        29
+      ],
+      "parent": 4,
+      "components": [
+        "GraphCanvas",
+        "GraphControls",
+        "GraphChatPanel"
+      ]
+    },
+    {
+      "id": 14,
+      "label": "PLMOrchestratorPage.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        30,
+        31,
+        32
+      ],
+      "parent": 5,
+      "components": [
+        "WorkflowDesigner",
+        "EnhancedAgentCanvas",
+        "StateMachineWorkflowEngine"
+      ]
+    },
+    {
+      "id": 15,
+      "label": "AIETLPipelinePage.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        33,
+        34,
+        35
+      ],
+      "parent": 6,
+      "components": [
+        "ETLPipelineBuilder",
+        "DataFlowCanvas",
+        "QualityDashboard"
+      ]
+    },
+    {
+      "id": 16,
+      "label": "fluent-data-mapping-page.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        36,
+        37,
+        38
+      ],
+      "parent": 7,
+      "components": [
+        "MappingCanvas",
+        "SchemaViewer",
+        "TransformationRules"
+      ]
+    },
+    {
+      "id": 17,
+      "label": "ModularSystemSettingsPage.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        39,
+        40,
+        41
+      ],
+      "parent": 8,
+      "components": [
+        "ConfigurationPanel",
+        "DataSourceDialog",
+        "ServiceStatus"
+      ]
+    },
+    {
+      "id": 18,
+      "label": "fluent-monitoring-page.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        42,
+        43,
+        44
+      ],
+      "parent": 9,
+      "components": [
+        "MetricsOverview",
+        "AlertsPanel",
+        "PerformanceCharts"
+      ]
+    },
+    {
+      "id": 19,
+      "label": "SideMenu",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        57,
+        58
+      ],
+      "parent": 10,
+      "file": "SideMenu.jsx",
+      "methods": [
+        "handleNavigation",
+        "toggleCollapse"
+      ],
+      "apis": [
+        "/api/navigation"
+      ]
+    },
+    {
+      "id": 20,
+      "label": "ErrorBoundary",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        59
+      ],
+      "parent": 10,
+      "file": "ErrorBoundary.jsx",
+      "methods": [
+        "componentDidCatch",
+        "render"
+      ],
+      "apis": [
+        "/api/error-log"
+      ]
+    },
+    {
+      "id": 21,
+      "label": "LandingHeader",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        60,
+        61
+      ],
+      "parent": 11,
+      "file": "LandingHeader.jsx",
+      "methods": [
+        "renderActions",
+        "handleGetStarted"
+      ],
+      "apis": [
+        "/api/health"
+      ]
+    },
+    {
+      "id": 22,
+      "label": "FeatureCards",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        62,
+        63
+      ],
+      "parent": 11,
+      "file": "FeatureCards.jsx",
+      "methods": [
+        "renderCard",
+        "handleCardClick"
+      ],
+      "apis": [
+        "/api/features"
+      ]
+    },
+    {
+      "id": 23,
+      "label": "ActionButtons",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        64,
+        65
+      ],
+      "parent": 11,
+      "file": "ActionButtons.jsx",
+      "methods": [
+        "handleAction",
+        "validatePermissions"
+      ],
+      "apis": [
+        "/api/actions"
+      ]
+    },
+    {
+      "id": 24,
+      "label": "DashboardContent",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        66,
+        67
+      ],
+      "parent": 12,
+      "file": "DashboardContent.jsx",
+      "methods": [
+        "loadMetrics",
+        "refreshData"
+      ],
+      "apis": [
+        "/api/dashboard",
+        "/api/metrics"
+      ]
+    },
+    {
+      "id": 25,
+      "label": "AnalyticsContent",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        68,
+        69
+      ],
+      "parent": 12,
+      "file": "AnalyticsContent.jsx",
+      "methods": [
+        "processAnalytics",
+        "renderCharts"
+      ],
+      "apis": [
+        "/api/analytics"
+      ]
+    },
+    {
+      "id": 26,
+      "label": "PageHeader",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": 12,
+      "file": "PageHeader.jsx",
+      "methods": [
+        "renderTitle",
+        "renderActions"
+      ],
+      "apis": []
+    },
+    {
+      "id": 27,
+      "label": "GraphCanvas",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        70,
+        71
+      ],
+      "parent": 13,
+      "file": "GraphCanvas.jsx",
+      "methods": [
+        "renderGraph",
+        "handleNodeClick"
+      ],
+      "apis": [
+        "/api/graph-data"
+      ]
+    },
+    {
+      "id": 28,
+      "label": "GraphControls",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        72,
+        73
+      ],
+      "parent": 13,
+      "file": "GraphControls.jsx",
+      "methods": [
+        "applyFilter",
+        "resetView"
+      ],
+      "apis": [
+        "/api/graph-filters"
+      ]
+    },
+    {
+      "id": 29,
+      "label": "GraphChatPanel",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        74,
+        75
+      ],
+      "parent": 13,
+      "file": "GraphChatPanel.jsx",
+      "methods": [
+        "sendMessage",
+        "processResponse"
+      ],
+      "apis": [
+        "/api/chat"
+      ]
+    },
+    {
+      "id": 30,
+      "label": "WorkflowDesigner",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        76,
+        77
+      ],
+      "parent": 14,
+      "file": "WorkflowDesigner.jsx",
+      "methods": [
+        "createWorkflow",
+        "saveWorkflow"
+      ],
+      "apis": [
+        "/api/workflows"
+      ]
+    },
+    {
+      "id": 31,
+      "label": "EnhancedAgentCanvas",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        78,
+        79
+      ],
+      "parent": 14,
+      "file": "EnhancedAgentCanvas.jsx",
+      "methods": [
+        "renderAgent",
+        "connectAgents"
+      ],
+      "apis": [
+        "/api/agents"
+      ]
+    },
+    {
+      "id": 32,
+      "label": "StateMachineWorkflowEngine",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        80,
+        81
+      ],
+      "parent": 14,
+      "file": "StateMachineWorkflowEngine.jsx",
+      "methods": [
+        "executeWorkflow",
+        "validateStates"
+      ],
+      "apis": [
+        "/api/workflow-execution"
+      ]
+    },
+    {
+      "id": 33,
+      "label": "ETLPipelineBuilder",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        82,
+        83
+      ],
+      "parent": 15,
+      "file": "ETLPipelineBuilder.jsx",
+      "methods": [
+        "buildPipeline",
+        "testPipeline"
+      ],
+      "apis": [
+        "/api/etl-pipeline"
+      ]
+    },
+    {
+      "id": 34,
+      "label": "DataFlowCanvas",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        84,
+        85
+      ],
+      "parent": 15,
+      "file": "DataFlowCanvas.jsx",
+      "methods": [
+        "renderFlow",
+        "validateFlow"
+      ],
+      "apis": [
+        "/api/data-flow"
+      ]
+    },
+    {
+      "id": 35,
+      "label": "QualityDashboard",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        86,
+        87
+      ],
+      "parent": 15,
+      "file": "QualityDashboard.jsx",
+      "methods": [
+        "runQualityCheck",
+        "displayResults"
+      ],
+      "apis": [
+        "/api/quality"
+      ]
+    },
+    {
+      "id": 36,
+      "label": "MappingCanvas",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        88,
+        89
+      ],
+      "parent": 16,
+      "file": "MappingCanvas.jsx",
+      "methods": [
+        "createMapping",
+        "validateMapping"
+      ],
+      "apis": [
+        "/api/data-mapping"
+      ]
+    },
+    {
+      "id": 37,
+      "label": "SchemaViewer",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        90,
+        91
+      ],
+      "parent": 16,
+      "file": "SchemaViewer.jsx",
+      "methods": [
+        "loadSchema",
+        "renderSchema"
+      ],
+      "apis": [
+        "/api/schema"
+      ]
+    },
+    {
+      "id": 38,
+      "label": "TransformationRules",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        92,
+        93
+      ],
+      "parent": 16,
+      "file": "TransformationRules.jsx",
+      "methods": [
+        "createRule",
+        "applyRule"
+      ],
+      "apis": [
+        "/api/transformation"
+      ]
+    },
+    {
+      "id": 39,
+      "label": "ConfigurationPanel",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        94,
+        95
+      ],
+      "parent": 17,
+      "file": "ConfigurationPanel.jsx",
+      "methods": [
+        "loadConfig",
+        "saveConfig"
+      ],
+      "apis": [
+        "/api/config"
+      ]
+    },
+    {
+      "id": 40,
+      "label": "DataSourceDialog",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        96,
+        97
+      ],
+      "parent": 17,
+      "file": "DataSourceDialog.jsx",
+      "methods": [
+        "testConnection",
+        "saveDataSource"
+      ],
+      "apis": [
+        "/api/data-sources"
+      ]
+    },
+    {
+      "id": 41,
+      "label": "ServiceStatus",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        98,
+        99
+      ],
+      "parent": 17,
+      "file": "ServiceStatus.jsx",
+      "methods": [
+        "checkHealth",
+        "restartService"
+      ],
+      "apis": [
+        "/api/services/health"
+      ]
+    },
+    {
+      "id": 42,
+      "label": "MetricsOverview",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        100
+      ],
+      "parent": 18,
+      "file": "MetricsOverview.jsx",
+      "methods": [
+        "loadMetrics",
+        "refreshMetrics"
+      ],
+      "apis": [
+        "/api/monitoring/metrics"
+      ]
+    },
+    {
+      "id": 43,
+      "label": "AlertsPanel",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        101,
+        102
+      ],
+      "parent": 18,
+      "file": "AlertsPanel.jsx",
+      "methods": [
+        "loadAlerts",
+        "acknowledgeAlert"
+      ],
+      "apis": [
+        "/api/monitoring/alerts"
+      ]
+    },
+    {
+      "id": 44,
+      "label": "PerformanceCharts",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        103,
+        104
+      ],
+      "parent": 18,
+      "file": "PerformanceCharts.jsx",
+      "methods": [
+        "renderChart",
+        "updateData"
+      ],
+      "apis": [
+        "/api/monitoring/performance"
+      ]
+    },
+    {
+      "id": 45,
+      "label": "SystemConfig",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 46,
+      "label": "NotificationService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 47,
+      "label": "DashboardDataUtils",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 48,
+      "label": "GraphExplorerService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 49,
+      "label": "WorkflowService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 50,
+      "label": "AgenticETLService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 51,
+      "label": "DataMappingService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 52,
+      "label": "ConfigurationService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 53,
+      "label": "MonitoringService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 54,
+      "label": "AlertService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 55,
+      "label": "ValidationService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 56,
+      "label": "TransformationService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 57,
+      "label": "handleNavigation",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 19
+    },
+    {
+      "id": 58,
+      "label": "toggleCollapse",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 19
+    },
+    {
+      "id": 59,
+      "label": "componentDidCatch",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 20
+    },
+    {
+      "id": 60,
+      "label": "renderActions",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 21
+    },
+    {
+      "id": 61,
+      "label": "handleGetStarted",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 21
+    },
+    {
+      "id": 62,
+      "label": "renderCard",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 22
+    },
+    {
+      "id": 63,
+      "label": "handleCardClick",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 22
+    },
+    {
+      "id": 64,
+      "label": "handleAction",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 23
+    },
+    {
+      "id": 65,
+      "label": "validatePermissions",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 23
+    },
+    {
+      "id": 66,
+      "label": "loadMetrics",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 24
+    },
+    {
+      "id": 67,
+      "label": "refreshData",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 24
+    },
+    {
+      "id": 68,
+      "label": "processAnalytics",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 25
+    },
+    {
+      "id": 69,
+      "label": "renderCharts",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 25
+    },
+    {
+      "id": 70,
+      "label": "renderGraph",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 27
+    },
+    {
+      "id": 71,
+      "label": "handleNodeClick",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 27
+    },
+    {
+      "id": 72,
+      "label": "applyFilter",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 28
+    },
+    {
+      "id": 73,
+      "label": "resetView",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 28
+    },
+    {
+      "id": 74,
+      "label": "sendMessage",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 29
+    },
+    {
+      "id": 75,
+      "label": "processResponse",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 29
+    },
+    {
+      "id": 76,
+      "label": "createWorkflow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 30
+    },
+    {
+      "id": 77,
+      "label": "saveWorkflow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 30
+    },
+    {
+      "id": 78,
+      "label": "renderAgent",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 31
+    },
+    {
+      "id": 79,
+      "label": "connectAgents",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 31
+    },
+    {
+      "id": 80,
+      "label": "executeWorkflow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 32
+    },
+    {
+      "id": 81,
+      "label": "validateStates",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 32
+    },
+    {
+      "id": 82,
+      "label": "buildPipeline",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 33
+    },
+    {
+      "id": 83,
+      "label": "testPipeline",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 33
+    },
+    {
+      "id": 84,
+      "label": "renderFlow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 34
+    },
+    {
+      "id": 85,
+      "label": "validateFlow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 34
+    },
+    {
+      "id": 86,
+      "label": "runQualityCheck",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 35
+    },
+    {
+      "id": 87,
+      "label": "displayResults",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 35
+    },
+    {
+      "id": 88,
+      "label": "createMapping",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 36
+    },
+    {
+      "id": 89,
+      "label": "validateMapping",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 36
+    },
+    {
+      "id": 90,
+      "label": "loadSchema",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 37
+    },
+    {
+      "id": 91,
+      "label": "renderSchema",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 37
+    },
+    {
+      "id": 92,
+      "label": "createRule",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 38
+    },
+    {
+      "id": 93,
+      "label": "applyRule",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 38
+    },
+    {
+      "id": 94,
+      "label": "loadConfig",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 39
+    },
+    {
+      "id": 95,
+      "label": "saveConfig",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 39
+    },
+    {
+      "id": 96,
+      "label": "testConnection",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 40
+    },
+    {
+      "id": 97,
+      "label": "saveDataSource",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 40
+    },
+    {
+      "id": 98,
+      "label": "checkHealth",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 41
+    },
+    {
+      "id": 99,
+      "label": "restartService",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 41
+    },
+    {
+      "id": 100,
+      "label": "refreshMetrics",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 42
+    },
+    {
+      "id": 101,
+      "label": "loadAlerts",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 43
+    },
+    {
+      "id": 102,
+      "label": "acknowledgeAlert",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 43
+    },
+    {
+      "id": 103,
+      "label": "renderChart",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 44
+    },
+    {
+      "id": 104,
+      "label": "updateData",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 44
+    },
+    {
+      "id": 105,
+      "label": "/api/health",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 106,
+      "label": "/api/navigation",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 107,
+      "label": "/api/error-log",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 108,
+      "label": "/api/features",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 109,
+      "label": "/api/actions",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 110,
+      "label": "/api/dashboard",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 111,
+      "label": "/api/metrics",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 134
+    },
+    {
+      "id": 112,
+      "label": "/api/analytics",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 134
+    },
+    {
+      "id": 113,
+      "label": "/api/graph-data",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 136
+    },
+    {
+      "id": 114,
+      "label": "/api/graph-filters",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 136
+    },
+    {
+      "id": 115,
+      "label": "/api/chat",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 116,
+      "label": "/api/workflows",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 117,
+      "label": "/api/agents",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 118,
+      "label": "/api/workflow-execution",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 135
+    },
+    {
+      "id": 119,
+      "label": "/api/etl-pipeline",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 120,
+      "label": "/api/data-flow",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 121,
+      "label": "/api/quality",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 132
+    },
+    {
+      "id": 122,
+      "label": "/api/data-mapping",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 123,
+      "label": "/api/schema",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 133
+    },
+    {
+      "id": 124,
+      "label": "/api/transformation",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 133
+    },
+    {
+      "id": 125,
+      "label": "/api/config",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 126,
+      "label": "/api/data-sources",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 127,
+      "label": "/api/services/health",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 128,
+      "label": "/api/monitoring/metrics",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 129,
+      "label": "/api/monitoring/alerts",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 130,
+      "label": "/api/monitoring/performance",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 131,
+      "label": "main.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        105,
+        116,
+        125,
+        137,
+        138,
+        139
+      ],
+      "parent": null,
+      "port": 8003,
+      "endpoints": [
+        "/api/health",
+        "/api/workflows",
+        "/api/config"
+      ]
+    },
+    {
+      "id": 132,
+      "label": "soda_quality_service.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        121,
+        140,
+        141
+      ],
+      "parent": null,
+      "port": 8004,
+      "endpoints": [
+        "/api/quality"
+      ]
+    },
+    {
+      "id": 133,
+      "label": "plm_xml_data_service.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        123,
+        124,
+        142,
+        143
+      ],
+      "parent": null,
+      "port": 8005,
+      "endpoints": [
+        "/api/schema",
+        "/api/transformation"
+      ]
+    },
+    {
+      "id": 134,
+      "label": "analytics_storage_service.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        112,
+        111,
+        144,
+        145
+      ],
+      "parent": null,
+      "port": 8006,
+      "endpoints": [
+        "/api/analytics",
+        "/api/metrics"
+      ]
+    },
+    {
+      "id": 135,
+      "label": "advanced_migration_engine.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        118,
+        146
+      ],
+      "parent": null,
+      "port": 8007,
+      "endpoints": [
+        "/api/workflow-execution"
+      ]
+    },
+    {
+      "id": 136,
+      "label": "code_graph_service.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        113,
+        114,
+        147
+      ],
+      "parent": null,
+      "port": 8008,
+      "endpoints": [
+        "/api/graph-data",
+        "/api/graph-filters"
+      ]
+    },
+    {
+      "id": 137,
+      "label": "workflows",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 138,
+      "label": "data_sources",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 139,
+      "label": "audit_logs",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 140,
+      "label": "quality_rules",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 132
+    },
+    {
+      "id": 141,
+      "label": "quality_reports",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 132
+    },
+    {
+      "id": 142,
+      "label": "plm_data",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 133
+    },
+    {
+      "id": 143,
+      "label": "transformations",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 133
+    },
+    {
+      "id": 144,
+      "label": "analytics_data",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 134
+    },
+    {
+      "id": 145,
+      "label": "metrics",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 134
+    },
+    {
+      "id": 146,
+      "label": "migration_jobs",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 135
+    },
+    {
+      "id": 147,
+      "label": "code_graph",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 136
+    }
+  ],
+  "links": [
+    {
+      "source": 1,
+      "target": 2,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 3,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 4,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 5,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 6,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 7,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 8,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 9,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 2,
+      "target": 10,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 2,
+      "target": 11,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 3,
+      "target": 12,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 4,
+      "target": 13,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 5,
+      "target": 14,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 6,
+      "target": 15,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 7,
+      "target": 16,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 8,
+      "target": 17,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 9,
+      "target": 18,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 10,
+      "target": 19,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 10,
+      "target": 20,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 11,
+      "target": 21,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 11,
+      "target": 22,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 11,
+      "target": 23,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 12,
+      "target": 24,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 12,
+      "target": 25,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 12,
+      "target": 26,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 13,
+      "target": 27,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 13,
+      "target": 28,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 13,
+      "target": 29,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 14,
+      "target": 30,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 14,
+      "target": 31,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 14,
+      "target": 32,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 15,
+      "target": 33,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 15,
+      "target": 34,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 15,
+      "target": 35,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 16,
+      "target": 36,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 16,
+      "target": 37,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 16,
+      "target": 38,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 17,
+      "target": 39,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 17,
+      "target": 40,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 17,
+      "target": 41,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 18,
+      "target": 42,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 18,
+      "target": 43,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 18,
+      "target": 44,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 21,
+      "target": 45,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 24,
+      "target": 45,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 20,
+      "target": 46,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 23,
+      "target": 46,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 24,
+      "target": 47,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 25,
+      "target": 47,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 27,
+      "target": 48,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 28,
+      "target": 48,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 30,
+      "target": 49,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 32,
+      "target": 49,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 31,
+      "target": 50,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 33,
+      "target": 50,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 36,
+      "target": 51,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 38,
+      "target": 51,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 39,
+      "target": 52,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 40,
+      "target": 52,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 41,
+      "target": 53,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 42,
+      "target": 53,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 43,
+      "target": 54,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 35,
+      "target": 55,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 37,
+      "target": 55,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 34,
+      "target": 56,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 38,
+      "target": 56,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 19,
+      "target": 57,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 19,
+      "target": 58,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 20,
+      "target": 59,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 21,
+      "target": 60,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 21,
+      "target": 61,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 22,
+      "target": 62,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 22,
+      "target": 63,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 23,
+      "target": 64,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 23,
+      "target": 65,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 24,
+      "target": 66,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 24,
+      "target": 67,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 25,
+      "target": 68,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 25,
+      "target": 69,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 27,
+      "target": 70,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 27,
+      "target": 71,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 28,
+      "target": 72,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 28,
+      "target": 73,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 29,
+      "target": 74,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 29,
+      "target": 75,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 30,
+      "target": 76,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 30,
+      "target": 77,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 31,
+      "target": 78,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 31,
+      "target": 79,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 32,
+      "target": 80,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 32,
+      "target": 81,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 33,
+      "target": 82,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 33,
+      "target": 83,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 34,
+      "target": 84,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 34,
+      "target": 85,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 35,
+      "target": 86,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 35,
+      "target": 87,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 36,
+      "target": 88,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 36,
+      "target": 89,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 37,
+      "target": 90,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 37,
+      "target": 91,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 38,
+      "target": 92,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 38,
+      "target": 93,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 39,
+      "target": 94,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 39,
+      "target": 95,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 40,
+      "target": 96,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 40,
+      "target": 97,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 41,
+      "target": 98,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 41,
+      "target": 99,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 42,
+      "target": 100,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 43,
+      "target": 101,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 43,
+      "target": 102,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 44,
+      "target": 103,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 44,
+      "target": 104,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 61,
+      "target": 105,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 98,
+      "target": 105,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 57,
+      "target": 106,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 59,
+      "target": 107,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 62,
+      "target": 108,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 64,
+      "target": 109,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 66,
+      "target": 110,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 67,
+      "target": 111,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 100,
+      "target": 111,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 68,
+      "target": 112,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 70,
+      "target": 113,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 72,
+      "target": 114,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 74,
+      "target": 115,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 75,
+      "target": 115,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 76,
+      "target": 116,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 77,
+      "target": 116,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 78,
+      "target": 117,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 79,
+      "target": 117,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 80,
+      "target": 118,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 82,
+      "target": 119,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 83,
+      "target": 119,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 84,
+      "target": 120,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 85,
+      "target": 120,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 86,
+      "target": 121,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 88,
+      "target": 122,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 89,
+      "target": 122,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 90,
+      "target": 123,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 91,
+      "target": 123,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 92,
+      "target": 124,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 93,
+      "target": 124,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 94,
+      "target": 125,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 95,
+      "target": 125,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 96,
+      "target": 126,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 97,
+      "target": 126,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 98,
+      "target": 127,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 99,
+      "target": 127,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 66,
+      "target": 128,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 100,
+      "target": 128,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 101,
+      "target": 129,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 102,
+      "target": 129,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 103,
+      "target": 130,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 104,
+      "target": 130,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 131,
+      "target": 105,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 131,
+      "target": 116,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 131,
+      "target": 125,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 132,
+      "target": 121,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 133,
+      "target": 123,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 133,
+      "target": 124,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 134,
+      "target": 112,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 134,
+      "target": 111,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 135,
+      "target": 118,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 136,
+      "target": 113,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 136,
+      "target": 114,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 131,
+      "target": 137,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 131,
+      "target": 138,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 131,
+      "target": 139,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 132,
+      "target": 140,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 132,
+      "target": 141,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 133,
+      "target": 142,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 133,
+      "target": 143,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 134,
+      "target": 144,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 134,
+      "target": 145,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 135,
+      "target": 146,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 136,
+      "target": 147,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 24,
+      "target": 131,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 27,
+      "target": 136,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 35,
+      "target": 132,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 36,
+      "target": 133,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 30,
+      "target": 131,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 31,
+      "target": 135,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    }
+  ],
+  "hierarchy": {
+    "levels": [
+      {
+        "level": 0,
+        "name": "Central Hub",
+        "color": "#e74c3c",
+        "description": "Main system navigation hub"
+      },
+      {
+        "level": 1,
+        "name": "Pages",
+        "color": "#3498db",
+        "description": "Application pages and routes"
+      },
+      {
+        "level": 2,
+        "name": "Frontend Files",
+        "color": "#2ecc71",
+        "description": "React component files"
+      },
+      {
+        "level": 3,
+        "name": "Components",
+        "color": "#f39c12",
+        "description": "UI components and widgets"
+      },
+      {
+        "level": 4,
+        "name": "Services",
+        "color": "#9b59b6",
+        "description": "Frontend service layer"
+      },
+      {
+        "level": 5,
+        "name": "Methods",
+        "color": "#1abc9c",
+        "description": "Component methods and functions"
+      },
+      {
+        "level": 6,
+        "name": "API Endpoints",
+        "color": "#e67e22",
+        "description": "REST API endpoints"
+      },
+      {
+        "level": 7,
+        "name": "Backend Files",
+        "color": "#34495e",
+        "description": "Python FastAPI services"
+      },
+      {
+        "level": 8,
+        "name": "Database Schema",
+        "color": "#95a5a6",
+        "description": "Database tables and structures"
+      }
+    ]
+  },
+  "centralHub": 1,
+  "stats": {
+    "totalNodes": 147,
+    "totalEdges": 184,
+    "hierarchicalEdges": 113,
+    "crossReferenceEdges": 71,
+    "nodesByLevel": {
+      "1": 8,
+      "2": 9,
+      "3": 26,
+      "4": 12,
+      "5": 48,
+      "6": 26,
+      "7": 6,
+      "8": 11,
+      "9": 1
+    }
+  }
+};
+        
+        // Global variables
+        let svg, g, simulation, nodes, links, expandedNodes = new Set(), selectedNode = null;
+        let filteredData = { nodes: [], links: [] };
+        let currentViewMode = 'hub';
+        let currentFilter = 'all';
+        let impactAnalysisActive = false;
+        
+        // Initialize the graph
+        function initGraph() {
+            const container = d3.select('#graph-container');
+            if (container.empty()) {
+                // Fallback to inline SVG
+                svg = d3.select('#graph');
+                const width = 800;
+                const height = 700;
+                svg.attr('width', width).attr('height', height);
+            } else {
+                const width = container.node().getBoundingClientRect().width;
+                const height = 600;
+                
+                svg = container.append('svg')
+                    .attr('width', width)
+                    .attr('height', height);
+            }
+            
+            // Add zoom and pan capabilities
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', function(event) {
+                    g.attr('transform', event.transform);
+                });
+            
+            svg.call(zoom);
+            
+            // Create arrowhead marker
+            svg.append("defs").append("marker")
+                .attr("id", "arrowhead")
+                .attr("viewBox", "0 -5 10 10")
+                .attr("refX", 25)
+                .attr("refY", 0)
+                .attr("markerWidth", 6)
+                .attr("markerHeight", 6)
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M0,-5L10,0L0,5")
+                .attr("fill", "rgba(255,255,255,0.6)");
+            
+            g = svg.append('g');
+            
+            // Initialize with central hub
+            focusOnHub();
+        }
+        
+        // Show central hub view
+        function showHubView() {
+            currentViewMode = 'hub';
+            updateActiveButton('hub-btn', 'filter-buttons');
+            focusOnHub();
+        }
+        
+        // Show only direct relationships
+        function showDirectRelationships() {
+            currentViewMode = 'direct';
+            updateActiveButton('direct-btn', 'filter-buttons');
+            if (selectedNode) {
+                showDirectRelationshipsForNode(selectedNode);
+            } else {
+                focusOnHub();
+            }
+        }
+        
+        // Show all relationships
+        function showAllRelationships() {
+            currentViewMode = 'all';
+            updateActiveButton('all-btn', 'filter-buttons');
+            resetView();
+        }
+        
+        // Filter by node type
+        function filterByType(type) {
+            currentFilter = type;
+            updateActiveButton('filter-' + type, 'filter-buttons');
+            applyFilters();
+        }
+        
+        // Show specific hierarchy level
+        function showLevel(level) {
+            const hubNode = graphData.nodes.find(n => n.id === 'hub_central');
+            const levelNodes = graphData.nodes.filter(n => n.level <= level);
+            const levelLinks = graphData.links.filter(l => 
+                levelNodes.some(n => n.id === l.source) && 
+                levelNodes.some(n => n.id === l.target)
+            );
+            
+            updateGraph(levelNodes, levelLinks);
+            updateActiveButton('level-' + level, 'filter-buttons');
+            updateBreadcrumb(`📍 Showing Level ${level} and below`);
+        }
+        
+        // Apply current filters
+        function applyFilters() {
+            let filtered = { nodes: [...graphData.nodes], links: [...graphData.links] };
+            
+            // Apply type filter
+            if (currentFilter !== 'all') {
+                filtered.nodes = filtered.nodes.filter(n => 
+                    n.type === currentFilter || n.id === 'hub_central'
+                );
+                filtered.links = filtered.links.filter(l =>
+                    filtered.nodes.some(n => n.id === l.source) &&
+                    filtered.nodes.some(n => n.id === l.target)
+                );
+            }
+            
+            updateGraph(filtered.nodes, filtered.links);
+        }
+        
+        // Focus on central hub
+        function focusOnHub() {
+            const hubNode = graphData.nodes.find(n => n.id === 'hub_central');
+            if (!hubNode) return;
+            
+            selectedNode = hubNode;
+            expandedNodes.clear();
+            expandedNodes.add('hub_central');
+            
+            // Show hub and immediate children
+            const hubChildren = graphData.links
+                .filter(l => l.source === 'hub_central')
+                .map(l => l.target);
+            
+            const visibleNodes = [hubNode, ...graphData.nodes.filter(n => hubChildren.includes(n.id))];
+            const visibleLinks = graphData.links.filter(l => l.source === 'hub_central');
+            
+            updateGraph(visibleNodes, visibleLinks);
+            updateBreadcrumb('📍 Central Hub Active: Click pages to explore system');
+        }
+        
+        // Show direct relationships for a node
+        function showDirectRelationshipsForNode(node) {
+            const directNodes = new Set([node.id]);
+            
+            // Find all directly connected nodes
+            graphData.links.forEach(link => {
+                if (link.source === node.id) directNodes.add(link.target);
+                if (link.target === node.id) directNodes.add(link.source);
+            });
+            
+            const visibleNodes = graphData.nodes.filter(n => directNodes.has(n.id));
+            const visibleLinks = graphData.links.filter(l => 
+                directNodes.has(l.source) && directNodes.has(l.target)
+            );
+            
+            updateGraph(visibleNodes, visibleLinks);
+            updateBreadcrumb(`📍 Direct relationships for: ${node.label}`);
+        }
+        
+        // Expand all nodes
+        function expandAll() {
+            graphData.nodes.forEach(n => expandedNodes.add(n.id));
+            updateGraph(graphData.nodes, graphData.links);
+            updateBreadcrumb('📍 All nodes expanded');
+        }
+        
+        // Collapse all nodes
+        function collapseAll() {
+            expandedNodes.clear();
+            focusOnHub();
+        }
+        
+        // Reset view to full graph
+        function resetView() {
+            expandedNodes.clear();
+            graphData.nodes.forEach(n => expandedNodes.add(n.id));
+            currentFilter = 'all';
+            currentViewMode = 'all';
+            updateActiveButton('filter-all', 'filter-buttons');
+            updateActiveButton('all-btn', 'filter-buttons');
+            updateGraph(graphData.nodes, graphData.links);
+            updateBreadcrumb('📍 Full system view');
+        }
+        
+        // Export hierarchy data
+        function exportHierarchy() {
+            const exportData = {
+                nodes: filteredData.nodes,
+                links: filteredData.links,
+                hierarchy: generateHierarchyTree(),
+                timestamp: new Date().toISOString(),
+                expandedNodes: Array.from(expandedNodes)
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], 
+                { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'hierarchical-traceability-graph.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Generate hierarchy tree for export
+        function generateHierarchyTree() {
+            const tree = {};
+            graphData.nodes.forEach(node => {
+                if (!tree[node.level]) tree[node.level] = [];
+                tree[node.level].push({
+                    id: node.id,
+                    label: node.label,
+                    type: node.type,
+                    children: getChildrenIds(node.id)
+                });
+            });
+            return tree;
+        }
+        
+        // Get children IDs for a node
+        function getChildrenIds(nodeId) {
+            return graphData.links
+                .filter(l => l.source === nodeId)
+                .map(l => l.target);
+        }
+        
+        // Update active button
+        function updateActiveButton(activeId, groupClass) {
+            document.querySelectorAll('.' + groupClass + ' button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(activeId);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+        
+        // Update graph with filtered data
+        function updateGraph(visibleNodes, visibleLinks) {
+            filteredData = { nodes: visibleNodes, links: visibleLinks };
+            
+            // Clear existing elements
+            g.selectAll("*").remove();
+            
+            // Create force simulation
+            simulation = d3.forceSimulation(visibleNodes)
+                .force("link", d3.forceLink(visibleLinks).id(d => d.id).distance(100))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(400, 350))
+                .force("collision", d3.forceCollide().radius(40));
+            
+            // Create links
+            const link = g.append("g")
+                .attr("class", "links")
+                .selectAll("line")
+                .data(visibleLinks)
+                .enter().append("line")
+                .attr("stroke", "#666")
+                .attr("stroke-opacity", 0.6)
+                .attr("stroke-width", d => Math.sqrt(d.value || 1))
+                .attr("marker-end", "url(#arrowhead)");
+            
+            // Create nodes
+            const node = g.append("g")
+                .attr("class", "nodes")
+                .selectAll("g")
+                .data(visibleNodes)
+                .enter().append("g")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+            
+            // Node circles
+            node.append("circle")
+                .attr("r", d => d.type === 'hub' ? 25 : (15 + d.level * 2))
+                .attr("fill", d => getNodeColor(d))
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 2);
+            
+            // Node labels
+            node.append("text")
+                .attr("dy", ".35em")
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .attr("font-size", d => d.type === 'hub' ? "12px" : "10px")
+                .text(d => d.label.length > 10 ? d.label.substring(0, 10) + "..." : d.label);
+            
+            // Node click handlers
+            node.on("click", (event, d) => handleNodeClick(event, d))
+                .on("dblclick", (event, d) => handleNodeDoubleClick(event, d))
+                .on("mouseover", (event, d) => showTooltip(event, d))
+                .on("mouseout", hideTooltip);
+            
+            // Update simulation
+            simulation.nodes(visibleNodes);
+            simulation.force("link").links(visibleLinks);
+            simulation.alpha(1).restart();
+            
+            // Update positions on simulation tick
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+                
+                node.attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+            
+            updateStats(visibleNodes.length, visibleLinks.length);
+        }
+        
+        // Handle node click - expand/collapse
+        function handleNodeClick(event, d) {
+            event.stopPropagation();
+            selectedNode = d;
+            
+            if (currentViewMode === 'hub' && d.id !== 'hub_central') {
+                // In hub mode, clicking non-hub nodes shows their immediate children
+                const children = getChildrenIds(d.id);
+                const childNodes = graphData.nodes.filter(n => children.includes(n.id));
+                const childLinks = graphData.links.filter(l => 
+                    l.source === d.id && children.includes(l.target)
+                );
+                
+                // Add current node and its children to visible set
+                const currentVisible = [d, ...childNodes];
+                const currentLinks = [...filteredData.links, ...childLinks];
+                
+                updateGraph(currentVisible, currentLinks);
+                updateBreadcrumb(`📍 Exploring: ${d.label} and children`);
+            } else if (currentViewMode === 'direct') {
+                showDirectRelationshipsForNode(d);
+            }
+        }
+        
+        // Handle node double-click - impact analysis
+        function handleNodeDoubleClick(event, d) {
+            event.stopPropagation();
+            performImpactAnalysis(d);
+        }
+        
+        // Perform impact analysis for a node
+        function performImpactAnalysis(node) {
+            impactAnalysisActive = true;
+            const impactedNodes = new Set([node.id]);
+            const impactQueue = [node.id];
+            
+            // Traverse dependencies
+            while (impactQueue.length > 0) {
+                const currentId = impactQueue.shift();
+                
+                // Find all nodes that depend on current node
+                graphData.links.forEach(link => {
+                    if (link.source === currentId && !impactedNodes.has(link.target)) {
+                        impactedNodes.add(link.target);
+                        impactQueue.push(link.target);
+                    }
+                });
+            }
+            
+            const impactNodes = graphData.nodes.filter(n => impactedNodes.has(n.id));
+            const impactLinks = graphData.links.filter(l => 
+                impactedNodes.has(l.source) && impactedNodes.has(l.target)
+            );
+            
+            updateGraph(impactNodes, impactLinks);
+            updateBreadcrumb(`🎯 Impact Analysis: ${node.label} affects ${impactedNodes.size} components`);
+        }
+        
+        // Get node color based on type and level
+        function getNodeColor(d) {
+            if (d.type === 'hub') return '#ff6b6b';
+            
+            const colors = {
+                'page': '#4ecdc4',
+                'frontend_file': '#45b7d1', 
+                'component': '#96ceb4',
+                'service': '#feca57',
+                'method': '#ff9ff3',
+                'api_endpoint': '#54a0ff',
+                'backend_file': '#5f27cd',
+                'database_schema': '#00d2d3'
+            };
+            
+            return colors[d.type] || '#74b9ff';
+        }
+        
+        // Tooltip functions
+        function showTooltip(event, d) {
+            const tooltip = d3.select("#tooltip");
+            if (tooltip.empty()) return;
+            
+            tooltip.style("opacity", 1)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 10) + "px")
+                .html(`
+                    <strong>${d.label}</strong><br/>
+                    Type: ${d.type}<br/>
+                    Level: ${d.level}<br/>
+                    Children: ${getChildrenIds(d.id).length}
+                `);
+        }
+        
+        function hideTooltip() {
+            const tooltip = d3.select("#tooltip");
+            if (!tooltip.empty()) {
+                tooltip.style("opacity", 0);
+            }
+        }
+        
+        // Update statistics
+        function updateStats(nodeCount, linkCount) {
+            const visibleNodesEl = document.getElementById('visible-nodes');
+            const visibleEdgesEl = document.getElementById('visible-edges');
+            
+            if (visibleNodesEl) visibleNodesEl.textContent = nodeCount || filteredData.nodes.length;
+            if (visibleEdgesEl) visibleEdgesEl.textContent = linkCount || filteredData.links.length;
+        }
+        
+        // Drag functions
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+        
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initGraph();
+        });
+        
+        updateGraph();
+        
+        function updateGraph() {
+            // Filter visible data
+            const filteredNodes = graphData.nodes.filter(node => visibleNodes.has(node.id));
+            const filteredLinks = graphData.links.filter(link => 
+                visibleNodes.has(link.source.id || link.source) && 
+                visibleNodes.has(link.target.id || link.target)
+            );
+            
+            // Force simulation
+            const simulation = d3.forceSimulation(filteredNodes)
+                .force("link", d3.forceLink(filteredLinks).id(d => d.id).distance(d => d.hierarchical ? 80 : 120))
+                .force("charge", d3.forceManyBody().strength(-400))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(d => d.size + 10))
+                .force("y", d3.forceY().y(d => d.level * 100).strength(0.1));
+            
+            // Clear previous elements
+            g.selectAll("*").remove();
+            
+            // Links
+            const link = g.append("g")
+                .selectAll("line")
+                .data(filteredLinks)
+                .enter().append("line")
+                .attr("class", d => `link ${d.hierarchical ? 'hierarchical' : ''}`)
+                .attr("stroke-width", d => d.weight);
+            
+            // Nodes
+            const nodeGroup = g.append("g")
+                .selectAll("g")
+                .data(filteredNodes)
+                .enter().append("g")
+                .attr("class", "node-group")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended))
+                .on("click", handleNodeClick)
+                .on("dblclick", handleNodeDoubleClick)
+                .on("mouseover", showTooltip)
+                .on("mouseout", hideTooltip);
+            
+            // Node circles
+            const node = nodeGroup.append("circle")
+                .attr("class", d => `node ${d.expandable ? 'expandable' : ''} ${!d.expanded && d.children.length > 0 ? 'collapsed' : ''}`)
+                .attr("r", d => d.size)
+                .attr("fill", d => d.color);
+            
+            // Node labels
+            const labels = nodeGroup.append("text")
+                .attr("class", "node-label")
+                .attr("dy", d => d.size + 15)
+                .text(d => d.label.length > 12 ? d.label.substring(0, 12) + "..." : d.label);
+            
+            // Expand/collapse icons
+            const icons = nodeGroup.append("text")
+                .attr("class", "expand-icon")
+                .attr("dy", 4)
+                .text(d => {
+                    if (!d.expandable || d.children.length === 0) return "";
+                    return d.expanded ? "−" : "+";
+                });
+            
+            // Update positions on simulation tick
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+                
+                nodeGroup
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+            
+            updateStats();
+        }
+        
+        function handleNodeClick(event, d) {
+            event.stopPropagation();
+            
+            if (d.expandable && d.children.length > 0) {
+                d.expanded = !d.expanded;
+                
+                if (d.expanded) {
+                    // Show children
+                    d.children.forEach(childId => {
+                        const childNode = graphData.nodes.find(n => n.id === childId);
+                        if (childNode && childNode.level <= currentLevel) {
+                            visibleNodes.add(childId);
+                        }
+                    });
+                } else {
+                    // Hide children recursively
+                    hideNodeChildren(d);
+                }
+                
+                updateGraph();
+            }
+        }
+        
+        function handleNodeDoubleClick(event, d) {
+            event.stopPropagation();
+            
+            // Focus on this node and its immediate connections
+            visibleNodes.clear();
+            visibleNodes.add(d.id);
+            
+            // Add parent
+            if (d.parent) {
+                visibleNodes.add(d.parent);
+            }
+            
+            // Add children
+            d.children.forEach(childId => {
+                visibleNodes.add(childId);
+            });
+            
+            updateGraph();
+            
+            // Update breadcrumb
+            document.getElementById('breadcrumb-text').textContent = `📍 Focused on: ${d.label} (${d.type})`;
+        }
+        
+        function hideNodeChildren(node) {
+            node.children.forEach(childId => {
+                visibleNodes.delete(childId);
+                const childNode = graphData.nodes.find(n => n.id === childId);
+                if (childNode) {
+                    hideNodeChildren(childNode);
+                }
+            });
+        }
+        
+        function expandAll() {
+            graphData.nodes.forEach(node => {
+                if (node.expandable) {
+                    node.expanded = true;
+                }
+                if (node.level <= currentLevel) {
+                    visibleNodes.add(node.id);
+                }
+            });
+            updateGraph();
+        }
+        
+        function collapseAll() {
+            visibleNodes.clear();
+            graphData.nodes.forEach(node => {
+                if (node.level === 1) {
+                    visibleNodes.add(node.id);
+                }
+                node.expanded = false;
+            });
+            updateGraph();
+        }
+        
+        function showLevel(level) {
+            currentLevel = level;
+            visibleNodes.clear();
+            
+            graphData.nodes.forEach(node => {
+                if (node.level <= level) {
+                    visibleNodes.add(node.id);
+                }
+                if (node.level < level) {
+                    node.expanded = true;
+                } else {
+                    node.expanded = false;
+                }
+            });
+            
+            updateGraph();
+            
+            // Update active button
+            document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        function resetView() {
+            currentLevel = 6;
+            visibleNodes.clear();
+            
+            graphData.nodes.forEach(node => {
+                visibleNodes.add(node.id);
+                node.expanded = true;
+            });
+            
+            updateGraph();
+            
+            document.getElementById('breadcrumb-text').textContent = '📍 Navigate: Click nodes to expand/collapse • Double-click to focus';
+        }
+        
+        function exportHierarchy() {
+            const exportData = {
+                hierarchy: graphData,
+                timestamp: new Date().toISOString(),
+                visibleNodes: Array.from(visibleNodes),
+                currentLevel: currentLevel
+            };
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "hierarchical-traceability-graph.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+        
+        function updateStats() {
+            document.getElementById('visible-nodes').textContent = visibleNodes.size;
+            document.getElementById('visible-edges').textContent = 
+                graphData.links.filter(link => 
+                    visibleNodes.has(link.source.id || link.source) && 
+                    visibleNodes.has(link.target.id || link.target)
+                ).length;
+            document.getElementById('expanded-nodes').textContent = 
+                graphData.nodes.filter(node => node.expanded && visibleNodes.has(node.id)).length;
+        }
+        
+        // Drag functions
+        function dragstarted(event, d) {
+            if (!event.active) d3.select(this).select('circle').attr('stroke-width', 4);
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+        
+        function dragended(event, d) {
+            if (!event.active) d3.select(this).select('circle').attr('stroke-width', 2);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        // Tooltip functions
+        const tooltip = d3.select("#tooltip");
+        
+        function showTooltip(event, d) {
+            const childrenInfo = d.children.length > 0 ? `<br><strong>Children:</strong> ${d.children.length}` : '';
+            const parentInfo = d.parent ? `<br><strong>Parent:</strong> Node #${d.parent}` : '';
+            
+            tooltip
+                .style("opacity", 1)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 10) + "px")
+                .html(`
+                    <strong>${d.label}</strong><br>
+                    <strong>Type:</strong> ${d.type}<br>
+                    <strong>Level:</strong> ${d.level}<br>
+                    <strong>ID:</strong> ${d.id}<br>
+                    <strong>Expandable:</strong> ${d.expandable ? 'Yes' : 'No'}
+                    ${childrenInfo}
+                    ${parentInfo}
+                `);
+        }
+        
+        function hideTooltip() {
+            tooltip.style("opacity", 0);
+        }
+        
+        // Initial setup
+        setTimeout(() => {
+            const bounds = g.node().getBBox();
+            const fullWidth = bounds.width;
+            const fullHeight = bounds.height;
+            const widthScale = width / fullWidth;
+            const heightScale = height / fullHeight;
+            const scale = 0.8 * Math.min(widthScale, heightScale);
+            const translate = [width / 2 - scale * (bounds.x + fullWidth / 2), height / 2 - scale * (bounds.y + fullHeight / 2)];
+            
+            svg.transition()
+                .duration(1000)
+                .call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
+        }, 1500);
+    </script>
+</body>
+</html>

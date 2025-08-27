@@ -1,0 +1,57 @@
+{
+  "name": "codetrace-ai-cli",
+  "version": "1.0.0",
+  "description": "CodeTrace AI Command Line Interface - Professional GitHub Repository Analysis Tool",
+  "type": "module",
+  "main": "codetrace.js",
+  "bin": {
+    "codetrace": "./codetrace.js"
+  },
+  "scripts": {
+    "build": "echo 'CLI is ready for use'",
+    "test": "echo 'No tests specified'",
+    "lint": "eslint *.js",
+    "prepare": "chmod +x codetrace.js"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "chalk": "^5.3.0", 
+    "ora": "^7.0.1",
+    "inquirer": "^9.2.12",
+    "axios": "^1.6.2",
+    "fs-extra": "^11.1.1",
+    "yaml": "^2.3.4",
+    "boxen": "^7.1.1",
+    "cli-table3": "^0.6.3",
+    "update-notifier": "^7.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.53.0"
+  },
+  "keywords": [
+    "cli",
+    "github",
+    "code-analysis", 
+    "quality-assessment",
+    "dependency-graph",
+    "codetrace-ai"
+  ],
+  "author": "CodeTrace AI Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codetrace-ai/codetrace-ai.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/codetrace-ai/codetrace-ai/issues"
+  },
+  "homepage": "https://codetrace.ai",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "codetrace.js",
+    "README.md"
+  ]
+}
