@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive System Mapping Report</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 40px; background: linear-gradient(135deg, #0078d4, #106ebe); color: white; padding: 30px; border-radius: 10px; }
+        .section { margin: 30px 0; }
+        .section h2 { color: #0078d4; border-bottom: 2px solid #0078d4; padding-bottom: 10px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+        .metric-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; color: #0078d4; }
+        .metric-label { color: #666; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #0078d4; color: white; }
+        .code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 15px; font-size: 0.8em; margin: 2px; }
+        .badge-primary { background: #0078d4; color: white; }
+        .badge-secondary { background: #6c757d; color: white; }
+        .badge-success { background: #28a745; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Comprehensive System Mapping Report</h1>
+            <p>Complete analysis of pages, UI components, backend services, and database schema</p>
+            <p>Generated: 8/24/2025, 2:59:54 PM</p>
+        </div>
+        
+        <div class="section">
+            <h2>📊 System Overview</h2>
+            <div class="summary-grid">
+                <div class="metric-card">
+                    <div class="metric-value">8</div>
+                    <div class="metric-label">Pages & Routes</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">15</div>
+                    <div class="metric-label">UI Components</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">9</div>
+                    <div class="metric-label">Backend Services</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">5</div>
+                    <div class="metric-label">Database Tables</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">7</div>
+                    <div class="metric-label">Integrations</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📄 Pages & Routes Mapping</h2>
+            <table>
+                <thead>
+                    <tr><th>Page Name</th><th>Route</th><th>File</th><th>Components</th><th>Services</th></tr>
+                </thead>
+                <tbody>
+                    
+                        <tr>
+                            <td><strong>Landing Page</strong></td>
+                            <td><span class="code">/</span></td>
+                            <td><span class="code">src/pages/landing/fluent-landing-page.jsx</span></td>
+                            <td><span class="badge badge-primary">LandingHeader</span><span class="badge badge-primary">FeatureCards</span><span class="badge badge-primary">ActionButtons</span></td>
+                            <td><span class="badge badge-secondary">SystemConfig</span><span class="badge badge-secondary">NotificationService</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Main Dashboard</strong></td>
+                            <td><span class="code">/dashboard</span></td>
+                            <td><span class="code">src/pages/dashboard/fluent-main-dashboard.jsx</span></td>
+                            <td><span class="badge badge-primary">PageHeader</span><span class="badge badge-primary">DashboardContent</span><span class="badge badge-primary">AnalyticsContent</span><span class="badge badge-primary">GettingStartedPanel</span><span class="badge badge-primary">SmartSuggestionsPanel</span><span class="badge badge-primary">UserFriendlyMetricCard</span><span class="badge badge-primary">UserFriendlyStatusIndicator</span></td>
+                            <td><span class="badge badge-secondary">DashboardDataUtils</span><span class="badge badge-secondary">DashboardUIUtils</span><span class="badge badge-secondary">SystemConfig</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Graph Explorer</strong></td>
+                            <td><span class="code">/graph</span></td>
+                            <td><span class="code">src/pages/graph/fluent-graph-explorer-final.jsx</span></td>
+                            <td><span class="badge badge-primary">GraphHeader</span><span class="badge badge-primary">GraphCanvas</span><span class="badge badge-primary">GraphControls</span><span class="badge badge-primary">GraphChatPanel</span><span class="badge badge-primary">GraphStatsPanel</span><span class="badge badge-primary">GraphDataTable</span></td>
+                            <td><span class="badge badge-secondary">GraphExplorerService</span><span class="badge badge-secondary">GraphChatService</span><span class="badge badge-secondary">useGraphData</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>PLM Orchestrator</strong></td>
+                            <td><span class="code">/orchestrator</span></td>
+                            <td><span class="code">src/pages/orchestrator/PLMOrchestratorPage.jsx</span></td>
+                            <td><span class="badge badge-primary">WorkflowDesigner</span><span class="badge badge-primary">EnhancedAgentCanvas</span><span class="badge badge-primary">StateMachineWorkflowEngine</span><span class="badge badge-primary">WorkflowInstancesManager</span><span class="badge badge-primary">SourceDataInsightsDashboard</span></td>
+                            <td><span class="badge badge-secondary">WorkflowService</span><span class="badge badge-secondary">AgenticETLService</span><span class="badge badge-secondary">StateMachineService</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>AI ETL Pipeline</strong></td>
+                            <td><span class="code">/ai-etl</span></td>
+                            <td><span class="code">src/pages/ai-etl/AIETLPipelinePage.jsx</span></td>
+                            <td><span class="badge badge-primary">ETLPipelineBuilder</span><span class="badge badge-primary">DataFlowCanvas</span><span class="badge badge-primary">AgentConfiguration</span><span class="badge badge-primary">PipelineMonitoring</span><span class="badge badge-primary">QualityDashboard</span></td>
+                            <td><span class="badge badge-secondary">AIETLService</span><span class="badge badge-secondary">DataQualityService</span><span class="badge badge-secondary">PipelineManager</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Data Mapping</strong></td>
+                            <td><span class="code">/data-mapping</span></td>
+                            <td><span class="code">src/pages/data-mapping/fluent-data-mapping-page.jsx</span></td>
+                            <td><span class="badge badge-primary">MappingCanvas</span><span class="badge badge-primary">SchemaViewer</span><span class="badge badge-primary">TransformationRules</span><span class="badge badge-primary">DataPreview</span><span class="badge badge-primary">ValidationResults</span></td>
+                            <td><span class="badge badge-secondary">DataMappingService</span><span class="badge badge-secondary">SchemaService</span><span class="badge badge-secondary">ValidationService</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>System Settings</strong></td>
+                            <td><span class="code">/settings</span></td>
+                            <td><span class="code">src/pages/settings/ModularSystemSettingsPage.jsx</span></td>
+                            <td><span class="badge badge-primary">DataSourceDialog</span><span class="badge badge-primary">AIServiceDialog</span><span class="badge badge-primary">SchemaDialog</span><span class="badge badge-primary">ConfigurationPanel</span><span class="badge badge-primary">ServiceStatus</span></td>
+                            <td><span class="badge badge-secondary">ConfigurationService</span><span class="badge badge-secondary">DataSourceService</span><span class="badge badge-secondary">AIServiceManager</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Monitoring Dashboard</strong></td>
+                            <td><span class="code">/monitoring</span></td>
+                            <td><span class="code">src/pages/monitoring/fluent-monitoring-page.jsx</span></td>
+                            <td><span class="badge badge-primary">MetricsOverview</span><span class="badge badge-primary">AlertsPanel</span><span class="badge badge-primary">PerformanceCharts</span><span class="badge badge-primary">ServiceHealthStatus</span><span class="badge badge-primary">LogViewer</span></td>
+                            <td><span class="badge badge-secondary">MonitoringService</span><span class="badge badge-secondary">AlertService</span><span class="badge badge-secondary">MetricsCollector</span></td>
+                        </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>🐍 Backend Services Mapping</h2>
+            <table>
+                <thead>
+                    <tr><th>Service Name</th><th>Port</th><th>File</th><th>Key Endpoints</th><th>Dependencies</th></tr>
+                </thead>
+                <tbody>
+                    
+                        <tr>
+                            <td><strong>Main API Server</strong></td>
+                            <td><span class="badge badge-success">8003</span></td>
+                            <td><span class="code">main.py</span></td>
+                            <td><span class="code">/api/health</span><br><span class="code">/api/data-sources</span><br><span class="code">/api/workflows</span></td>
+                            <td><span class="badge badge-secondary">PostgreSQL</span><span class="badge badge-secondary">Neo4j</span><span class="badge badge-secondary">FastAPI</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>SODA Quality Service</strong></td>
+                            <td><span class="badge badge-success">8004</span></td>
+                            <td><span class="code">services/soda_quality_service.py</span></td>
+                            <td><span class="code">/api/quality/scan</span><br><span class="code">/api/quality/reports</span><br><span class="code">/api/quality/rules</span></td>
+                            <td><span class="badge badge-secondary">SODA Core</span><span class="badge badge-secondary">PostgreSQL</span><span class="badge badge-secondary">Data Quality Framework</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>PLM XML Data Service</strong></td>
+                            <td><span class="badge badge-success">8005</span></td>
+                            <td><span class="code">services/plm_xml_data_service.py</span></td>
+                            <td><span class="code">/api/plm/parse</span><br><span class="code">/api/plm/transform</span><br><span class="code">/api/plm/validate</span></td>
+                            <td><span class="badge badge-secondary">XML Parser</span><span class="badge badge-secondary">PLM Libraries</span><span class="badge badge-secondary">Schema Validators</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Analytics Storage Service</strong></td>
+                            <td><span class="badge badge-success">8006</span></td>
+                            <td><span class="code">services/analytics_storage_service.py</span></td>
+                            <td><span class="code">/api/analytics/store</span><br><span class="code">/api/analytics/query</span><br><span class="code">/api/analytics/aggregate</span></td>
+                            <td><span class="badge badge-secondary">Time Series DB</span><span class="badge badge-secondary">Analytics Engine</span><span class="badge badge-secondary">Data Warehouse</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Advanced Migration Engine</strong></td>
+                            <td><span class="badge badge-success">8007</span></td>
+                            <td><span class="code">services/advanced_migration_engine.py</span></td>
+                            <td><span class="code">/api/migration/start</span><br><span class="code">/api/migration/status</span><br><span class="code">/api/migration/rollback</span></td>
+                            <td><span class="badge badge-secondary">Migration Framework</span><span class="badge badge-secondary">Rollback Manager</span><span class="badge badge-secondary">Progress Monitor</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Code Graph Service</strong></td>
+                            <td><span class="badge badge-success">8008</span></td>
+                            <td><span class="code">services/code_graph_service.py</span></td>
+                            <td><span class="code">/api/codegraph/analyze</span><br><span class="code">/api/codegraph/dependencies</span><br><span class="code">/api/codegraph/metrics</span></td>
+                            <td><span class="badge badge-secondary">AST Parser</span><span class="badge badge-secondary">Graph Database</span><span class="badge badge-secondary">Code Analysis Tools</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Enhanced Audit Trail System</strong></td>
+                            <td><span class="badge badge-success">N/A (Internal)</span></td>
+                            <td><span class="code">services/enhanced_audit_trail_system.py</span></td>
+                            <td><span class="code">Internal API only</span></td>
+                            <td><span class="badge badge-secondary">Audit Database</span><span class="badge badge-secondary">Event Logger</span><span class="badge badge-secondary">Compliance Framework</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Enterprise Configuration Manager</strong></td>
+                            <td><span class="badge badge-success">N/A (Internal)</span></td>
+                            <td><span class="code">services/enterprise_config_manager.py</span></td>
+                            <td><span class="code">Internal API only</span></td>
+                            <td><span class="badge badge-secondary">Configuration Store</span><span class="badge badge-secondary">Security Manager</span><span class="badge badge-secondary">Validation Engine</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>Workflow State Manager</strong></td>
+                            <td><span class="badge badge-success">N/A (Internal)</span></td>
+                            <td><span class="code">services/workflow_state_manager.py</span></td>
+                            <td><span class="code">Internal API only</span></td>
+                            <td><span class="badge badge-secondary">State Machine</span><span class="badge badge-secondary">Persistence Layer</span><span class="badge badge-secondary">Event Bus</span></td>
+                        </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>🔗 Component-Service Integration Matrix</h2>
+            <table>
+                <thead>
+                    <tr><th>Frontend Component</th><th>Backend Services</th><th>API Endpoints</th><th>Database Tables</th></tr>
+                </thead>
+                <tbody>
+                    
+                        <tr>
+                            <td><strong>DashboardContent</strong></td>
+                            <td><span class="badge badge-primary">Main API Server (8003)</span><br><span class="badge badge-primary">Analytics Storage Service (8006)</span></td>
+                            <td><span class="code">/api/health</span><br><span class="code">/api/analytics/query</span></td>
+                            <td><span class="badge badge-secondary">services</span><span class="badge badge-secondary">quality_reports</span><span class="badge badge-secondary">audit_log</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>GraphCanvas</strong></td>
+                            <td><span class="badge badge-primary">Code Graph Service (8008)</span><br><span class="badge badge-primary">Main API Server (8003)</span></td>
+                            <td><span class="code">/api/codegraph/visualization</span><br><span class="code">/api/graph</span></td>
+                            <td><span class="badge badge-secondary">Neo4j nodes and relationships</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>WorkflowDesigner</strong></td>
+                            <td><span class="badge badge-primary">Main API Server (8003)</span><br><span class="badge badge-primary">Advanced Migration Engine (8007)</span></td>
+                            <td><span class="code">/api/workflows</span><br><span class="code">/api/migration/start</span></td>
+                            <td><span class="badge badge-secondary">workflows</span><span class="badge badge-secondary">audit_log</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>DataSourceDialog</strong></td>
+                            <td><span class="badge badge-primary">Main API Server (8003)</span><br><span class="badge badge-primary">SODA Quality Service (8004)</span></td>
+                            <td><span class="code">/api/data-sources</span><br><span class="code">/api/quality/scan</span></td>
+                            <td><span class="badge badge-secondary">data_sources</span><span class="badge badge-secondary">quality_reports</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>EnhancedAgentCanvas</strong></td>
+                            <td><span class="badge badge-primary">PLM XML Data Service (8005)</span><br><span class="badge badge-primary">Analytics Storage Service (8006)</span></td>
+                            <td><span class="code">/api/plm/parse</span><br><span class="code">/api/analytics/store</span></td>
+                            <td><span class="badge badge-secondary">data_sources</span><span class="badge badge-secondary">workflows</span><span class="badge badge-secondary">services</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>XMLMapperDialog</strong></td>
+                            <td><span class="badge badge-primary">PLM XML Data Service (8005)</span></td>
+                            <td><span class="code">/api/plm/parse</span><br><span class="code">/api/plm/transform</span><br><span class="code">/api/plm/validate</span></td>
+                            <td><span class="badge badge-secondary">data_sources</span><span class="badge badge-secondary">audit_log</span></td>
+                        </tr>
+                    
+                        <tr>
+                            <td><strong>SystemSettingsPage</strong></td>
+                            <td><span class="badge badge-primary">Main API Server (8003)</span><br><span class="badge badge-primary">All Services (Health Check)</span></td>
+                            <td><span class="code">/api/config</span><br><span class="code">/api/health (all services)</span></td>
+                            <td><span class="badge badge-secondary">services</span><span class="badge badge-secondary">data_sources</span><span class="badge badge-secondary">audit_log</span></td>
+                        </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>📈 Recommendations</h2>
+            <ul>
+                <li>🔧 Consider implementing API versioning for all backend services</li><li>📊 Add comprehensive monitoring and alerting for all microservices</li><li>🔒 Implement proper authentication and authorization across all services</li><li>📝 Add comprehensive API documentation using OpenAPI/Swagger</li><li>🧪 Implement automated testing for all component-service integrations</li><li>🔄 Consider implementing circuit breakers for external service calls</li><li>📈 Add performance monitoring and metrics collection</li><li>🔐 Implement proper secret management for database credentials</li><li>📋 Add comprehensive logging and audit trails</li><li>🚀 Consider containerization with Docker for deployment consistency</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>🏗️ Architecture Overview</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <h3>Frontend Architecture</h3>
+                    <ul>
+                        <li><strong>Framework:</strong> React 18 with Fluent UI</li>
+                        <li><strong>Routing:</strong> React Router v6</li>
+                        <li><strong>State:</strong> React Context + Local State</li>
+                        <li><strong>Styling:</strong> Fluent UI + CSS Modules</li>
+                    </ul>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <h3>Backend Architecture</h3>
+                    <ul>
+                        <li><strong>Framework:</strong> FastAPI with Python 3.12</li>
+                        <li><strong>Database:</strong> PostgreSQL + Neo4j</li>
+                        <li><strong>Services:</strong> 9 microservices</li>
+                        <li><strong>API Design:</strong> RESTful APIs with OpenAPI documentation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

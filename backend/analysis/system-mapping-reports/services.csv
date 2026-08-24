@@ -1,0 +1,10 @@
+Name,Port,File,Endpoints,Dependencies,Description
+"Main API Server","8003","main.py","/api/health; /api/data-sources; /api/workflows; /api/graph; /api/audit-trail; /api/config","PostgreSQL; Neo4j; FastAPI","Primary API server handling core application logic"
+"SODA Quality Service","8004","services/soda_quality_service.py","/api/quality/scan; /api/quality/reports; /api/quality/rules; /api/quality/metrics","SODA Core; PostgreSQL; Data Quality Framework","Data quality validation and monitoring service"
+"PLM XML Data Service","8005","services/plm_xml_data_service.py","/api/plm/parse; /api/plm/transform; /api/plm/validate; /api/plm/export","XML Parser; PLM Libraries; Schema Validators","PLM XML data processing and transformation"
+"Analytics Storage Service","8006","services/analytics_storage_service.py","/api/analytics/store; /api/analytics/query; /api/analytics/aggregate; /api/analytics/export","Time Series DB; Analytics Engine; Data Warehouse","Analytics data storage and retrieval service"
+"Advanced Migration Engine","8007","services/advanced_migration_engine.py","/api/migration/start; /api/migration/status; /api/migration/rollback; /api/migration/monitoring","Migration Framework; Rollback Manager; Progress Monitor","Advanced data migration with rollback capabilities"
+"Code Graph Service","8008","services/code_graph_service.py","/api/codegraph/analyze; /api/codegraph/dependencies; /api/codegraph/metrics; /api/codegraph/visualization","AST Parser; Graph Database; Code Analysis Tools","Code analysis and dependency graph generation"
+"Enhanced Audit Trail System","N/A (Internal)","services/enhanced_audit_trail_system.py","Internal API only","Audit Database; Event Logger; Compliance Framework","Comprehensive audit logging and compliance tracking"
+"Enterprise Configuration Manager","N/A (Internal)","services/enterprise_config_manager.py","Internal API only","Configuration Store; Security Manager; Validation Engine","Enterprise-level configuration management"
+"Workflow State Manager","N/A (Internal)","services/workflow_state_manager.py","Internal API only","State Machine; Persistence Layer; Event Bus","Workflow state management and persistence"

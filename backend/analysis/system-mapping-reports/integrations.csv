@@ -1,0 +1,8 @@
+Frontend Component,Backend Services,API Endpoints,Database Tables,Data Flow
+"DashboardContent","Main API Server (8003); Analytics Storage Service (8006)","/api/health; /api/analytics/query","services; quality_reports; audit_log","Component fetches system metrics and analytics data for display"
+"GraphCanvas","Code Graph Service (8008); Main API Server (8003)","/api/codegraph/visualization; /api/graph","Neo4j nodes and relationships","Fetches graph data and renders using Cytoscape.js"
+"WorkflowDesigner","Main API Server (8003); Advanced Migration Engine (8007)","/api/workflows; /api/migration/start","workflows; audit_log","Creates/edits workflows and triggers execution"
+"DataSourceDialog","Main API Server (8003); SODA Quality Service (8004)","/api/data-sources; /api/quality/scan","data_sources; quality_reports","Manages data source configuration and triggers quality scans"
+"EnhancedAgentCanvas","PLM XML Data Service (8005); Analytics Storage Service (8006)","/api/plm/parse; /api/analytics/store","data_sources; workflows; services","Configures agents for PLM data processing and analytics"
+"XMLMapperDialog","PLM XML Data Service (8005)","/api/plm/parse; /api/plm/transform; /api/plm/validate","data_sources; audit_log","Handles XML mapping, transformation, and validation"
+"SystemSettingsPage","Main API Server (8003); All Services (Health Check)","/api/config; /api/health (all services)","services; data_sources; audit_log","System configuration management and service health monitoring"

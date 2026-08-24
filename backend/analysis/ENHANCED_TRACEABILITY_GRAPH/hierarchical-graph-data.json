@@ -1,0 +1,3748 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "hierarchical": true,
+  "hasImpactAnalysis": true,
+  "graph": {
+    "name": "GraphTrace Enhanced Hierarchical Traceability with Impact Analysis",
+    "description": "Interactive expandable graph: Central Hub → Pages → Frontend Files → Components → Services → Methods → API Endpoints → Backend Files → Schema"
+  },
+  "nodes": [
+    {
+      "id": 1,
+      "label": "GraphTrace System Hub",
+      "type": "central_hub",
+      "group": 9,
+      "level": 9,
+      "size": 35,
+      "color": "#e74c3c",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "parent": null,
+      "isHub": true
+    },
+    {
+      "id": 2,
+      "label": "Landing Page",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        10,
+        11
+      ],
+      "parent": 1,
+      "route": "/",
+      "file": "fluent-landing-page.jsx"
+    },
+    {
+      "id": 3,
+      "label": "Main Dashboard",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        12
+      ],
+      "parent": 1,
+      "route": "/dashboard",
+      "file": "fluent-main-dashboard.jsx"
+    },
+    {
+      "id": 4,
+      "label": "Graph Explorer",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        13
+      ],
+      "parent": 1,
+      "route": "/graph",
+      "file": "fluent-graph-explorer-final.jsx"
+    },
+    {
+      "id": 5,
+      "label": "PLM Orchestrator",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        14
+      ],
+      "parent": 1,
+      "route": "/orchestrator",
+      "file": "PLMOrchestratorPage.jsx"
+    },
+    {
+      "id": 6,
+      "label": "AI ETL Pipeline",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        15
+      ],
+      "parent": 1,
+      "route": "/ai-etl",
+      "file": "AIETLPipelinePage.jsx"
+    },
+    {
+      "id": 7,
+      "label": "Data Mapping",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        16
+      ],
+      "parent": 1,
+      "route": "/data-mapping",
+      "file": "fluent-data-mapping-page.jsx"
+    },
+    {
+      "id": 8,
+      "label": "System Settings",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        17
+      ],
+      "parent": 1,
+      "route": "/settings",
+      "file": "ModularSystemSettingsPage.jsx"
+    },
+    {
+      "id": 9,
+      "label": "Monitoring Dashboard",
+      "type": "page",
+      "group": 1,
+      "level": 1,
+      "size": 25,
+      "color": "#3498db",
+      "expandable": true,
+      "expanded": true,
+      "children": [
+        18
+      ],
+      "parent": 1,
+      "route": "/monitoring",
+      "file": "fluent-monitoring-page.jsx"
+    },
+    {
+      "id": 10,
+      "label": "App.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        19,
+        20
+      ],
+      "parent": 2,
+      "components": [
+        "SideMenu",
+        "ErrorBoundary"
+      ]
+    },
+    {
+      "id": 11,
+      "label": "fluent-landing-page.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        21,
+        22,
+        23
+      ],
+      "parent": 2,
+      "components": [
+        "LandingHeader",
+        "FeatureCards",
+        "ActionButtons"
+      ]
+    },
+    {
+      "id": 12,
+      "label": "fluent-main-dashboard.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        24,
+        25,
+        26
+      ],
+      "parent": 3,
+      "components": [
+        "DashboardContent",
+        "AnalyticsContent",
+        "PageHeader"
+      ]
+    },
+    {
+      "id": 13,
+      "label": "fluent-graph-explorer-final.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        27,
+        28,
+        29
+      ],
+      "parent": 4,
+      "components": [
+        "GraphCanvas",
+        "GraphControls",
+        "GraphChatPanel"
+      ]
+    },
+    {
+      "id": 14,
+      "label": "PLMOrchestratorPage.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        30,
+        31,
+        32
+      ],
+      "parent": 5,
+      "components": [
+        "WorkflowDesigner",
+        "EnhancedAgentCanvas",
+        "StateMachineWorkflowEngine"
+      ]
+    },
+    {
+      "id": 15,
+      "label": "AIETLPipelinePage.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        33,
+        34,
+        35
+      ],
+      "parent": 6,
+      "components": [
+        "ETLPipelineBuilder",
+        "DataFlowCanvas",
+        "QualityDashboard"
+      ]
+    },
+    {
+      "id": 16,
+      "label": "fluent-data-mapping-page.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        36,
+        37,
+        38
+      ],
+      "parent": 7,
+      "components": [
+        "MappingCanvas",
+        "SchemaViewer",
+        "TransformationRules"
+      ]
+    },
+    {
+      "id": 17,
+      "label": "ModularSystemSettingsPage.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        39,
+        40,
+        41
+      ],
+      "parent": 8,
+      "components": [
+        "ConfigurationPanel",
+        "DataSourceDialog",
+        "ServiceStatus"
+      ]
+    },
+    {
+      "id": 18,
+      "label": "fluent-monitoring-page.jsx",
+      "type": "frontend_file",
+      "group": 2,
+      "level": 2,
+      "size": 18,
+      "color": "#2ecc71",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        42,
+        43,
+        44
+      ],
+      "parent": 9,
+      "components": [
+        "MetricsOverview",
+        "AlertsPanel",
+        "PerformanceCharts"
+      ]
+    },
+    {
+      "id": 19,
+      "label": "SideMenu",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        57,
+        58
+      ],
+      "parent": 10,
+      "file": "SideMenu.jsx",
+      "methods": [
+        "handleNavigation",
+        "toggleCollapse"
+      ],
+      "apis": [
+        "/api/navigation"
+      ]
+    },
+    {
+      "id": 20,
+      "label": "ErrorBoundary",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        59
+      ],
+      "parent": 10,
+      "file": "ErrorBoundary.jsx",
+      "methods": [
+        "componentDidCatch",
+        "render"
+      ],
+      "apis": [
+        "/api/error-log"
+      ]
+    },
+    {
+      "id": 21,
+      "label": "LandingHeader",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        60,
+        61
+      ],
+      "parent": 11,
+      "file": "LandingHeader.jsx",
+      "methods": [
+        "renderActions",
+        "handleGetStarted"
+      ],
+      "apis": [
+        "/api/health"
+      ]
+    },
+    {
+      "id": 22,
+      "label": "FeatureCards",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        62,
+        63
+      ],
+      "parent": 11,
+      "file": "FeatureCards.jsx",
+      "methods": [
+        "renderCard",
+        "handleCardClick"
+      ],
+      "apis": [
+        "/api/features"
+      ]
+    },
+    {
+      "id": 23,
+      "label": "ActionButtons",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        64,
+        65
+      ],
+      "parent": 11,
+      "file": "ActionButtons.jsx",
+      "methods": [
+        "handleAction",
+        "validatePermissions"
+      ],
+      "apis": [
+        "/api/actions"
+      ]
+    },
+    {
+      "id": 24,
+      "label": "DashboardContent",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        66,
+        67
+      ],
+      "parent": 12,
+      "file": "DashboardContent.jsx",
+      "methods": [
+        "loadMetrics",
+        "refreshData"
+      ],
+      "apis": [
+        "/api/dashboard",
+        "/api/metrics"
+      ]
+    },
+    {
+      "id": 25,
+      "label": "AnalyticsContent",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        68,
+        69
+      ],
+      "parent": 12,
+      "file": "AnalyticsContent.jsx",
+      "methods": [
+        "processAnalytics",
+        "renderCharts"
+      ],
+      "apis": [
+        "/api/analytics"
+      ]
+    },
+    {
+      "id": 26,
+      "label": "PageHeader",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": 12,
+      "file": "PageHeader.jsx",
+      "methods": [
+        "renderTitle",
+        "renderActions"
+      ],
+      "apis": []
+    },
+    {
+      "id": 27,
+      "label": "GraphCanvas",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        70,
+        71
+      ],
+      "parent": 13,
+      "file": "GraphCanvas.jsx",
+      "methods": [
+        "renderGraph",
+        "handleNodeClick"
+      ],
+      "apis": [
+        "/api/graph-data"
+      ]
+    },
+    {
+      "id": 28,
+      "label": "GraphControls",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        72,
+        73
+      ],
+      "parent": 13,
+      "file": "GraphControls.jsx",
+      "methods": [
+        "applyFilter",
+        "resetView"
+      ],
+      "apis": [
+        "/api/graph-filters"
+      ]
+    },
+    {
+      "id": 29,
+      "label": "GraphChatPanel",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        74,
+        75
+      ],
+      "parent": 13,
+      "file": "GraphChatPanel.jsx",
+      "methods": [
+        "sendMessage",
+        "processResponse"
+      ],
+      "apis": [
+        "/api/chat"
+      ]
+    },
+    {
+      "id": 30,
+      "label": "WorkflowDesigner",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        76,
+        77
+      ],
+      "parent": 14,
+      "file": "WorkflowDesigner.jsx",
+      "methods": [
+        "createWorkflow",
+        "saveWorkflow"
+      ],
+      "apis": [
+        "/api/workflows"
+      ]
+    },
+    {
+      "id": 31,
+      "label": "EnhancedAgentCanvas",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        78,
+        79
+      ],
+      "parent": 14,
+      "file": "EnhancedAgentCanvas.jsx",
+      "methods": [
+        "renderAgent",
+        "connectAgents"
+      ],
+      "apis": [
+        "/api/agents"
+      ]
+    },
+    {
+      "id": 32,
+      "label": "StateMachineWorkflowEngine",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        80,
+        81
+      ],
+      "parent": 14,
+      "file": "StateMachineWorkflowEngine.jsx",
+      "methods": [
+        "executeWorkflow",
+        "validateStates"
+      ],
+      "apis": [
+        "/api/workflow-execution"
+      ]
+    },
+    {
+      "id": 33,
+      "label": "ETLPipelineBuilder",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        82,
+        83
+      ],
+      "parent": 15,
+      "file": "ETLPipelineBuilder.jsx",
+      "methods": [
+        "buildPipeline",
+        "testPipeline"
+      ],
+      "apis": [
+        "/api/etl-pipeline"
+      ]
+    },
+    {
+      "id": 34,
+      "label": "DataFlowCanvas",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        84,
+        85
+      ],
+      "parent": 15,
+      "file": "DataFlowCanvas.jsx",
+      "methods": [
+        "renderFlow",
+        "validateFlow"
+      ],
+      "apis": [
+        "/api/data-flow"
+      ]
+    },
+    {
+      "id": 35,
+      "label": "QualityDashboard",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        86,
+        87
+      ],
+      "parent": 15,
+      "file": "QualityDashboard.jsx",
+      "methods": [
+        "runQualityCheck",
+        "displayResults"
+      ],
+      "apis": [
+        "/api/quality"
+      ]
+    },
+    {
+      "id": 36,
+      "label": "MappingCanvas",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        88,
+        89
+      ],
+      "parent": 16,
+      "file": "MappingCanvas.jsx",
+      "methods": [
+        "createMapping",
+        "validateMapping"
+      ],
+      "apis": [
+        "/api/data-mapping"
+      ]
+    },
+    {
+      "id": 37,
+      "label": "SchemaViewer",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        90,
+        91
+      ],
+      "parent": 16,
+      "file": "SchemaViewer.jsx",
+      "methods": [
+        "loadSchema",
+        "renderSchema"
+      ],
+      "apis": [
+        "/api/schema"
+      ]
+    },
+    {
+      "id": 38,
+      "label": "TransformationRules",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        92,
+        93
+      ],
+      "parent": 16,
+      "file": "TransformationRules.jsx",
+      "methods": [
+        "createRule",
+        "applyRule"
+      ],
+      "apis": [
+        "/api/transformation"
+      ]
+    },
+    {
+      "id": 39,
+      "label": "ConfigurationPanel",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        94,
+        95
+      ],
+      "parent": 17,
+      "file": "ConfigurationPanel.jsx",
+      "methods": [
+        "loadConfig",
+        "saveConfig"
+      ],
+      "apis": [
+        "/api/config"
+      ]
+    },
+    {
+      "id": 40,
+      "label": "DataSourceDialog",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        96,
+        97
+      ],
+      "parent": 17,
+      "file": "DataSourceDialog.jsx",
+      "methods": [
+        "testConnection",
+        "saveDataSource"
+      ],
+      "apis": [
+        "/api/data-sources"
+      ]
+    },
+    {
+      "id": 41,
+      "label": "ServiceStatus",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        98,
+        99
+      ],
+      "parent": 17,
+      "file": "ServiceStatus.jsx",
+      "methods": [
+        "checkHealth",
+        "restartService"
+      ],
+      "apis": [
+        "/api/services/health"
+      ]
+    },
+    {
+      "id": 42,
+      "label": "MetricsOverview",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        100
+      ],
+      "parent": 18,
+      "file": "MetricsOverview.jsx",
+      "methods": [
+        "loadMetrics",
+        "refreshMetrics"
+      ],
+      "apis": [
+        "/api/monitoring/metrics"
+      ]
+    },
+    {
+      "id": 43,
+      "label": "AlertsPanel",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        101,
+        102
+      ],
+      "parent": 18,
+      "file": "AlertsPanel.jsx",
+      "methods": [
+        "loadAlerts",
+        "acknowledgeAlert"
+      ],
+      "apis": [
+        "/api/monitoring/alerts"
+      ]
+    },
+    {
+      "id": 44,
+      "label": "PerformanceCharts",
+      "type": "component",
+      "group": 3,
+      "level": 3,
+      "size": 15,
+      "color": "#f39c12",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        103,
+        104
+      ],
+      "parent": 18,
+      "file": "PerformanceCharts.jsx",
+      "methods": [
+        "renderChart",
+        "updateData"
+      ],
+      "apis": [
+        "/api/monitoring/performance"
+      ]
+    },
+    {
+      "id": 45,
+      "label": "SystemConfig",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 46,
+      "label": "NotificationService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 47,
+      "label": "DashboardDataUtils",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 48,
+      "label": "GraphExplorerService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 49,
+      "label": "WorkflowService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 50,
+      "label": "AgenticETLService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 51,
+      "label": "DataMappingService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 52,
+      "label": "ConfigurationService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 53,
+      "label": "MonitoringService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 54,
+      "label": "AlertService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 55,
+      "label": "ValidationService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 56,
+      "label": "TransformationService",
+      "type": "service",
+      "group": 4,
+      "level": 4,
+      "size": 20,
+      "color": "#9b59b6",
+      "expandable": true,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 57,
+      "label": "handleNavigation",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 19
+    },
+    {
+      "id": 58,
+      "label": "toggleCollapse",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 19
+    },
+    {
+      "id": 59,
+      "label": "componentDidCatch",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 20
+    },
+    {
+      "id": 60,
+      "label": "renderActions",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 21
+    },
+    {
+      "id": 61,
+      "label": "handleGetStarted",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 21
+    },
+    {
+      "id": 62,
+      "label": "renderCard",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 22
+    },
+    {
+      "id": 63,
+      "label": "handleCardClick",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 22
+    },
+    {
+      "id": 64,
+      "label": "handleAction",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 23
+    },
+    {
+      "id": 65,
+      "label": "validatePermissions",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 23
+    },
+    {
+      "id": 66,
+      "label": "loadMetrics",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 24
+    },
+    {
+      "id": 67,
+      "label": "refreshData",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 24
+    },
+    {
+      "id": 68,
+      "label": "processAnalytics",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 25
+    },
+    {
+      "id": 69,
+      "label": "renderCharts",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 25
+    },
+    {
+      "id": 70,
+      "label": "renderGraph",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 27
+    },
+    {
+      "id": 71,
+      "label": "handleNodeClick",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 27
+    },
+    {
+      "id": 72,
+      "label": "applyFilter",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 28
+    },
+    {
+      "id": 73,
+      "label": "resetView",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 28
+    },
+    {
+      "id": 74,
+      "label": "sendMessage",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 29
+    },
+    {
+      "id": 75,
+      "label": "processResponse",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 29
+    },
+    {
+      "id": 76,
+      "label": "createWorkflow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 30
+    },
+    {
+      "id": 77,
+      "label": "saveWorkflow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 30
+    },
+    {
+      "id": 78,
+      "label": "renderAgent",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 31
+    },
+    {
+      "id": 79,
+      "label": "connectAgents",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 31
+    },
+    {
+      "id": 80,
+      "label": "executeWorkflow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 32
+    },
+    {
+      "id": 81,
+      "label": "validateStates",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 32
+    },
+    {
+      "id": 82,
+      "label": "buildPipeline",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 33
+    },
+    {
+      "id": 83,
+      "label": "testPipeline",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 33
+    },
+    {
+      "id": 84,
+      "label": "renderFlow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 34
+    },
+    {
+      "id": 85,
+      "label": "validateFlow",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 34
+    },
+    {
+      "id": 86,
+      "label": "runQualityCheck",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 35
+    },
+    {
+      "id": 87,
+      "label": "displayResults",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 35
+    },
+    {
+      "id": 88,
+      "label": "createMapping",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 36
+    },
+    {
+      "id": 89,
+      "label": "validateMapping",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 36
+    },
+    {
+      "id": 90,
+      "label": "loadSchema",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 37
+    },
+    {
+      "id": 91,
+      "label": "renderSchema",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 37
+    },
+    {
+      "id": 92,
+      "label": "createRule",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 38
+    },
+    {
+      "id": 93,
+      "label": "applyRule",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 38
+    },
+    {
+      "id": 94,
+      "label": "loadConfig",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 39
+    },
+    {
+      "id": 95,
+      "label": "saveConfig",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 39
+    },
+    {
+      "id": 96,
+      "label": "testConnection",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 40
+    },
+    {
+      "id": 97,
+      "label": "saveDataSource",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 40
+    },
+    {
+      "id": 98,
+      "label": "checkHealth",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 41
+    },
+    {
+      "id": 99,
+      "label": "restartService",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 41
+    },
+    {
+      "id": 100,
+      "label": "refreshMetrics",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 42
+    },
+    {
+      "id": 101,
+      "label": "loadAlerts",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 43
+    },
+    {
+      "id": 102,
+      "label": "acknowledgeAlert",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 43
+    },
+    {
+      "id": 103,
+      "label": "renderChart",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 44
+    },
+    {
+      "id": 104,
+      "label": "updateData",
+      "type": "method",
+      "group": 5,
+      "level": 5,
+      "size": 12,
+      "color": "#1abc9c",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 44
+    },
+    {
+      "id": 105,
+      "label": "/api/health",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 106,
+      "label": "/api/navigation",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 107,
+      "label": "/api/error-log",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 108,
+      "label": "/api/features",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 109,
+      "label": "/api/actions",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 110,
+      "label": "/api/dashboard",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 111,
+      "label": "/api/metrics",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 134
+    },
+    {
+      "id": 112,
+      "label": "/api/analytics",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 134
+    },
+    {
+      "id": 113,
+      "label": "/api/graph-data",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 136
+    },
+    {
+      "id": 114,
+      "label": "/api/graph-filters",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 136
+    },
+    {
+      "id": 115,
+      "label": "/api/chat",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 116,
+      "label": "/api/workflows",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 117,
+      "label": "/api/agents",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 118,
+      "label": "/api/workflow-execution",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 135
+    },
+    {
+      "id": 119,
+      "label": "/api/etl-pipeline",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 120,
+      "label": "/api/data-flow",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 121,
+      "label": "/api/quality",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 132
+    },
+    {
+      "id": 122,
+      "label": "/api/data-mapping",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 123,
+      "label": "/api/schema",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 133
+    },
+    {
+      "id": 124,
+      "label": "/api/transformation",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 133
+    },
+    {
+      "id": 125,
+      "label": "/api/config",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 126,
+      "label": "/api/data-sources",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 127,
+      "label": "/api/services/health",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 128,
+      "label": "/api/monitoring/metrics",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 129,
+      "label": "/api/monitoring/alerts",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 130,
+      "label": "/api/monitoring/performance",
+      "type": "api_endpoint",
+      "group": 6,
+      "level": 6,
+      "size": 16,
+      "color": "#e67e22",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": null
+    },
+    {
+      "id": 131,
+      "label": "main.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        105,
+        116,
+        125,
+        137,
+        138,
+        139
+      ],
+      "parent": null,
+      "port": 8003,
+      "endpoints": [
+        "/api/health",
+        "/api/workflows",
+        "/api/config"
+      ]
+    },
+    {
+      "id": 132,
+      "label": "soda_quality_service.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        121,
+        140,
+        141
+      ],
+      "parent": null,
+      "port": 8004,
+      "endpoints": [
+        "/api/quality"
+      ]
+    },
+    {
+      "id": 133,
+      "label": "plm_xml_data_service.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        123,
+        124,
+        142,
+        143
+      ],
+      "parent": null,
+      "port": 8005,
+      "endpoints": [
+        "/api/schema",
+        "/api/transformation"
+      ]
+    },
+    {
+      "id": 134,
+      "label": "analytics_storage_service.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        112,
+        111,
+        144,
+        145
+      ],
+      "parent": null,
+      "port": 8006,
+      "endpoints": [
+        "/api/analytics",
+        "/api/metrics"
+      ]
+    },
+    {
+      "id": 135,
+      "label": "advanced_migration_engine.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        118,
+        146
+      ],
+      "parent": null,
+      "port": 8007,
+      "endpoints": [
+        "/api/workflow-execution"
+      ]
+    },
+    {
+      "id": 136,
+      "label": "code_graph_service.py",
+      "type": "backend_file",
+      "group": 7,
+      "level": 7,
+      "size": 18,
+      "color": "#34495e",
+      "expandable": true,
+      "expanded": false,
+      "children": [
+        113,
+        114,
+        147
+      ],
+      "parent": null,
+      "port": 8008,
+      "endpoints": [
+        "/api/graph-data",
+        "/api/graph-filters"
+      ]
+    },
+    {
+      "id": 137,
+      "label": "workflows",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 138,
+      "label": "data_sources",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 139,
+      "label": "audit_logs",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 131
+    },
+    {
+      "id": 140,
+      "label": "quality_rules",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 132
+    },
+    {
+      "id": 141,
+      "label": "quality_reports",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 132
+    },
+    {
+      "id": 142,
+      "label": "plm_data",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 133
+    },
+    {
+      "id": 143,
+      "label": "transformations",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 133
+    },
+    {
+      "id": 144,
+      "label": "analytics_data",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 134
+    },
+    {
+      "id": 145,
+      "label": "metrics",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 134
+    },
+    {
+      "id": 146,
+      "label": "migration_jobs",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 135
+    },
+    {
+      "id": 147,
+      "label": "code_graph",
+      "type": "database_schema",
+      "group": 8,
+      "level": 8,
+      "size": 14,
+      "color": "#95a5a6",
+      "expandable": false,
+      "expanded": false,
+      "children": [],
+      "parent": 136
+    }
+  ],
+  "links": [
+    {
+      "source": 1,
+      "target": 2,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 3,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 4,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 5,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 6,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 7,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 8,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 1,
+      "target": 9,
+      "type": "navigates_to",
+      "hierarchical": true,
+      "weight": 1
+    },
+    {
+      "source": 2,
+      "target": 10,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 2,
+      "target": 11,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 3,
+      "target": 12,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 4,
+      "target": 13,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 5,
+      "target": 14,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 6,
+      "target": 15,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 7,
+      "target": 16,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 8,
+      "target": 17,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 9,
+      "target": 18,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 10,
+      "target": 19,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 10,
+      "target": 20,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 11,
+      "target": 21,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 11,
+      "target": 22,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 11,
+      "target": 23,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 12,
+      "target": 24,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 12,
+      "target": 25,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 12,
+      "target": 26,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 13,
+      "target": 27,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 13,
+      "target": 28,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 13,
+      "target": 29,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 14,
+      "target": 30,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 14,
+      "target": 31,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 14,
+      "target": 32,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 15,
+      "target": 33,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 15,
+      "target": 34,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 15,
+      "target": 35,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 16,
+      "target": 36,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 16,
+      "target": 37,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 16,
+      "target": 38,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 17,
+      "target": 39,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 17,
+      "target": 40,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 17,
+      "target": 41,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 18,
+      "target": 42,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 18,
+      "target": 43,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 18,
+      "target": 44,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 21,
+      "target": 45,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 24,
+      "target": 45,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 20,
+      "target": 46,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 23,
+      "target": 46,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 24,
+      "target": 47,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 25,
+      "target": 47,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 27,
+      "target": 48,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 28,
+      "target": 48,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 30,
+      "target": 49,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 32,
+      "target": 49,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 31,
+      "target": 50,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 33,
+      "target": 50,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 36,
+      "target": 51,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 38,
+      "target": 51,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 39,
+      "target": 52,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 40,
+      "target": 52,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 41,
+      "target": 53,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 42,
+      "target": 53,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 43,
+      "target": 54,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 35,
+      "target": 55,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 37,
+      "target": 55,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 34,
+      "target": 56,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 38,
+      "target": 56,
+      "type": "uses",
+      "hierarchical": false,
+      "weight": 3
+    },
+    {
+      "source": 19,
+      "target": 57,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 19,
+      "target": 58,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 20,
+      "target": 59,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 21,
+      "target": 60,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 21,
+      "target": 61,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 22,
+      "target": 62,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 22,
+      "target": 63,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 23,
+      "target": 64,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 23,
+      "target": 65,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 24,
+      "target": 66,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 24,
+      "target": 67,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 25,
+      "target": 68,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 25,
+      "target": 69,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 27,
+      "target": 70,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 27,
+      "target": 71,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 28,
+      "target": 72,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 28,
+      "target": 73,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 29,
+      "target": 74,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 29,
+      "target": 75,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 30,
+      "target": 76,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 30,
+      "target": 77,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 31,
+      "target": 78,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 31,
+      "target": 79,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 32,
+      "target": 80,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 32,
+      "target": 81,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 33,
+      "target": 82,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 33,
+      "target": 83,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 34,
+      "target": 84,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 34,
+      "target": 85,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 35,
+      "target": 86,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 35,
+      "target": 87,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 36,
+      "target": 88,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 36,
+      "target": 89,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 37,
+      "target": 90,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 37,
+      "target": 91,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 38,
+      "target": 92,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 38,
+      "target": 93,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 39,
+      "target": 94,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 39,
+      "target": 95,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 40,
+      "target": 96,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 40,
+      "target": 97,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 41,
+      "target": 98,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 41,
+      "target": 99,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 42,
+      "target": 100,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 43,
+      "target": 101,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 43,
+      "target": 102,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 44,
+      "target": 103,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 44,
+      "target": 104,
+      "type": "contains",
+      "hierarchical": true,
+      "weight": 5
+    },
+    {
+      "source": 61,
+      "target": 105,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 98,
+      "target": 105,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 57,
+      "target": 106,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 59,
+      "target": 107,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 62,
+      "target": 108,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 64,
+      "target": 109,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 66,
+      "target": 110,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 67,
+      "target": 111,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 100,
+      "target": 111,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 68,
+      "target": 112,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 70,
+      "target": 113,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 72,
+      "target": 114,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 74,
+      "target": 115,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 75,
+      "target": 115,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 76,
+      "target": 116,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 77,
+      "target": 116,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 78,
+      "target": 117,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 79,
+      "target": 117,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 80,
+      "target": 118,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 82,
+      "target": 119,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 83,
+      "target": 119,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 84,
+      "target": 120,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 85,
+      "target": 120,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 86,
+      "target": 121,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 88,
+      "target": 122,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 89,
+      "target": 122,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 90,
+      "target": 123,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 91,
+      "target": 123,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 92,
+      "target": 124,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 93,
+      "target": 124,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 94,
+      "target": 125,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 95,
+      "target": 125,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 96,
+      "target": 126,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 97,
+      "target": 126,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 98,
+      "target": 127,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 99,
+      "target": 127,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 66,
+      "target": 128,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 100,
+      "target": 128,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 101,
+      "target": 129,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 102,
+      "target": 129,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 103,
+      "target": 130,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 104,
+      "target": 130,
+      "type": "calls",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 131,
+      "target": 105,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 131,
+      "target": 116,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 131,
+      "target": 125,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 132,
+      "target": 121,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 133,
+      "target": 123,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 133,
+      "target": 124,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 134,
+      "target": 112,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 134,
+      "target": 111,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 135,
+      "target": 118,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 136,
+      "target": 113,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 136,
+      "target": 114,
+      "type": "implements",
+      "hierarchical": true,
+      "weight": 3
+    },
+    {
+      "source": 131,
+      "target": 137,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 131,
+      "target": 138,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 131,
+      "target": 139,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 132,
+      "target": 140,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 132,
+      "target": 141,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 133,
+      "target": 142,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 133,
+      "target": 143,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 134,
+      "target": 144,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 134,
+      "target": 145,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 135,
+      "target": 146,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 136,
+      "target": 147,
+      "type": "connects_to",
+      "hierarchical": true,
+      "weight": 4
+    },
+    {
+      "source": 24,
+      "target": 131,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 27,
+      "target": 136,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 35,
+      "target": 132,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 36,
+      "target": 133,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 30,
+      "target": 131,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    },
+    {
+      "source": 31,
+      "target": 135,
+      "type": "communicates_with",
+      "hierarchical": false,
+      "weight": 1
+    }
+  ],
+  "hierarchy": {
+    "levels": [
+      {
+        "level": 0,
+        "name": "Central Hub",
+        "color": "#e74c3c",
+        "description": "Main system navigation hub"
+      },
+      {
+        "level": 1,
+        "name": "Pages",
+        "color": "#3498db",
+        "description": "Application pages and routes"
+      },
+      {
+        "level": 2,
+        "name": "Frontend Files",
+        "color": "#2ecc71",
+        "description": "React component files"
+      },
+      {
+        "level": 3,
+        "name": "Components",
+        "color": "#f39c12",
+        "description": "UI components and widgets"
+      },
+      {
+        "level": 4,
+        "name": "Services",
+        "color": "#9b59b6",
+        "description": "Frontend service layer"
+      },
+      {
+        "level": 5,
+        "name": "Methods",
+        "color": "#1abc9c",
+        "description": "Component methods and functions"
+      },
+      {
+        "level": 6,
+        "name": "API Endpoints",
+        "color": "#e67e22",
+        "description": "REST API endpoints"
+      },
+      {
+        "level": 7,
+        "name": "Backend Files",
+        "color": "#34495e",
+        "description": "Python FastAPI services"
+      },
+      {
+        "level": 8,
+        "name": "Database Schema",
+        "color": "#95a5a6",
+        "description": "Database tables and structures"
+      }
+    ]
+  },
+  "centralHub": 1,
+  "stats": {
+    "totalNodes": 147,
+    "totalEdges": 184,
+    "hierarchicalEdges": 113,
+    "crossReferenceEdges": 71,
+    "nodesByLevel": {
+      "1": 8,
+      "2": 9,
+      "3": 26,
+      "4": 12,
+      "5": 48,
+      "6": 26,
+      "7": 6,
+      "8": 11,
+      "9": 1
+    }
+  }
+}
