@@ -85,6 +85,8 @@ class GraphRequest(BaseModel):
 class LocalSourceFile(BaseModel):
     path: str = Field(..., min_length=1, description="Relative source path")
     content: str = Field(..., description="UTF-8 source contents")
+    size: Optional[int] = Field(default=None, ge=0, description="Original browser file size in bytes")
+    last_modified: Optional[int] = Field(default=None, ge=0, description="Browser file modification time in milliseconds since epoch")
 
 
 class LocalGraphRequest(BaseModel):
@@ -94,6 +96,10 @@ class LocalGraphRequest(BaseModel):
         description="Optional file extensions, such as .py or .ts",
         examples=[[".py", ".ts"]],
     )
+
+
+MAX_LOCAL_FILES = 500
+MAX_LOCAL_PAYLOAD_BYTES = 10_000_000
 
 
 @graph_router.post(
@@ -107,6 +113,12 @@ class LocalGraphRequest(BaseModel):
 async def generate_local_graph(request: LocalGraphRequest):
     """Build a graph from source files selected in the browser."""
     try:
+        payload_size = sum(len(file.content.encode("utf-8")) for file in request.files)
+        if len(request.files) > MAX_LOCAL_FILES or payload_size > MAX_LOCAL_PAYLOAD_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Local source is limited to {MAX_LOCAL_FILES} files and {MAX_LOCAL_PAYLOAD_BYTES // 1_000_000} MB",
+            )
         from graph.codegraph_integration import CodeGraph
         from codegraph_core import ScanConfig
 
@@ -124,7 +136,16 @@ async def generate_local_graph(request: LocalGraphRequest):
             for target, edge_type, attrs in outgoing
         ]
         return {"nodes": nodes, "edges": edges,
-                "metadata": {**summary, "source": "local_folder", "graph_type": "dependency"}}
+                "metadata": {
+                    **summary,
+                    "source": "local_folder",
+                    "graph_type": "dependency",
+                    "selected_files": len(request.files),
+                    "selected_bytes": payload_size,
+                    "source_paths": [item.path for item in request.files],
+                }}
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Failed to generate local graph")
         raise HTTPException(status_code=500, detail=f"Local graph generation failed: {exc}") from exc

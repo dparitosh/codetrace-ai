@@ -1,6 +1,6 @@
 import { AlertTriangle, BarChart, CheckCircle, Download, FileText, Search, Shield } from 'lucide-react';
 import React, { useState } from 'react';
-import { DIRECT_API_CONFIG } from '../config/api';
+import { API_CONFIG } from '../config/api';
 
 interface CVSSVulnerability {
   cve_id: string;
@@ -123,7 +123,7 @@ const SecurityPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${DIRECT_API_CONFIG.BASE_URL}/api/v1/security/compliance/dashboard?repository_url=${encodeURIComponent(repositoryUrl)}`);
+      const response = await fetch(API_CONFIG.SECURITY.COMPLIANCE(repositoryUrl));
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -148,7 +148,7 @@ const SecurityPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${DIRECT_API_CONFIG.BASE_URL}/api/v1/security/cvss/scan`, {
+      const response = await fetch(API_CONFIG.SECURITY.CVSS_SCAN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ const SecurityPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${DIRECT_API_CONFIG.BASE_URL}/api/v1/security/sbom/generate`, {
+      const response = await fetch(API_CONFIG.SECURITY.SBOM_GENERATE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

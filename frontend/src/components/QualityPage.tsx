@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { BarChart3, Clock3, FileText, Lightbulb, Search } from 'lucide-react'
-import { DIRECT_API_CONFIG } from '../config/api'
+import { API_CONFIG } from '../config/api'
 
 interface QualityPageProps {
   onBack: () => void
@@ -42,7 +42,7 @@ export default function QualityPage({ onBack, initialRepositoryUrl }: QualityPag
       const repository = extractRepoFromUrl(repositoryUrl.trim());
 
       // First analyze the repository, then get quality metrics
-      const analysisResponse = await fetch(`${DIRECT_API_CONFIG.BASE_URL}/api/v1/github/analyze`, {
+      const analysisResponse = await fetch(API_CONFIG.GITHUB.ANALYZE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +67,7 @@ export default function QualityPage({ onBack, initialRepositoryUrl }: QualityPag
       const analysisResult = await analysisResponse.json()
 
       // Get quality metrics
-      const qualityResponse = await fetch(`${DIRECT_API_CONFIG.BASE_URL}/api/v1/quality/assess`, {
+      const qualityResponse = await fetch(API_CONFIG.QUALITY.ASSESS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

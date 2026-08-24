@@ -42,6 +42,7 @@ export const API_CONFIG = {
   GRAPH: {
     ENHANCED_TRACEABILITY: '/api/v1/graph/enhanced-traceability',
     DEPENDENCY: '/api/v1/graph/dependency',
+    LOCAL: '/api/v1/graph/local',
   },
 
   // Security endpoints

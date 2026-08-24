@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DIRECT_API_CONFIG } from '../config/api'
+import { API_CONFIG } from '../config/api'
 
 interface AnalysisPageProps {
   onBack: () => void
@@ -28,7 +28,7 @@ export default function AnalysisPage({ onBack, onNavigateToQuality, onNavigateTo
   const startStatusPolling = (analysisId: string) => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`${DIRECT_API_CONFIG.BASE_URL}/api/v1/github/analysis/status/${analysisId}`)
+        const response = await fetch(API_CONFIG.GITHUB.ANALYSIS_STATUS(analysisId))
         if (response.ok) {
           const status = await response.json()
           setAnalysisStatus(status)
@@ -39,7 +39,7 @@ export default function AnalysisPage({ onBack, onNavigateToQuality, onNavigateTo
             setPollingInterval(null)
             
             try {
-              const resultsResponse = await fetch(`${DIRECT_API_CONFIG.BASE_URL}/api/v1/github/analysis/results/${analysisId}`)
+              const resultsResponse = await fetch(API_CONFIG.GITHUB.ANALYSIS_RESULTS(analysisId))
               if (resultsResponse.ok) {
                 const results = await resultsResponse.json()
                 setAnalysisResult(results)
@@ -88,7 +88,7 @@ export default function AnalysisPage({ onBack, onNavigateToQuality, onNavigateTo
 
       const repository = extractRepoFromUrl(repositoryUrl.trim());
 
-      const response = await fetch(`${DIRECT_API_CONFIG.BASE_URL}/api/v1/github/analyze`, {
+      const response = await fetch(API_CONFIG.GITHUB.ANALYZE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

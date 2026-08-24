@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { API_CONFIG } from '../config/api'
-import { BarChart3, Download, ExternalLink, FileText, GitBranch, Link2, Network, Palette, Zap } from 'lucide-react'
+import { BarChart3, Download, ExternalLink, FileText, GitBranch } from 'lucide-react'
 
 interface GraphPageProps {
   onBack: () => void
@@ -10,20 +10,20 @@ interface GraphPageProps {
 function GraphCanvas({ graphData }: { graphData: any }) {
   const nodes = (graphData?.nodes || []).slice(0, 80)
   const edges = graphData?.edges || graphData?.links || []
-  const width = 760
-  const height = 360
+  const width = 1200
+  const height = 720
   const positions = new Map(nodes.map((node: any, index: number) => {
     const angle = (index / Math.max(nodes.length, 1)) * Math.PI * 2 - Math.PI / 2
     return [String(node.id ?? node.label ?? node.name ?? index), {
-      x: width / 2 + Math.cos(angle) * 300,
-      y: height / 2 + Math.sin(angle) * 140,
+      x: width / 2 + Math.cos(angle) * 470,
+      y: height / 2 + Math.sin(angle) * 250,
     }]
   }))
   const resolvePosition = (value: any) => positions.get(String(value?.id ?? value?.label ?? value?.name ?? value))
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full min-w-[640px] h-[360px]" role="img" aria-label="Dependency graph preview">
+      <svg viewBox={`0 0 ${width} ${height}`} className="block w-full min-w-[900px] h-[720px]" role="img" aria-label="Dependency graph preview">
         <defs><marker id="graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8" /></marker></defs>
         <g stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#graph-arrow)">
           {edges.slice(0, 180).map((edge: any, index: number) => {
@@ -41,12 +41,6 @@ function GraphCanvas({ graphData }: { graphData: any }) {
           return <g key={String(node.id ?? node.label ?? index)}><circle cx={position.x} cy={position.y} r="18" fill={fill} stroke={stroke} strokeWidth="2" /><text x={position.x} y={position.y + 32} textAnchor="middle" fontSize="10" fill="#334155">{String(node.label ?? node.name ?? node.id ?? type).slice(0, 24)}</text></g>
         })}
       </svg>
-      <div className="flex flex-wrap gap-3 border-t border-gray-200 px-4 py-2 text-xs text-gray-600">
-        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-blue-600" />file/module</span>
-        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-violet-600" />class</span>
-        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-green-600" />function</span>
-        <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" />package</span>
-      </div>
     </div>
   )
 }
@@ -106,6 +100,8 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
           ? { files: await Promise.all(localFiles.map(async (file) => ({
               path: file.webkitRelativePath || file.name,
               content: await file.text(),
+              size: file.size,
+              last_modified: file.lastModified,
             }))) }
           : { repository_url: repositoryUrl.trim(), layout: layoutType,
               filters: { node_types: ['file', 'function', 'class'], min_connections: 1 }, format: 'd3' })
@@ -161,13 +157,13 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
           <p className="text-gray-600 mt-2">Interactive visualization of code dependencies and relationships</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Controls Panel */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-4">
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Graph Generation</h2>
               
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div>
                   <label htmlFor="repository-url" className="block text-sm font-medium text-gray-700 mb-2">
                     GitHub Repository URL
@@ -183,7 +179,7 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
                   />
                 </div>
 
-                <div className="border-t pt-4">
+                <div>
                   <label htmlFor="local-folder" className="block text-sm font-medium text-gray-700 mb-2">
                     Or select a local source folder
                   </label>
@@ -221,7 +217,7 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
                 </div>
 
                 {error && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="md:col-span-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-red-800 text-sm">{error}</p>
                   </div>
                 )}
@@ -267,14 +263,26 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
                     <span className="text-gray-600">Complexity:</span>
                     <span className="font-medium">{graphData.metadata?.complexity_score || 'N/A'}</span>
                   </div>
+                  {graphData.metadata?.source === 'local_folder' && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Selected files:</span>
+                        <span className="font-medium">{graphData.metadata.selected_files}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Source size:</span>
+                        <span className="font-medium">{Math.round((graphData.metadata.selected_bytes || 0) / 1024)} KB</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
           </div>
 
           {/* Graph Visualization */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-lg p-6" style={{ minHeight: '600px' }}>
+          <div className="lg:col-span-4">
+            <div className="bg-white rounded-lg shadow-lg p-6" style={{ minHeight: '780px' }}>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">
                   {showEnhancedGraph ? 'Enhanced Traceability Graph' : 'Dependency Visualization'}
@@ -405,7 +413,7 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
               {graphData && (
                 <div className="space-y-4">
                   {/* Graph Preview */}
-                  <div className="bg-gray-50 rounded-lg p-4 min-h-96 border">
+                  <div className="bg-gray-50 rounded-lg min-h-[720px] border overflow-hidden">
                     <GraphCanvas graphData={graphData} />
                   </div>
 
@@ -463,32 +471,6 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
               )}
                 </>
               )}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Graph Visualization Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center p-4">
-              <Link2 className="h-8 w-8 mx-auto mb-2 text-blue-600" aria-hidden="true" />
-              <h3 className="font-medium text-gray-900">Dependencies</h3>
-              <p className="text-sm text-gray-600">Visualize code dependencies and imports</p>
-            </div>
-            <div className="text-center p-4">
-              <Zap className="h-8 w-8 mx-auto mb-2 text-yellow-600" aria-hidden="true" />
-              <h3 className="font-medium text-gray-900">Interactive</h3>
-              <p className="text-sm text-gray-600">Click, zoom, and explore graph elements</p>
-            </div>
-            <div className="text-center p-4">
-              <Palette className="h-8 w-8 mx-auto mb-2 text-purple-600" aria-hidden="true" />
-              <h3 className="font-medium text-gray-900">Multiple Layouts</h3>
-              <p className="text-sm text-gray-600">Force-directed, hierarchical, and more</p>
-            </div>
-            <div className="text-center p-4">
-              <Network className="h-8 w-8 mx-auto mb-2 text-green-600" aria-hidden="true" />
-              <h3 className="font-medium text-gray-900">Export Options</h3>
-              <p className="text-sm text-gray-600">PNG, SVG, PDF, and JSON formats</p>
             </div>
           </div>
         </div>
