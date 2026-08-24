@@ -11,7 +11,7 @@ function GraphCanvas({ graphData }: { graphData: any }) {
   const nodes = (graphData?.nodes || []).slice(0, 80)
   const edges = graphData?.edges || graphData?.links || []
   const width = 1200
-  const height = 720
+  const height = 840
   const positions = new Map(nodes.map((node: any, index: number) => {
     const angle = (index / Math.max(nodes.length, 1)) * Math.PI * 2 - Math.PI / 2
     return [String(node.id ?? node.label ?? node.name ?? index), {
@@ -22,8 +22,8 @@ function GraphCanvas({ graphData }: { graphData: any }) {
   const resolvePosition = (value: any) => positions.get(String(value?.id ?? value?.label ?? value?.name ?? value))
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-      <svg viewBox={`0 0 ${width} ${height}`} className="block w-full min-w-[900px] h-[720px]" role="img" aria-label="Dependency graph preview">
+    <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <svg viewBox={`0 0 ${width} ${height}`} className="block h-full w-full" role="img" aria-label="Dependency graph preview">
         <defs><marker id="graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8" /></marker></defs>
         <g stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#graph-arrow)">
           {edges.slice(0, 180).map((edge: any, index: number) => {
@@ -282,7 +282,7 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
 
           {/* Graph Visualization */}
           <div className="lg:col-span-4">
-            <div className="bg-white rounded-lg shadow-lg p-6" style={{ minHeight: '780px' }}>
+            <div className="bg-white rounded-lg shadow-lg p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">
                   {showEnhancedGraph ? 'Enhanced Traceability Graph' : 'Dependency Visualization'}
@@ -413,7 +413,7 @@ export default function GraphPage({ onBack, initialRepositoryUrl }: GraphPagePro
               {graphData && (
                 <div className="space-y-4">
                   {/* Graph Preview */}
-                  <div className="bg-gray-50 rounded-lg min-h-[720px] border overflow-hidden">
+                  <div className="h-[840px] bg-gray-50 rounded-lg border overflow-hidden">
                     <GraphCanvas graphData={graphData} />
                   </div>
 
