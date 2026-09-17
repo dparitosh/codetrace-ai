@@ -36,11 +36,10 @@ function App() {
   const [backendStatus, setBackendStatus] = useState({
     api: 'loading',
     database: 'loading', 
-    github: 'loading'
+    source: 'loading'
   })
   const [activeDemo, setActiveDemo] = useState('analysis')
   const [currentPage, setCurrentPage] = useState('dashboard')
-  const [currentRepositoryUrl, setCurrentRepositoryUrl] = useState('')
 
   // Simulate backend status check
   useEffect(() => {
@@ -52,7 +51,7 @@ function App() {
           setBackendStatus({
             api: 'online',
             database: data.components?.database === 'connected' ? 'online' : 'dev-mode',
-            github: data.components?.github === 'connected' ? 'online' : 'ready'
+            source: 'online'
           })
         }
       } catch (error) {
@@ -62,7 +61,7 @@ function App() {
           setBackendStatus({
             api: 'online',
             database: 'dev-mode',
-            github: 'ready'
+            source: 'online'
           })
         }, 1000)
       }
@@ -91,10 +90,9 @@ function App() {
         'dev-mode': 'Database: Development Mode',
         offline: 'Database: Offline' 
       },
-      github: { 
-        online: 'GitHub: Connected', 
-        ready: 'GitHub Integration: Ready',
-        offline: 'GitHub: Offline' 
+      source: {
+        online: 'Local source analysis: Ready',
+        offline: 'Local source analysis: Offline'
       }
     }
     
@@ -116,15 +114,8 @@ function App() {
     setCurrentPage('dashboard')
   }
 
-  const handleNavigateToQuality = (repositoryUrl: string) => {
-    setCurrentRepositoryUrl(repositoryUrl)
-    setCurrentPage('quality')
-  }
-
-  const handleNavigateToGraph = (repositoryUrl: string) => {
-    setCurrentRepositoryUrl(repositoryUrl)
-    setCurrentPage('graph')
-  }
+  const handleNavigateToQuality = () => setCurrentPage('quality')
+  const handleNavigateToGraph = () => setCurrentPage('graph')
 
   // Render different pages based on current page
   if (currentPage === 'analysis') {
@@ -138,11 +129,11 @@ function App() {
   }
 
   if (currentPage === 'quality') {
-    return <QualityPage onBack={handleBackToDashboard} initialRepositoryUrl={currentRepositoryUrl} />
+    return <QualityPage onBack={handleBackToDashboard} />
   }
 
   if (currentPage === 'graph') {
-    return <GraphPage onBack={handleBackToDashboard} initialRepositoryUrl={currentRepositoryUrl} />
+    return <GraphPage onBack={handleBackToDashboard} />
   }
 
   if (currentPage === 'security') {
@@ -176,7 +167,7 @@ function App() {
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            GitHub Repository Analysis Platform
+            Local Source Analysis Platform
           </h2>
           <p className="text-lg text-gray-600 mb-8">
             Advanced code analysis, dependency visualization, and quality assessment
@@ -278,8 +269,8 @@ function App() {
                 <span className="text-gray-700 font-medium">{getStatusText('database', backendStatus.database)}</span>
               </div>
               <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-3 ${getStatusColor(backendStatus.github)}`}></div>
-                <span className="text-gray-700 font-medium">{getStatusText('github', backendStatus.github)}</span>
+              <div className={`w-3 h-3 rounded-full mr-3 ${getStatusColor(backendStatus.source)}`}></div>
+              <span className="text-gray-700 font-medium">{getStatusText('source', backendStatus.source)}</span>
               </div>
             </div>
             <div className="mt-6 text-center">

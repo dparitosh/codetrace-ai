@@ -1,7 +1,7 @@
 {
   "name": "codetrace-ai-frontend",
   "version": "1.0.0",
-  "description": "CodeTrace AI Frontend - React Dashboard for GitHub Repository Analysis",
+  "description": "CodeTrace AI Frontend - local-first source-code analysis dashboard",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -104,7 +104,7 @@
   },
   "keywords": [
     "codetrace-ai",
-    "github-analysis", 
+    "local-source-analysis",
     "code-quality",
     "dependency-visualization",
     "react",
@@ -113,13 +113,5 @@
   ],
   "author": "CodeTrace AI Team",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/codetrace-ai/codetrace-ai.git",
-    "directory": "frontend"
-  },
-  "bugs": {
-    "url": "https://github.com/codetrace-ai/codetrace-ai/issues"
-  },
   "homepage": "https://codetrace.ai"
 }

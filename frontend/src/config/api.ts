@@ -26,35 +26,22 @@ export const API_CONFIG = {
   // Health endpoint
   HEALTH: '/api/health',
 
-  // GitHub API endpoints
-  GITHUB: {
-    ANALYZE: '/api/v1/github/analyze',
-    ANALYSIS_STATUS: (id: string) => `/api/v1/github/analysis/status/${id}`,
-    ANALYSIS_RESULTS: (id: string) => `/api/v1/github/analysis/results/${id}`,
-  },
-
   // Quality endpoints
   QUALITY: {
-    ASSESS: '/api/v1/quality/assess',
+    LOCAL: '/api/v1/quality/local',
   },
 
   // Graph endpoints
   GRAPH: {
     ENHANCED_TRACEABILITY: '/api/v1/graph/enhanced-traceability',
-    DEPENDENCY: '/api/v1/graph/dependency',
     LOCAL: '/api/v1/graph/local',
+    LOCAL_ANALYZE: '/api/v1/graph/local/analyze',
+    GITLAB: '/api/v1/graph/gitlab',
   },
 
   // Security endpoints
   SECURITY: {
-    COMPLIANCE: (repositoryUrl: string) => `/api/v1/security/compliance/dashboard?repository_url=${encodeURIComponent(repositoryUrl)}`,
-    CVSS_SCAN: '/api/v1/security/cvss/scan',
-    SBOM_GENERATE: '/api/v1/security/sbom/generate',
-  },
-
-  // MCP endpoints - DYNAMIC, NO HARDCODING
-  MCP: {
-    LIVE_ANALYSIS_WS: `ws://${config.host}:${config.backendPort}/api/v1/mcp/frontend/live-analysis`,
+    LOCAL: '/api/v1/security/local',
   }
 }
 

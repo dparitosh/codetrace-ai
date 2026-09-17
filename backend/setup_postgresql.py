@@ -126,7 +126,7 @@ async def test_database_operations():
             'owner': 'test',
             'name': 'sample-repo',
             'full_name': 'test/sample-repo',
-            'url': 'https://github.com/test/sample-repo',
+            'url': 'local-folder://sample-repo',
             'default_branch': 'main',
             'language': 'Python',
             'size': 1000,

@@ -1,5 +1,5 @@
 # CodeTrace AI Backend Dependencies
-# Production-ready Python packages for GitHub integration and analysis
+# Production Python packages for source-code analysis
 
 # Core Framework
 fastapi==0.104.1
@@ -7,7 +7,7 @@ uvicorn[standard]==0.24.0
 pydantic==2.5.0
 pydantic-settings==2.1.0
 
-# HTTP Client & GitHub Integration
+# HTTP clients
 aiohttp==3.9.1
 httpx==0.25.2
 PyJWT==2.8.0

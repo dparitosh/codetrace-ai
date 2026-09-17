@@ -156,26 +156,64 @@ class CodeGraph:
         module_id = self._module_id(p)
         self.g.upsert_node(module_id, "module", name=p.stem, path=p.as_posix(), language="python")
         self.g.add_edge(file_id, module_id, "defines")
-        for node in ast.walk(tree):
+        functions: List[Tuple[str, ast.AST]] = []
+        function_by_name: Dict[str, str] = {}
+
+        def add_variable(owner: str, name: str, line: int, scope: str) -> None:
+            variable_id = f"variable:{p.as_posix()}::{owner}::{name}"
+            self.g.upsert_node(variable_id, "variable", name=name, path=p.as_posix(), start=line,
+                               language="python", scope=scope, owner=owner)
+            self.g.add_edge(owner, variable_id, "defines")
+
+        def add_function(node: Any, owner: str, scope: str) -> str:
+            function_id = f"function:{p.as_posix()}::{scope}::{node.name}"
+            self.g.upsert_node(function_id, "function", name=node.name, path=p.as_posix(), start=node.lineno,
+                               language="python", owner=owner, scope=scope,
+                               docstring=ast.get_docstring(node) or "")
+            self.g.add_edge(owner, function_id, "defines")
+            function_by_name.setdefault(node.name, function_id)
+            functions.append((function_id, node))
+            for argument in (*node.args.posonlyargs, *node.args.args, *node.args.kwonlyargs):
+                add_variable(function_id, argument.arg, argument.lineno, "parameter")
+            if node.args.vararg:
+                add_variable(function_id, node.args.vararg.arg, node.args.vararg.lineno, "parameter")
+            if node.args.kwarg:
+                add_variable(function_id, node.args.kwarg.arg, node.args.kwarg.lineno, "parameter")
+            return function_id
+
+        for node in tree.body:
             if isinstance(node, ast.Import):
                 for item in node.names:
                     self.g.add_edge(module_id, "module:" + item.name, "imports", name=item.name)
             elif isinstance(node, ast.ImportFrom) and node.module:
                 self.g.add_edge(module_id, "module:" + node.module, "imports", name=node.module)
-            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                kind = "class" if isinstance(node, ast.ClassDef) else "function"
-                symbol_id = f"{kind}:{p.as_posix()}::{node.name}"
-                self.g.upsert_node(symbol_id, kind, name=node.name, path=p.as_posix(), start=node.lineno,
-                                   language="python")
-                self.g.add_edge(module_id, symbol_id, "defines")
-                if isinstance(node, ast.ClassDef):
-                    for base in node.bases:
-                        if isinstance(base, ast.Name):
-                            self.g.add_edge(symbol_id, "symbol:" + base.id, "inherits_from", name=base.id)
-                else:
-                    for call in ast.walk(node):
-                        if isinstance(call, ast.Call) and isinstance(call.func, ast.Name):
-                            self.g.add_edge(symbol_id, "symbol:" + call.func.id, "calls", name=call.func.id)
+            elif isinstance(node, ast.ClassDef):
+                class_id = f"class:{p.as_posix()}::{node.name}"
+                self.g.upsert_node(class_id, "class", name=node.name, path=p.as_posix(), start=node.lineno,
+                                   language="python", owner=module_id, docstring=ast.get_docstring(node) or "")
+                self.g.add_edge(module_id, class_id, "defines")
+                for base in node.bases:
+                    if isinstance(base, ast.Name):
+                        self.g.add_edge(class_id, "symbol:" + base.id, "inherits_from", name=base.id)
+                for child in node.body:
+                    if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        add_function(child, class_id, f"{node.name}.")
+                    elif isinstance(child, (ast.Assign, ast.AnnAssign)):
+                        for target in _assigned_names(child):
+                            add_variable(class_id, target, child.lineno, "class")
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                add_function(node, module_id, "")
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+                for target in _assigned_names(node):
+                    add_variable(module_id, target, node.lineno, "module")
+
+        for function_id, function_node in functions:
+            for call in ast.walk(function_node):
+                if isinstance(call, ast.Call) and isinstance(call.func, ast.Name):
+                    target = function_by_name.get(call.func.id, "symbol:" + call.func.id)
+                    if target not in self.g.nodes:
+                        self.g.upsert_node(target, "external_symbol", name=call.func.id, language="python")
+                    self.g.add_edge(function_id, target, "calls", name=call.func.id)
 
     def _scan_generic_file(self, p: Path, source: str, file_id: str):
         """Best-effort scanner for languages without an installed parser."""
@@ -207,3 +245,14 @@ class CodeGraph:
                     "code": "\n".join(lines[start - 1:end])}
         except (OSError, ValueError):
             return None
+
+
+def _assigned_names(node: Any) -> List[str]:
+    """Extract simple assignment targets without treating attribute writes as variables."""
+    values = node.targets if isinstance(node, ast.Assign) else [node.target]
+    names: List[str] = []
+    for value in values:
+        for child in ast.walk(value):
+            if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Store):
+                names.append(child.id)
+    return names

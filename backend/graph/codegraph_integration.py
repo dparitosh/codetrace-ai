@@ -1,6 +1,6 @@
 """
 CodeTrace AI - Enhanced Code Graph Integration
-Integrates codegraph_core for advanced GitHub repository analysis
+Integrates codegraph_core for local directory and source-file analysis
 """
 import sys
 from pathlib import Path
@@ -34,7 +34,7 @@ class CodeTraceGraphAnalyzer:
     
     async def analyze_repository(self, repo_path: str, languages: List[str] = None) -> Dict[str, Any]:
         """
-        Analyze a GitHub repository for code structure and dependencies
+        Analyze a source directory for code structure and dependencies
         
         Args:
             repo_path: Path to cloned repository
@@ -191,15 +191,15 @@ class CodeTraceGraphAnalyzer:
             return []
 
 
-class GitHubRepositoryAnalyzer:
-    """High-level analyzer for GitHub repositories using CodeTrace AI"""
+class SourceRepositoryAnalyzer:
+    """High-level analyzer for a local source directory using CodeTrace AI"""
     
     def __init__(self):
         self.code_analyzer = CodeTraceGraphAnalyzer()
     
     async def comprehensive_analysis(self, repo_path: str) -> Dict[str, Any]:
         """
-        Perform comprehensive analysis of a GitHub repository
+        Perform comprehensive analysis of a source directory
         
         Returns:
             Complete analysis including code structure, quality, and recommendations
@@ -286,4 +286,4 @@ class GitHubRepositoryAnalyzer:
 
 
 # Export for CodeTrace AI backend
-__all__ = ["CodeTraceGraphAnalyzer", "GitHubRepositoryAnalyzer", "CODEGRAPH_AVAILABLE"]
+__all__ = ["CodeTraceGraphAnalyzer", "SourceRepositoryAnalyzer", "CODEGRAPH_AVAILABLE"]

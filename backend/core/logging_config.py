@@ -69,37 +69,6 @@ class StructuredFormatter(logging.Formatter):
         return f"{log_entry['timestamp']} | {log_entry['level']:<8} | {log_entry['logger']:<20} | {log_entry['message']}"
 
 
-class GitHubAPILogger(logging.LoggerAdapter):
-    """Specialized logger for GitHub API operations"""
-
-    def __init__(self, logger, extra=None):
-        super().__init__(logger, extra or {})
-
-    def api_request(
-        self,
-        method: str,
-        endpoint: str,
-        status_code: Optional[int] = None,
-        duration: Optional[float] = None,
-        **kwargs,
-    ):
-        """Log GitHub API request"""
-        extra = {
-            "api_method": method,
-            "api_endpoint": endpoint,
-            "api_status": status_code,
-            "duration": duration,
-        }
-        extra.update(kwargs)
-
-        if status_code and status_code >= 400:
-            self.error(
-                f"GitHub API {method} {endpoint} failed with {status_code}", extra=extra
-            )
-        else:
-            self.info(f"GitHub API {method} {endpoint} completed", extra=extra)
-
-
 def setup_logging(log_level: str = "INFO", log_dir: str = "logs"):
     """
     Setup application logging configuration
