@@ -4,10 +4,12 @@ from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from api.graph_routes import LocalGraphRequest, build_graph_from_files
+from api.trace_routes import TraceManifest
+from graph.traceability import materialize, neighborhood, code_uri, CT
 
 agent_router = APIRouter(tags=["Agent Context"])
 CONTEXT_SCHEMA_VERSION = "1.0"
@@ -16,6 +18,7 @@ CONTEXT_SCHEMA_VERSION = "1.0"
 class AgentContextRequest(LocalGraphRequest):
     query: str = Field(..., min_length=1, max_length=500, description="Coding task or question")
     max_symbols: int = Field(default=40, ge=1, le=100)
+    trace_manifest: Optional[TraceManifest] = None
 
 
 def _package_name(path: str) -> str:
@@ -89,6 +92,17 @@ def create_agent_context(request: AgentContextRequest) -> Dict[str, Any]:
                  and (edge["source"] in selected or edge["target"] in selected)][:request.max_symbols * 3]
     audit_totals = {key: len(value) for key, value in audit.items() if isinstance(value, list)}
     audit = {key: value[:100] if isinstance(value, list) else value for key, value in audit.items()}
+    lifecycle_trace = None
+    if request.trace_manifest is not None:
+        try:
+            combined = materialize(graph, request.trace_manifest.model_dump(), graph['metadata']['source_digest'])
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        # Anchor context at the best-ranked symbol; omit containment so a shared
+        # repository/package does not imply that unrelated features are affected.
+        anchor = code_uri(request.trace_manifest.repository.uri, symbols[0]['id']) if symbols else request.trace_manifest.repository.uri
+        predicates = sorted({edge['type'] for edge in combined['edges'] if edge['type'] != CT + 'contains'})
+        lifecycle_trace = neighborhood(combined, anchor, 'both', 6, 100, predicates or [CT + 'noRelations'])
     return {
         "schema_version": CONTEXT_SCHEMA_VERSION,
         "query": request.query,
@@ -98,6 +112,7 @@ def create_agent_context(request: AgentContextRequest) -> Dict[str, Any]:
         "relations": relations,
         "audit": audit,
         "audit_totals": audit_totals,
+        "lifecycle_trace": lifecycle_trace,
         "limitations": ["Call resolution is limited to simple intra-module Python calls; uncalled functions are candidates for review.",
                         "Cross-module import resolution and complete package-cycle detection are not implemented."],
         "agent_guidance": [

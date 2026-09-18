@@ -33,6 +33,11 @@ The live OpenAPI contract is available at `http://localhost:8009/docs`.
 - `POST /api/v1/graph/gitlab`
 - `POST /api/v1/quality/local`
 - `POST /api/v1/security/local`
+- `POST /api/v1/trace/materialize`
+- `POST /api/v1/trace/query`
+- `POST /api/v1/trace/jsonld`
+
+The [trace knowledge graph guide](docs/trace-knowledge-graph.md) describes combining the code index with explicit OSLC lifecycle links. The graph page accepts an optional JSON lifecycle manifest alongside either source input.
 
 The API limits browser submissions to 500 files and 10 MB of text content per request.
 

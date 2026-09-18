@@ -33,6 +33,7 @@ export const API_CONFIG = {
 
   // Graph endpoints
   GRAPH: {
+    TRACE: '/api/v1/trace/materialize',
     LOCAL: '/api/v1/graph/local',
     LOCAL_ANALYZE: '/api/v1/graph/local/analyze',
     GITLAB: '/api/v1/graph/gitlab',

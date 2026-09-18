@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import subprocess
 import os
+import hashlib
+import json
 import tempfile
 from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -101,7 +103,8 @@ def build_graph_from_files(request: LocalGraphRequest) -> Dict[str, Any]:
             raise HTTPException(status_code=422, detail="Strict profile only accepts configured source extensions: " + ", ".join(unsupported[:5]))
     graph = CodeGraph(scan_config)
     summary = graph.scan_sources([file.model_dump() for file in request.files])
-    return _serialize_graph(graph, {**summary, "source": "local_folder", "analysis_profile": request.profile, "selected_files": len(request.files), "selected_bytes": payload_size, "source_paths": [file.path for file in request.files]})
+    digest = hashlib.sha256(json.dumps(sorted((file.path, hashlib.sha256(file.content.encode()).hexdigest()) for file in request.files)).encode()).hexdigest()
+    return _serialize_graph(graph, {**summary, "source_digest": digest, "source": "local_folder", "analysis_profile": request.profile, "selected_files": len(request.files), "selected_bytes": payload_size, "source_paths": [file.path for file in request.files]})
 
 
 def build_graph_from_directory(directory: Path, source: str, project_url: Optional[str] = None) -> Dict[str, Any]:

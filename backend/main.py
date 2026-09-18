@@ -17,6 +17,7 @@ sys.path.insert(0, str(backend_dir))
 
 from api.graph_routes import graph_router
 from api.agent_routes import agent_router
+from api.trace_routes import trace_router
 from api.quality_routes import quality_router
 from api.security_routes import security_router
 from core.config import settings
@@ -82,6 +83,8 @@ async def capabilities():
         {"id": "analysis.semantic-graph", "enabled": True},
         {"id": "analysis.networkx-audit", "enabled": True},
         {"id": "agent.bounded-context", "enabled": True},
+        {"id": "trace.lifecycle-knowledge-graph", "enabled": True},
+        {"id": "trace.jsonld-export", "enabled": True},
     ]}
 
 
@@ -89,6 +92,7 @@ app.include_router(graph_router, prefix="/api/v1/graph", tags=["Graph Analysis"]
 app.include_router(quality_router, prefix="/api/v1/quality", tags=["Quality Assessment"])
 app.include_router(security_router, prefix="/api/v1/security", tags=["Security & Compliance"])
 app.include_router(agent_router, prefix="/api/v1/agent", tags=["Agent Context"])
+app.include_router(trace_router, prefix="/api/v1/trace", tags=["Trace Knowledge Graph"])
 
 
 if __name__ == "__main__":
