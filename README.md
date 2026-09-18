@@ -16,7 +16,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 Open `http://localhost:3001`, choose a local folder, then run Analysis, Quality, Security, or Dependency Graph.
 
-The installer requires a real Python 3.9+ installation; the Windows Store app-execution alias is not sufficient.
+The installer requires Python 3.10+; the Windows Store app-execution alias is not sufficient. An existing project virtual environment is reused. To select an interpreter explicitly, run `./install.ps1 -PythonPath C:\Python312\python.exe`.
 
 ## Inputs
 
@@ -35,6 +35,10 @@ The live OpenAPI contract is available at `http://localhost:8009/docs`.
 - `POST /api/v1/security/local`
 
 The API limits browser submissions to 500 files and 10 MB of text content per request.
+
+GitLab analysis uses relative source paths, excludes dependency/build folders and symbolic links, and enforces the same analysis limits after cloning. Git clone itself has a 60-second timeout but no disk quota. Private access uses an already configured Git credential helper without interactive prompts.
+
+The graph page renders a bounded preview; it reports when nodes are omitted. Legacy static traceability pages and mock analysis routes have been removed. Agent context ranks symbols by the query, preserves file-qualified identities, and reports analysis limitations. Complete cross-module call/import resolution remains pending.
 
 For a VS Code coding-agent integration, see [the agent integration guide](docs/vscode-agent.md).
 

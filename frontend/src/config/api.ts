@@ -33,7 +33,6 @@ export const API_CONFIG = {
 
   // Graph endpoints
   GRAPH: {
-    ENHANCED_TRACEABILITY: '/api/v1/graph/enhanced-traceability',
     LOCAL: '/api/v1/graph/local',
     LOCAL_ANALYZE: '/api/v1/graph/local/analyze',
     GITLAB: '/api/v1/graph/gitlab',

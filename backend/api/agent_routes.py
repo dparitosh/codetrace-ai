@@ -1,6 +1,7 @@
 """Bounded, versioned source context for coding-agent integrations."""
 
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter
@@ -42,21 +43,27 @@ def _build_architecture_audit(graph_data: Dict[str, Any]) -> Dict[str, Any]:
             continue
         path = str(node["properties"].get("path", ""))
         package = _package_name(path)
-        node_map[node["id"]] = architecture.add_class(package, str(node["properties"].get("name", node["label"])), path=path, start=node["properties"].get("start"))
+        node_map[node["id"]] = node["id"]
+        architecture.add_node(node["id"], "class", node["label"], path=path, start=node["properties"].get("start"))
+        architecture.add_relationship("package:" + package, node["id"], "contains")
     for node in nodes:
         if node["type"] != "function":
             continue
         properties = node["properties"]
         path = str(properties.get("path", ""))
         owner = node_map.get(str(properties.get("owner"))) or "package:" + _package_name(path)
-        node_map[node["id"]] = architecture.add_function(owner, str(properties.get("name", node["label"])), path=path, start=properties.get("start"), docstring=bool(properties.get("docstring")))
+        node_map[node["id"]] = node["id"]
+        architecture.add_node(node["id"], "function", node["label"], path=path, start=properties.get("start"))
+        architecture.add_relationship(owner, node["id"], "contains")
     for node in nodes:
         if node["type"] != "variable":
             continue
         properties = node["properties"]
         path = str(properties.get("path", ""))
         owner = node_map.get(str(properties.get("owner"))) or "package:" + _package_name(path)
-        node_map[node["id"]] = architecture.add_variable(owner, str(properties.get("name", node["label"])), path=path, start=properties.get("start"), scope=properties.get("scope"))
+        node_map[node["id"]] = node["id"]
+        architecture.add_node(node["id"], "variable", node["label"], path=path, start=properties.get("start"), scope=properties.get("scope"))
+        architecture.add_relationship(owner, node["id"], "contains")
     for edge in graph_data["edges"]:
         if edge["type"] in {"calls", "imports", "inherits_from"} and edge["source"] in node_map and edge["target"] in node_map:
             relationship = "calls" if edge["type"] == "calls" else "depends_on"
@@ -65,16 +72,23 @@ def _build_architecture_audit(graph_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @agent_router.post("/context", summary="Build bounded source context for a coding agent")
-async def create_agent_context(request: AgentContextRequest) -> Dict[str, Any]:
+def create_agent_context(request: AgentContextRequest) -> Dict[str, Any]:
     graph = build_graph_from_files(request)
     audit = _build_architecture_audit(graph)
+    tokens = set(re.findall(r"\w+", request.query.lower()))
+    candidates = [node for node in graph["nodes"] if node["type"] in {"class", "function", "variable"}]
+    candidates.sort(key=lambda node: (-sum(token in (node["id"] + " " + node["label"]).lower() for token in tokens), node["id"]))
     symbols = [
         {"id": node["id"], "kind": node["type"], "name": node["properties"].get("name", node["label"]),
          "path": node["properties"].get("path"), "line": node["properties"].get("start"),
          "owner": node["properties"].get("owner"), "documented": bool(node["properties"].get("docstring"))}
-        for node in graph["nodes"] if node["type"] in {"class", "function", "variable"}
+        for node in candidates
     ][:request.max_symbols]
-    relations = [edge for edge in graph["edges"] if edge["type"] in {"calls", "imports", "inherits_from"}][:request.max_symbols * 3]
+    selected = {symbol["id"] for symbol in symbols}
+    relations = [edge for edge in graph["edges"] if edge["type"] in {"calls", "imports", "inherits_from"}
+                 and (edge["source"] in selected or edge["target"] in selected)][:request.max_symbols * 3]
+    audit_totals = {key: len(value) for key, value in audit.items() if isinstance(value, list)}
+    audit = {key: value[:100] if isinstance(value, list) else value for key, value in audit.items()}
     return {
         "schema_version": CONTEXT_SCHEMA_VERSION,
         "query": request.query,
@@ -83,6 +97,9 @@ async def create_agent_context(request: AgentContextRequest) -> Dict[str, Any]:
         "symbols": symbols,
         "relations": relations,
         "audit": audit,
+        "audit_totals": audit_totals,
+        "limitations": ["Call resolution is limited to simple intra-module Python calls; uncalled functions are candidates for review.",
+                        "Cross-module import resolution and complete package-cycle detection are not implemented."],
         "agent_guidance": [
             "Treat static findings as review prompts, not proof of a defect.",
             "Read the referenced file before changing code and preserve existing public contracts.",

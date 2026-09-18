@@ -41,11 +41,12 @@ function App() {
   const [activeDemo, setActiveDemo] = useState('analysis')
   const [currentPage, setCurrentPage] = useState('dashboard')
 
-  // Simulate backend status check
+  // Report actual service availability.
   useEffect(() => {
     const checkBackendStatus = async () => {
       try {
         const response = await fetch(API_CONFIG.HEALTH)
+        if (!response.ok) throw new Error('Health check failed')
         if (response.ok) {
           const data = await response.json()
           setBackendStatus({
@@ -55,15 +56,7 @@ function App() {
           })
         }
       } catch (error) {
-        console.log('Backend status check - using mock data for demo')
-        // Simulate successful connection for demo
-        setTimeout(() => {
-          setBackendStatus({
-            api: 'online',
-            database: 'dev-mode',
-            source: 'online'
-          })
-        }, 1000)
+        setBackendStatus({ api: 'offline', database: 'offline', source: 'offline' })
       }
     }
     
@@ -137,7 +130,7 @@ function App() {
   }
 
   if (currentPage === 'security') {
-    return <SecurityPage />
+    return <><button onClick={handleBackToDashboard} className="m-4 text-indigo-700">Back to Dashboard</button><SecurityPage /></>
   }
 
   return (

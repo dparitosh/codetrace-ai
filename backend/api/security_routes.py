@@ -5,7 +5,7 @@ import uuid
 from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel
-from api.graph_routes import LocalGraphRequest
+from api.graph_routes import LocalGraphRequest, validate_source_limits
 
 security_router = APIRouter()
 
@@ -29,7 +29,8 @@ RULES = [("possible-secret", "high", re.compile(r"(?i)(api[_-]?key|secret|passwo
 
 
 @security_router.post("/local", response_model=LocalSecurityResponse, summary="Scan local source files")
-async def scan_local_source(request: LocalGraphRequest):
+def scan_local_source(request: LocalGraphRequest):
+    validate_source_limits(request)
     findings: List[SecurityFinding] = []
     for source_file in request.files:
         for line_number, line in enumerate(source_file.content.splitlines(), start=1):

@@ -46,7 +46,7 @@ class ScanConfig:
     include_tests: bool = True
 
     def allowed_extensions(self) -> Set[str]:
-        return self.extensions or set(DEFAULT_EXTENSIONS)
+        return {'.' + value.lower().lstrip('.') for value in (self.extensions or DEFAULT_EXTENSIONS)}
 
 
 DEFAULT_EXTENSIONS = {
@@ -117,6 +117,10 @@ class CodeGraph:
             if extension not in self.config.allowed_extensions() or len(content.encode("utf-8")) > self.config.max_file_size:
                 continue
             path = Path(name)
+            if any(part in self.config.excludes for part in path.parts):
+                continue
+            if not self.config.include_tests and ("test" in path.stem.lower() or "tests" in path.parts):
+                continue
             file_id = "file:" + path.as_posix()
             self.g.upsert_node(file_id, "file", path=path.as_posix(), extension=extension,
                                loc=content.count("\n") + 1)
@@ -171,7 +175,8 @@ class CodeGraph:
                                language="python", owner=owner, scope=scope,
                                docstring=ast.get_docstring(node) or "")
             self.g.add_edge(owner, function_id, "defines")
-            function_by_name.setdefault(node.name, function_id)
+            if owner == module_id:
+                function_by_name[node.name] = function_id
             functions.append((function_id, node))
             for argument in (*node.args.posonlyargs, *node.args.args, *node.args.kwonlyargs):
                 add_variable(function_id, argument.arg, argument.lineno, "parameter")

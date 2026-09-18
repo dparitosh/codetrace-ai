@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "CodeTrace AI"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
-    HOST: str = "0.0.0.0"
+    HOST: str = "127.0.0.1"
     PORT: int = 8009
     CORS_ORIGINS: List[str] = Field(default=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"])
     GITLAB_ALLOWED_HOSTS: List[str] = Field(default=["gitlab.com"], description="Allowed GitLab hosts for project cloning")

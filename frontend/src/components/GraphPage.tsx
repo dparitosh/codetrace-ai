@@ -16,6 +16,7 @@ function GraphCanvas({ graph }: { graph: any }) {
   }))
   const color = (type: string) => type === 'function' ? ['#dcfce7', '#16a34a'] : type === 'class' ? ['#ede9fe', '#7c3aed'] : type === 'package' ? ['#fef3c7', '#d97706'] : ['#dbeafe', '#2563eb']
   return <div className="h-[72vh] min-h-[620px] w-full overflow-auto rounded-xl border border-slate-200 bg-white">
+    {graph.nodes.length > nodes.length && <p className="p-2 text-sm text-amber-800">Preview shows {nodes.length} of {graph.nodes.length} nodes and up to 220 relationships.</p>}
     <svg viewBox={`0 0 ${width} ${height}`} className="h-full min-w-[1000px] w-full" role="img" aria-label="Dependency graph">
       <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8Z" fill="#94a3b8" /></marker></defs>
       {edges.map((edge: any, index: number) => { const from = positions.get(String(edge.source)), to = positions.get(String(edge.target)); return from && to ? <line key={index} x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke="#cbd5e1" strokeWidth="1.5" markerEnd="url(#arrow)" /> : null })}

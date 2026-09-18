@@ -11,7 +11,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 
 backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
@@ -48,11 +47,6 @@ app = FastAPI(
 )
 app.add_middleware(CORSMiddleware, allow_origins=settings.CORS_ORIGINS, allow_credentials=True, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"])
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-
-analysis_dir = backend_dir / "analysis"
-if analysis_dir.exists():
-    app.mount("/analysis", StaticFiles(directory=str(analysis_dir)), name="analysis")
-
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
