@@ -1,8 +1,7 @@
-"""
-Services Module - Business Logic Layer
-Handles repository persistence, analysis orchestration, and data management
-"""
+"""Local intelligence services. Legacy database integration is loaded only on demand."""
 
-from .repository_service import repository_service
-
-__all__ = ['repository_service']
+def __getattr__(name):
+    if name == 'repository_service':
+        from .repository_service import repository_service
+        return repository_service
+    raise AttributeError(name)

@@ -11,6 +11,7 @@ from pathlib import PurePosixPath
 from uuid import NAMESPACE_URL, uuid5
 
 import networkx as nx
+from core.config import settings
 
 CT = 'urn:codetrace:vocab:'
 RM = 'http://open-services.net/ns/rm#'
@@ -18,6 +19,13 @@ QM = 'http://open-services.net/ns/qm#'
 RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'
 RDFS = 'http://www.w3.org/2000/01/rdf-schema#'
 TYPE_URIS = {'requirement': RM + 'Requirement', 'test': QM + 'TestCase'}
+TYPE_URIS.update({'architecture': 'http://open-services.net/ns/am#Resource',
+                  'change_request': 'http://open-services.net/ns/cm#ChangeRequest',
+                  'tracked_resource': 'http://open-services.net/ns/core/trs#TrackedResourceSet',
+                  'configuration': 'http://open-services.net/ns/config#Configuration'})
+TYPE_URIS['resource_shape'] = 'http://open-services.net/ns/core#ResourceShape'
+TYPE_URIS.update({'test_plan': QM + 'TestPlan', 'test_script': QM + 'TestScript',
+                  'test_execution_record': QM + 'TestExecutionRecord', 'test_result': QM + 'TestResult'})
 
 
 def code_uri(repository_uri, code_id):
@@ -29,26 +37,44 @@ def materialize(code_graph, manifest, source_digest):
     repository = manifest['repository']
     repo_uri = repository['uri']
     graph = nx.MultiDiGraph()
+    def add_node(uri, **attributes):
+        if uri not in graph and len(graph) >= settings.MAX_GRAPH_NODES:
+            raise ValueError('Trace graph node limit exceeded; use a smaller source or manifest')
+        graph.add_node(uri, **attributes)
     diagnostics = []
     provenance = {'origin': 'code_analyzer', 'repository_uri': repo_uri,
                   'revision': repository.get('revision'), 'source_digest': source_digest}
-    graph.add_node(repo_uri, label=repository['label'], type='repository', properties=provenance)
+    add_node(repo_uri, label=repository['label'], type='repository', properties=provenance)
     original = {node['id']: node for node in code_graph['nodes']}
     identities = {key: code_uri(repo_uri, key) for key in original}
+    edge_count = 0
 
     def edge(source, target, predicate, properties):
+        nonlocal edge_count
         # An identical assertion is idempotent, but evidence from another source
         # remains a separate multigraph edge.
         key = hashlib.sha256(json.dumps([source, target, predicate, properties], sort_keys=True).encode()).hexdigest()
+        if not graph.has_edge(source, target, key):
+            if edge_count >= settings.MAX_GRAPH_EDGES:
+                raise ValueError('Trace graph edge limit exceeded; use a smaller source or manifest')
+            edge_count += 1
         graph.add_edge(source, target, key=key, type=predicate, properties=properties)
 
     def package(path):
-        uri = code_uri(repo_uri, 'package:' + path)
-        if uri not in graph:
-            graph.add_node(uri, label=path, type='package', properties={**provenance, 'path': path, 'classification': 'directory'})
-            parent = repo_uri if path == '.' else package(PurePosixPath(path).parent.as_posix())
+        # Iterative construction avoids recursion failures on deeply nested paths.
+        pending = []
+        current = path
+        while code_uri(repo_uri, 'package:' + current) not in graph:
+            pending.append(current)
+            if current == '.':
+                break
+            current = PurePosixPath(current).parent.as_posix()
+        for item in reversed(pending):
+            uri = code_uri(repo_uri, 'package:' + item)
+            add_node(uri, label=item, type='package', properties={**provenance, 'path': item, 'classification': 'directory'})
+            parent = repo_uri if item == '.' else code_uri(repo_uri, 'package:' + PurePosixPath(item).parent.as_posix())
             edge(parent, uri, CT + 'contains', provenance)
-        return uri
+        return code_uri(repo_uri, 'package:' + path)
 
     for node in code_graph['nodes']:
         props = dict(node['properties'])
@@ -57,7 +83,7 @@ def materialize(code_graph, manifest, source_digest):
             kind = 'method'
         if props.get('owner') in identities:
             props['owner'] = identities[props['owner']]
-        graph.add_node(identities[node['id']], label=node['label'], type=kind,
+        add_node(identities[node['id']], label=node['label'], type=kind,
                        properties={**props, **provenance, 'code_id': node['id'],
                                    'extraction': 'python_ast' if props.get('language') == 'python' else 'structural_or_heuristic'})
         if kind == 'file':
@@ -72,7 +98,7 @@ def materialize(code_graph, manifest, source_digest):
         uri = resource['uri']
         if uri in graph:
             raise ValueError('Lifecycle resource URI conflicts with code/repository identity: ' + uri)
-        graph.add_node(uri, label=resource['label'], type=resource['kind'], properties={
+        add_node(uri, label=resource['label'], type=resource['kind'], properties={
             'origin': 'lifecycle_import', 'provider_uri': resource.get('provider_uri'),
             'configuration_uri': manifest.get('configuration_uri'),
         })
@@ -85,7 +111,7 @@ def materialize(code_graph, manifest, source_digest):
             return identities[key]
         uri = endpoint['uri']
         if uri not in graph:
-            graph.add_node(uri, label=uri, type='external_resource', properties={'origin': 'lifecycle_import', 'resolved': False})
+            add_node(uri, label=uri, type='external_resource', properties={'origin': 'lifecycle_import', 'resolved': False})
             diagnostics.append({'kind': 'unresolved_resource', 'uri': uri})
         return uri
 

@@ -1,18 +1,7 @@
-#!/usr/bin/env powershell
-# Frontend Startup Script
-# Simple script to start the React frontend
-
-Write-Host "Starting Frontend Service..." -ForegroundColor Green
-
-# Navigate to frontend directory
-Set-Location "frontend"
-
-# Install dependencies if needed
-if (-not (Test-Path "node_modules")) {
-    Write-Host "Installing dependencies..." -ForegroundColor Yellow
-    npm install
-}
-
-# Start development server
-Write-Host "Starting React development server..." -ForegroundColor Green
-npm run dev
+[CmdletBinding()]
+param()
+$ErrorActionPreference = 'Stop'
+$root = $PSScriptRoot
+if (-not (Test-Path (Join-Path $root 'frontend\node_modules'))) { throw 'Run install.ps1 first.' }
+Push-Location (Join-Path $root 'frontend')
+try { & npm run dev } finally { Pop-Location }

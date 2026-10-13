@@ -1,6 +1,6 @@
 """Local-source quality assessment endpoints."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -47,4 +47,4 @@ def assess_local_quality(request: LocalGraphRequest):
     if documentation is None: recommendations.append("No class/function documentation metric is available for this selection; no overall grade was assigned.")
     elif documentation < 70: recommendations.append("Document public classes and functions to improve navigability.")
     if not recommendations: recommendations.append("No structural quality hotspot was detected in the selected source files.")
-    return QualityAssessmentResponse(repository="local-folder", overall_score=overall, grade=grade, metrics=metrics, recommendations=recommendations, assessed_at=datetime.utcnow().isoformat())
+    return QualityAssessmentResponse(repository="local-folder", overall_score=overall, grade=grade, metrics=metrics, recommendations=recommendations, assessed_at=datetime.now(timezone.utc).isoformat())

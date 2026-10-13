@@ -6,6 +6,7 @@ from typing import List
 from fastapi import APIRouter
 from pydantic import BaseModel
 from api.graph_routes import LocalGraphRequest, validate_source_limits
+from core.config import settings
 
 security_router = APIRouter()
 
@@ -23,6 +24,8 @@ class LocalSecurityResponse(BaseModel):
     source: str
     files_scanned: int
     findings: List[SecurityFinding]
+    total_findings: int
+    truncated: bool
 
 
 RULES = [("possible-secret", "high", re.compile(r"(?i)(api[_-]?key|secret|password|token)\s*[:=]\s*['\"][^'\"]{8,}"), "Possible hard-coded secret"), ("dynamic-execution", "high", re.compile(r"\b(eval|exec)\s*\("), "Dynamic code execution should be reviewed")]
@@ -32,9 +35,13 @@ RULES = [("possible-secret", "high", re.compile(r"(?i)(api[_-]?key|secret|passwo
 def scan_local_source(request: LocalGraphRequest):
     validate_source_limits(request)
     findings: List[SecurityFinding] = []
+    total_findings = 0
     for source_file in request.files:
         for line_number, line in enumerate(source_file.content.splitlines(), start=1):
             for rule, severity, pattern, description in RULES:
                 if pattern.search(line):
-                    findings.append(SecurityFinding(rule=rule, severity=severity, file=source_file.path, line=line_number, description=description))
-    return LocalSecurityResponse(scan_id=str(uuid.uuid4()), source="local-folder", files_scanned=len(request.files), findings=findings[:200])
+                    total_findings += 1
+                    if len(findings) < settings.SECURITY_MAX_FINDINGS:
+                        findings.append(SecurityFinding(rule=rule, severity=severity, file=source_file.path, line=line_number, description=description))
+    return LocalSecurityResponse(scan_id=str(uuid.uuid4()), source="local-folder", files_scanned=len(request.files),
+                                 findings=findings, total_findings=total_findings, truncated=total_findings > len(findings))

@@ -94,10 +94,17 @@ class SoftwareArchitectureGraph:
     def package_cycles(self) -> List[List[str]]:
         package_graph = nx.DiGraph()
         package_graph.add_nodes_from(self._nodes("package"))
+        # Compute ownership once per audit, not once per endpoint of every edge.
+        hierarchy = self._contains_graph()
+        package_by_node = {}
+        for package in sorted(self._nodes('package')):
+            package_by_node[package] = package
+            for child in nx.descendants(hierarchy, package):
+                package_by_node.setdefault(child, package)
         for source, target, data in self.graph.edges(data=True):
             if data.get("relationship") in {"contains", "calls", "uses", "depends_on", "imports", "references"}:
-                source_package = self._package_for(source)
-                target_package = self._package_for(target)
+                source_package = package_by_node.get(source)
+                target_package = package_by_node.get(target)
                 if source_package and target_package and source_package != target_package:
                     package_graph.add_edge(source_package, target_package)
         return list(nx.simple_cycles(package_graph))
@@ -126,10 +133,18 @@ class SoftwareArchitectureGraph:
         """Jaccard similarity of semantic neighbors/features for two nodes."""
         if first not in self.graph or second not in self.graph:
             raise KeyError("both nodes must be present")
-        first_features = set(self.graph.successors(first)) | set(self.graph.predecessors(first))
-        second_features = set(self.graph.successors(second)) | set(self.graph.predecessors(second))
-        for node, features in ((first, first_features), (second, second_features)):
-            features.update(self.graph.nodes[node].get("feature_tags", []))
+        def semantic_features(node):
+            features = set()
+            for source, target, data in list(self.graph.out_edges(node, data=True)) + list(self.graph.in_edges(node, data=True)):
+                relation = data.get('relationship')
+                if relation in {'contains', 'defines'}:
+                    continue
+                neighbor = target if source == node else source
+                features.add(('neighbor', 'out' if source == node else 'in', relation, neighbor))
+            features.update(('tag', tag) for tag in self.graph.nodes[node].get('feature_tags', []))
+            return features
+        first_features = semantic_features(first)
+        second_features = semantic_features(second)
         union = first_features | second_features
         return 1.0 if not union and first == second else len(first_features & second_features) / len(union or {None})
 
@@ -155,11 +170,12 @@ class SoftwareArchitectureGraph:
     def memory_map(self) -> Dict[str, Any]:
         """Return a JSON-safe hierarchy useful for UI memory-map views."""
         tree: Dict[str, Any] = {"level": "root", "children": {}}
+        hierarchy = self._contains_graph()
         for node, data in self.graph.nodes(data=True):
             if data.get("level") != "package":
                 continue
             package = {"id": node, "name": data.get("name", node), "level": "package", "children": {}}
-            for child in nx.descendants(self._contains_graph(), node):
+            for child in nx.descendants(hierarchy, node):
                 child_data = self.graph.nodes[child]
                 if child_data.get("level") in {"class", "function", "variable"}:
                     package["children"][child] = {"id": child, "name": child_data.get("name", child),

@@ -1,0 +1,6 @@
+# Optional PostgreSQL schema tools; not required by the local-first API.
+-r requirements-local.txt
+SQLAlchemy>=2.0,<2.1
+databases[asyncpg]>=0.9,<0.10
+asyncpg>=0.29,<1
+psycopg2-binary>=2.9,<3

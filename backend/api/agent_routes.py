@@ -79,7 +79,7 @@ def create_agent_context(request: AgentContextRequest) -> Dict[str, Any]:
     graph = build_graph_from_files(request)
     audit = _build_architecture_audit(graph)
     tokens = set(re.findall(r"\w+", request.query.lower()))
-    candidates = [node for node in graph["nodes"] if node["type"] in {"class", "function", "variable"}]
+    candidates = [node for node in graph["nodes"] if node["type"] in {"class", "function", "variable", "symbol"}]
     candidates.sort(key=lambda node: (-sum(token in (node["id"] + " " + node["label"]).lower() for token in tokens), node["id"]))
     symbols = [
         {"id": node["id"], "kind": node["type"], "name": node["properties"].get("name", node["label"]),
@@ -114,7 +114,8 @@ def create_agent_context(request: AgentContextRequest) -> Dict[str, Any]:
         "audit_totals": audit_totals,
         "lifecycle_trace": lifecycle_trace,
         "limitations": ["Call resolution is limited to simple intra-module Python calls; uncalled functions are candidates for review.",
-                        "Cross-module import resolution and complete package-cycle detection are not implemented."],
+                        "Cross-module import resolution and complete package-cycle detection are not implemented.",
+                        "Non-Python symbols are heuristic; the architecture audit covers Python classes, functions and variables."],
         "agent_guidance": [
             "Treat static findings as review prompts, not proof of a defect.",
             "Read the referenced file before changing code and preserve existing public contracts.",

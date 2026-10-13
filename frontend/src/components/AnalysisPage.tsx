@@ -1,10 +1,19 @@
-import { useState } from 'react'
-import { ArrowLeft, FolderOpen, Network, ShieldCheck } from 'lucide-react'
-import { API_CONFIG } from '../config/api'
-
+import SourceAnalysisPage from './SourceAnalysisPage'
 interface AnalysisPageProps { onBack: () => void; onNavigateToQuality: () => void; onNavigateToGraph: () => void }
 export default function AnalysisPage({ onBack, onNavigateToQuality, onNavigateToGraph }: AnalysisPageProps) {
-  const [files, setFiles] = useState<File[]>([]), [result, setResult] = useState<any>(null), [error, setError] = useState(''), [loading, setLoading] = useState(false)
-  const analyze = async () => { if (!files.length) return setError('Select a local source folder.'); setLoading(true); setError(''); try { const payload = { files: await Promise.all(files.map(async file => ({ path: file.webkitRelativePath || file.name, content: await file.text(), size: file.size, last_modified: file.lastModified }))) }; const response = await fetch(API_CONFIG.GRAPH.LOCAL_ANALYZE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Analysis failed'); setResult(data) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Analysis failed') } finally { setLoading(false) } }
-  return <main className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-5xl"><button onClick={onBack} className="mb-5 inline-flex items-center gap-2 text-indigo-700"><ArrowLeft className="h-4 w-4" />Dashboard</button><h1 className="text-3xl font-bold">Local source analysis</h1><p className="mt-1 text-slate-600">Your selected files are sent to the local CodeTrace service for analysis.</p><section className="mt-6 rounded-xl bg-white p-6 shadow-sm"><label className="block font-medium">Source folder<input type="file" multiple ref={input => input?.setAttribute('webkitdirectory', '')} onChange={event => setFiles(Array.from(event.target.files || []))} className="mt-3 block" /></label>{files.length > 0 && <p className="mt-2 text-emerald-700">{files.length} files selected</p>}<button onClick={analyze} disabled={loading} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-white disabled:opacity-50"><FolderOpen className="h-4 w-4" />{loading ? 'Analyzing…' : 'Analyze folder'}</button>{error && <p className="mt-4 text-red-700">{error}</p>}</section>{result && <section className="mt-6 rounded-xl bg-white p-6 shadow-sm"><h2 className="text-xl font-semibold">Analysis complete</h2><div className="mt-4 grid gap-4 sm:grid-cols-3"><div><b>{result.results?.summary?.total_files || 0}</b><span className="block text-sm text-slate-600">files</span></div><div><b>{result.results?.summary?.total_lines || 0}</b><span className="block text-sm text-slate-600">lines</span></div><div><b>{result.results?.graph?.edges?.length || 0}</b><span className="block text-sm text-slate-600">relationships</span></div></div><div className="mt-6 flex gap-3"><button onClick={onNavigateToGraph} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-white"><Network className="h-4 w-4" />View graph</button><button onClick={onNavigateToQuality} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-white"><ShieldCheck className="h-4 w-4" />Quality check</button></div></section>}</div></main>
+  return <SourceAnalysisPage title="Local source analysis" description="Supported source files are sent to the local service for analysis and review." kind="analysis" onBack={onBack}>
+    {result => <>
+      <h2 className="text-xl font-semibold">Analysis complete</h2>
+      <div className="mt-4 flex flex-wrap gap-6">
+        <span><b>{result.results.summary.total_files}</b> files</span>
+        <span><b>{result.results.summary.total_lines}</b> lines</span>
+        <span><b>{result.results.graph.edges.length}</b> relationships</span>
+      </div>
+      <p className="mt-4 text-sm text-slate-600">The other analysis tools use a new folder selection.</p>
+      <div className="mt-3 flex gap-3">
+        <button onClick={onNavigateToGraph} className="rounded bg-indigo-700 px-4 py-2 text-white">Open graph tool</button>
+        <button onClick={onNavigateToQuality} className="rounded bg-emerald-700 px-4 py-2 text-white">Open quality tool</button>
+      </div>
+    </>}
+  </SourceAnalysisPage>
 }

@@ -172,9 +172,7 @@ class EnhancedDatabase:
             "connected": self.is_connected,
             "using_fallback": self.use_fallback,
             "connection_attempts": self.connection_attempts,
-            "database_url": (
-                settings.postgres_url if not self.use_fallback else "fallback"
-            ),
+            "database_url": "fallback" if self.use_fallback else engine.url.render_as_string(hide_password=True),
             "fallback_data": {
                 "repositories": len(self.fallback.repositories),
                 "analyses": len(self.fallback.analyses),
@@ -189,10 +187,11 @@ enhanced_db = EnhancedDatabase()
 DATABASE_URL = settings.postgres_url
 database = enhanced_db  # For backward compatibility
 engine = (
-    sqlalchemy.create_engine(DATABASE_URL) if not enhanced_db.use_fallback else None
+    sqlalchemy.create_engine(DATABASE_URL, pool_pre_ping=True,
+        connect_args={'connect_timeout': settings.POSTGRES_CONNECT_TIMEOUT_SECONDS}) if not enhanced_db.use_fallback else None
 )
-metadata = sqlalchemy.MetaData()
 Base = declarative_base()
+metadata = Base.metadata
 
 
 async def connect_db():
@@ -216,7 +215,8 @@ def create_tables():
     """Create all tables if database is available"""
     if not enhanced_db.use_fallback and engine:
         try:
-            metadata.create_all(bind=engine)
+            from database import models, enhanced_models
+            Base.metadata.create_all(bind=engine)
             logger.info("Database tables created successfully")
         except Exception as e:
             logger.error(f"Failed to create database tables: {e}")

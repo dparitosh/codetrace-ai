@@ -33,3 +33,9 @@ coverage.xml
 *.swp
 Thumbs.db
 .DS_Store
+
+!.env.local.example
+.runtime/
+data/
+temp/
+logs/

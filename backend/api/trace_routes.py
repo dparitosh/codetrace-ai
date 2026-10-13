@@ -1,6 +1,7 @@
 """Code index + explicit OSLC lifecycle assertions -> materialized trace KG."""
 
 import re
+import json
 from typing import Annotated, Literal, Optional, Union
 from urllib.parse import urlsplit
 
@@ -11,6 +12,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validat
 from api.graph_routes import (GraphData, LocalGraphRequest, GitLabGraphRequest,
                               build_graph_from_files, generate_gitlab_graph)
 from graph.traceability import materialize, neighborhood, as_jsonld
+from core.config import settings
 
 trace_router = APIRouter(tags=['Trace Knowledge Graph'])
 
@@ -40,7 +42,7 @@ class Repository(TraceModel):
 
 class LifecycleResource(TraceModel):
     uri: URI
-    kind: Literal['requirement', 'feature', 'variant', 'test', 'product']
+    kind: Literal['requirement', 'feature', 'variant', 'test', 'test_plan', 'test_script', 'test_execution_record', 'test_result', 'product', 'architecture', 'change_request', 'configuration', 'tracked_resource', 'build', 'resource_shape']
     label: str = Field(min_length=1, max_length=512)
     provider_uri: Optional[URI] = None
 
@@ -71,6 +73,8 @@ class TraceManifest(TraceModel):
 
     @model_validator(mode='after')
     def unique_resources(self):
+        if len(json.dumps(self.model_dump(), ensure_ascii=False).encode('utf-8')) > settings.MAX_TRACE_MANIFEST_BYTES:
+            raise ValueError('Lifecycle manifest exceeds MAX_TRACE_MANIFEST_BYTES')
         uris = [item.uri for item in self.resources]
         if len(uris) != len(set(uris)):
             raise ValueError('Duplicate lifecycle resource URIs')

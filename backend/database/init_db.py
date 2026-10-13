@@ -1,80 +1,54 @@
-"""
-Database setup and initialization script
-"""
+"""Explicit PostgreSQL bootstrap; creates missing tables, never seeds data.
 
+This is not a versioned migration and does not alter existing table columns.
+"""
 import asyncio
-import asyncpg
 import sys
-import os
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.config import settings
-from database.connection import engine, Base
+
 
 async def create_database_if_not_exists():
-    """Create the database if it doesn't exist"""
-    # Connect to PostgreSQL server (not the specific database)
-    server_url = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/postgres"
-    
+    import asyncpg
+    if not settings.POSTGRES_PASSWORD:
+        raise ValueError('Set POSTGRES_PASSWORD in central configuration before PostgreSQL setup')
+    conn = await asyncpg.connect(host=settings.POSTGRES_HOST, port=settings.POSTGRES_PORT,
+        user=settings.POSTGRES_USER, password=settings.POSTGRES_PASSWORD, database='postgres',
+        timeout=settings.POSTGRES_CONNECT_TIMEOUT_SECONDS)
     try:
-        conn = await asyncpg.connect(server_url)
-        
-        # Check if database exists
-        db_exists = await conn.fetchval(
-            "SELECT 1 FROM pg_database WHERE datname = $1",
-            settings.POSTGRES_DB
-        )
-        
-        if not db_exists:
-            # Create database using parameterized query for safety
-            # Note: Database names cannot be parameterized, but we validate the name
-            db_name = settings.POSTGRES_DB
-            # Validate database name to prevent injection
-            if not db_name.replace('_', '').replace('-', '').isalnum():
-                raise ValueError(f"Invalid database name: {db_name}")
-            await conn.execute(f'CREATE DATABASE "{db_name}"')
-            print(f"Created database: {db_name}")
-        else:
-            print(f"Database {settings.POSTGRES_DB} already exists")
-        
+        exists = await conn.fetchval('SELECT 1 FROM pg_database WHERE datname = $1', settings.POSTGRES_DB)
+        if not exists:
+            try:
+                await conn.execute(f'CREATE DATABASE "{settings.POSTGRES_DB}"')
+            except asyncpg.DuplicateDatabaseError:
+                pass
+    finally:
         await conn.close()
-        
-    except asyncpg.InvalidPasswordError:
-        print(f"Authentication failed for user '{settings.POSTGRES_USER}'")
-        print("Please check your PostgreSQL credentials in .env file")
-        raise
-    except asyncpg.CannotConnectNowError:
-        print(f"Cannot connect to PostgreSQL server at {settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}")
-        print("Please make sure PostgreSQL is running")
-        raise
-    except Exception as e:
-        print(f"Error creating database: {e}")
-        print("Make sure PostgreSQL is running and credentials are correct")
-        raise
+
 
 def create_tables():
-    """Create all database tables"""
-    try:
-        Base.metadata.create_all(bind=engine)
-        print("All database tables created successfully")
-    except Exception as e:
-        print(f"Error creating tables: {e}")
-        raise
+    from database.connection import engine, Base
+    from database import models, enhanced_models
+    with engine.begin() as conn:
+        Base.metadata.create_all(bind=conn)
+
 
 async def init_database():
-    """Initialize the complete database setup"""
-    print("Initializing database setup...")
-    
-    # Create database if not exists
     await create_database_if_not_exists()
-    
-    # Create tables
-    create_tables()
-    
-    print("Database initialization completed!")
+    await asyncio.to_thread(create_tables)
+    print('PostgreSQL bootstrap completed. No sample data inserted; existing columns unchanged.')
 
-if __name__ == "__main__":
-    asyncio.run(init_database())
+
+def main():
+    try:
+        asyncio.run(init_database())
+    except Exception as exc:
+        print(f'PostgreSQL bootstrap failed ({type(exc).__name__}). Check configuration and server permissions.', file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

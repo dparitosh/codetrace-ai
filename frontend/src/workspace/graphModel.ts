@@ -1,0 +1,63 @@
+import { domainOf } from './types'
+import type { TraceGraph, TraceNode } from './types'
+
+export function containmentDescendants(graph: TraceGraph, root: string) {
+  const children = new Map<string, string[]>()
+  graph.edges.forEach(edge => {
+    if (['contains', 'defines'].includes(edge.type.split('#').pop()?.split(':').pop() || '')) {
+      children.set(edge.source, [...(children.get(edge.source) || []), edge.target])
+    }
+  })
+  const visited = new Set([root]); const queue = [root]
+  for (let index = 0; index < queue.length; index++) {
+    for (const child of children.get(queue[index]) || []) {
+      if (!visited.has(child)) { visited.add(child); queue.push(child) }
+    }
+  }
+  visited.delete(root)
+  return visited
+}
+
+export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean, limit: number, edgeLimit: number, focusIds?: Set<string>, collapsedIds = new Set<string>(), selectedId?: string | null) {
+  const lifecycleEndpoints = new Set<string>()
+  graph.edges.forEach(edge => {
+    if (edge.properties.origin === 'lifecycle_assertion') {
+      lifecycleEndpoints.add(edge.source); lifecycleEndpoints.add(edge.target)
+    }
+  })
+  let candidates = graph.nodes.filter(node => (domain === 'ALL' || domainOf(node) === domain)
+    && (detail || lifecycleEndpoints.has(node.id) || !['variable', 'external_symbol', 'function', 'method', 'symbol'].includes(node.type)))
+  if (focusIds) candidates = graph.nodes.filter(node => focusIds.has(node.id))
+  const hidden = new Set<string>()
+  collapsedIds.forEach(root => containmentDescendants(graph, root).forEach(id => hidden.add(id)))
+  candidates = candidates.filter(node => !hidden.has(node.id))
+  const degree = new Map<string, number>()
+  graph.edges.forEach(edge => { degree.set(edge.source, (degree.get(edge.source) || 0) + 1); degree.set(edge.target, (degree.get(edge.target) || 0) + 1) })
+  candidates.sort((a, b) => Number(b.id === selectedId) - Number(a.id === selectedId)
+    || Number(lifecycleEndpoints.has(b.id)) - Number(lifecycleEndpoints.has(a.id))
+    || Number(domainOf(b) !== 'CODE') - Number(domainOf(a) !== 'CODE')
+    || (degree.get(b.id) || 0) - (degree.get(a.id) || 0) || a.id.localeCompare(b.id))
+  const nodes = candidates.slice(0, limit)
+  const visible = new Set(nodes.map(node => node.id))
+  const eligibleEdges = graph.edges.filter(edge => visible.has(edge.source) && visible.has(edge.target))
+    .sort((a, b) => Number(b.properties.origin === 'lifecycle_assertion') - Number(a.properties.origin === 'lifecycle_assertion'))
+  const edges = eligibleEdges.slice(0, edgeLimit)
+  return { nodes, edges, omittedEdges: eligibleEdges.length - edges.length, omitted: candidates.length - nodes.length, total: candidates.length }
+}
+
+export function matchingNodes(graph: TraceGraph | null, query: string): TraceNode[] {
+  if (!graph || !query.trim()) return []
+  const value = query.toLowerCase().trim()
+  return graph.nodes.filter(node => `${node.label} ${node.type} ${node.properties.path || ''} ${node.properties.identifier || ''}`.toLowerCase().includes(value)).slice(0, 12)
+}
+
+export function localContext(graph: TraceGraph, nodeId: string, depth = 1) {
+  const ids = new Set([nodeId])
+  for (let iteration = 0; iteration < depth; iteration++) {
+    const boundary = new Set(ids)
+    graph.edges.forEach(edge => {
+      if (boundary.has(edge.source) || boundary.has(edge.target)) { ids.add(edge.source); ids.add(edge.target) }
+    })
+  }
+  return ids
+}

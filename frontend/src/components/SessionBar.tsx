@@ -1,0 +1,57 @@
+import { memo, useEffect, useMemo, useState } from 'react'
+import { endSession, getReview, listReviews, refreshSession, ReviewRecord, startSession, useReviewSession } from '../reviewSession'
+import ReviewPanel from './ReviewPanel'
+
+const ResultPreview = memo(function ResultPreview({ result }: { result: unknown }) {
+  const [open, setOpen] = useState(false)
+  const limit = __APP_CONFIG__.reviewPreviewItems
+  const preview = useMemo(() => open ? JSON.stringify(result, (_key, value) =>
+    Array.isArray(value) && value.length > limit ? [...value.slice(0, limit), { omitted_items: value.length - limit }] : value, 2) : '', [result, open, limit])
+  return <section className="mt-3">
+    <button className="underline" onClick={() => setOpen(value => !value)}>{open ? 'Hide' : 'Inspect'} result preview</button>
+    {open && <><p className="text-sm">Preview limited to {limit} items per list. Approved exports contain the full result.</p><pre className="max-h-96 overflow-auto bg-white p-3 text-xs">{preview}</pre></>}
+  </section>
+})
+
+export default function SessionBar() {
+  const session = useReviewSession()
+  const [now, setNow] = useState(Date.now())
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [reviews, setReviews] = useState<ReviewRecord[] | null>(null)
+  const [selected, setSelected] = useState<ReviewRecord | null>(null)
+  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer) }, [])
+  useEffect(() => { setReviews(null); setSelected(null) }, [session?.token])
+  const remaining = session ? Math.max(0, Math.ceil((session.deadline - Math.max(now, Date.now())) / 1000)) : 0
+  const run = async (action: () => Promise<unknown>) => {
+    setBusy(true); setError('')
+    try { await action() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Session action failed') }
+    finally { setBusy(false) }
+  }
+  return <aside className="border-b bg-indigo-50 px-6 py-3" aria-label="Review session">
+    <div className="flex flex-wrap items-center gap-4 text-sm">
+      <b>{remaining ? `Session expires in ${Math.floor(remaining / 60)}m ${remaining % 60}s` : 'No active review session'}</b>
+      {remaining ? <>
+        <button disabled={busy} onClick={() => run(() => refreshSession(true))} className="underline">Keep session active</button>
+        <button disabled={busy} onClick={() => run(async () => setReviews(await listReviews()))} className="underline">Review history</button>
+        <button disabled={busy} onClick={() => run(endSession)} className="underline">End session and clear reviews</button>
+      </> : <button disabled={busy} onClick={() => run(startSession)} className="underline">Start session</button>}
+      <span>Reviews are held in memory and cleared on expiry or backend restart.</span>
+    </div>
+    {error && <p role="alert" className="mt-2 text-red-700">{error}</p>}
+    {reviews && remaining > 0 && <div className="mt-3 flex flex-wrap gap-3">
+      {!reviews.length && <span>No reviews yet.</span>}
+      {reviews.map(review => <button key={review.id} disabled={busy || review.status === 'processing'}
+        onClick={() => run(async () => setSelected(await getReview(review.id)))} className="rounded border bg-white px-3 py-2">
+        {review.kind} · {review.status} · {new Date(review.created_at).toLocaleTimeString()}
+      </button>)}
+      <button onClick={() => { setReviews(null); setSelected(null) }} className="underline">Close history</button>
+    </div>}
+    {selected && remaining > 0 && <>
+      <ReviewPanel key={selected.id} review={selected} onChange={value => {
+        setSelected(value); setReviews(items => items?.map(item => item.id === value.id ? value : item) || null)
+      }} />
+      <ResultPreview result={selected.result} />
+    </>}
+  </aside>
+}

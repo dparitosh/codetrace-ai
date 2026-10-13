@@ -1,12 +1,10 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_HOST: string
-  readonly VITE_BACKEND_PORT: string
-  readonly VITE_FRONTEND_PORT: string
-  readonly VITE_BACKEND_URL: string
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
+declare const __APP_CONFIG__: {
+  reviewPreviewItems: number
+  controlTimeout: number
+  host: string
+  backendPort: number
+  frontendPort: number
+  backendUrl: string
 }

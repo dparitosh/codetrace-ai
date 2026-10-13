@@ -2,6 +2,7 @@
 
 import ast
 import re
+import symtable
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,21 +16,33 @@ class Node:
     attrs: Dict[str, Any] = field(default_factory=dict)
 
 
+class GraphLimitExceeded(ValueError):
+    """Extraction exceeded the caller's configured graph budget."""
+
+
 class InMemoryGraph:
     """Small graph API used by the core; NetworkX remains an optional adapter."""
-    def __init__(self):
+    def __init__(self, max_nodes=None, max_edges=None):
         self.nodes: Dict[str, Node] = {}
         self.edges: Dict[str, List[Tuple[str, str, Dict[str, Any]]]] = {}
+        self.max_nodes = max_nodes
+        self.max_edges = max_edges
+        self.edge_count = 0
 
     def upsert_node(self, id: str, type: str, **attrs):
         if id in self.nodes:
             self.nodes[id].attrs.update(attrs)
         else:
+            if self.max_nodes is not None and len(self.nodes) >= self.max_nodes:
+                raise GraphLimitExceeded('Graph node limit exceeded; analyze a smaller source selection')
             self.nodes[id] = Node(id=id, type=type, attrs=attrs)
         return self.nodes[id]
 
     def add_edge(self, src: str, dst: str, etype: str, **attrs):
+        if self.max_edges is not None and self.edge_count >= self.max_edges:
+            raise GraphLimitExceeded('Graph edge limit exceeded; analyze a smaller source selection')
         self.edges.setdefault(src, []).append((dst, etype, attrs))
+        self.edge_count += 1
 
     def neighbors(self, id: str) -> List[str]:
         return [dst for dst, _, _ in self.edges.get(id, [])]
@@ -41,9 +54,12 @@ class ScanConfig:
     excludes: Set[str] = field(default_factory=lambda: {
         ".git", "node_modules", ".venv", "venv", "__pycache__", "dist", "build",
         "target", "bin", "obj", ".idea", ".pytest_cache",
+        ".runtime",
     })
     max_file_size: int = 2_000_000
     include_tests: bool = True
+    max_nodes: Optional[int] = None
+    max_edges: Optional[int] = None
 
     def allowed_extensions(self) -> Set[str]:
         return {'.' + value.lower().lstrip('.') for value in (self.extensions or DEFAULT_EXTENSIONS)}
@@ -58,8 +74,8 @@ DEFAULT_EXTENSIONS = {
 
 class CodeGraph:
     def __init__(self, config: Optional[ScanConfig] = None):
-        self.g = InMemoryGraph()
         self.config = config or ScanConfig()
+        self.g = InMemoryGraph(self.config.max_nodes, self.config.max_edges)
         self.last_scan_time: Optional[float] = None
         self.index: Dict[str, Set[str]] = {}
         self._scanners: Dict[str, Callable[[Path, str, str], None]] = {".py": self._scan_python_file}
@@ -74,7 +90,7 @@ class CodeGraph:
     def scan(self, paths: List[str], excludes: Optional[List[str]] = None, *, reset: bool = True):
         excluded = set(self.config.excludes) | set(excludes or [])
         if reset:
-            self.g = InMemoryGraph()
+            self.g = InMemoryGraph(self.config.max_nodes, self.config.max_edges)
             self.index.clear()
         start = time.time()
         files_scanned = 0
@@ -106,7 +122,7 @@ class CodeGraph:
     def scan_sources(self, sources: List[Dict[str, str]], *, reset: bool = True):
         """Scan source files supplied by a client without requiring server paths."""
         if reset:
-            self.g = InMemoryGraph()
+            self.g = InMemoryGraph(self.config.max_nodes, self.config.max_edges)
             self.index.clear()
         start = time.time()
         files_scanned = 0
@@ -114,13 +130,15 @@ class CodeGraph:
             name = str(source_file.get("path", "untitled"))
             content = str(source_file.get("content", ""))
             extension = Path(name).suffix.lower()
-            if extension not in self.config.allowed_extensions() or len(content.encode("utf-8")) > self.config.max_file_size:
+            if extension not in self.config.allowed_extensions():
                 continue
             path = Path(name)
             if any(part in self.config.excludes for part in path.parts):
                 continue
             if not self.config.include_tests and ("test" in path.stem.lower() or "tests" in path.parts):
                 continue
+            if len(content.encode('utf-8')) > self.config.max_file_size:
+                raise ValueError(f'Source file exceeds {self.config.max_file_size} bytes: {name}')
             file_id = "file:" + path.as_posix()
             self.g.upsert_node(file_id, "file", path=path.as_posix(), extension=extension,
                                loc=content.count("\n") + 1)
@@ -154,6 +172,7 @@ class CodeGraph:
     def _scan_python_file(self, p: Path, source: str, file_id: str):
         try:
             tree = ast.parse(source)
+            symbol_table = symtable.symtable(source, str(p), 'exec')
         except (SyntaxError, ValueError):
             self._scan_generic_file(p, source, file_id)
             return
@@ -212,13 +231,25 @@ class CodeGraph:
                 for target in _assigned_names(node):
                     add_variable(module_id, target, node.lineno, "module")
 
+        scopes = {}
+        def collect_scopes(table):
+            for child in table.get_children():
+                scopes[(child.get_name(), child.get_lineno())] = child
+                collect_scopes(child)
+        collect_scopes(symbol_table)
         for function_id, function_node in functions:
-            for call in ast.walk(function_node):
+            scope = scopes[(function_node.name, function_node.lineno)]
+            for call in _function_body_nodes(function_node):
                 if isinstance(call, ast.Call) and isinstance(call.func, ast.Name):
-                    target = function_by_name.get(call.func.id, "symbol:" + call.func.id)
+                    binding = scope.lookup(call.func.id)
+                    # A parameter/local/import shadows any same-named module function.
+                    target = (function_by_name.get(call.func.id, "symbol:" + call.func.id)
+                              if binding.is_global() else f'symbol:{function_id}::{call.func.id}')
                     if target not in self.g.nodes:
                         self.g.upsert_node(target, "external_symbol", name=call.func.id, language="python")
                     self.g.add_edge(function_id, target, "calls", name=call.func.id)
+
+
 
     def _scan_generic_file(self, p: Path, source: str, file_id: str):
         """Best-effort scanner for languages without an installed parser."""
@@ -250,6 +281,19 @@ class CodeGraph:
                     "code": "\n".join(lines[start - 1:end])}
         except (OSError, ValueError):
             return None
+
+
+def _function_body_nodes(node):
+    """Do not attribute calls in a nested scope to its enclosing function."""
+    pending = list(reversed(node.body))
+    scopes = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda,
+              ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
+    while pending:
+        child = pending.pop()
+        if isinstance(child, scopes):
+            continue
+        yield child
+        pending.extend(reversed(list(ast.iter_child_nodes(child))))
 
 
 def _assigned_names(node: Any) -> List[str]:
