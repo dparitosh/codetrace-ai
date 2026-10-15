@@ -11,6 +11,7 @@ from graph.traceability import neighborhood
 from services.workspace_service import build_managed_snapshot
 from services.companion_service import answer_question
 from services.oslc_service import server_secret
+from services.oslc_store import LINK_PREDICATES
 
 workspace_router = APIRouter(tags=['Managed Intelligence Workspace'])
 
@@ -43,14 +44,18 @@ def workspace_catalog():
                         for item in settings.MANAGED_REPOSITORIES],
             'providers': [{'id': item.id, 'label': item.label, 'domain': item.domain,
                 'transport': 'file' if item.file_path else 'network',
-                'credential_configured': bool(server_secret(item.token_env)) if item.token_env else None}
+                'allow_writes': item.allow_writes,
+                'credential_configured': (bool(server_secret(item.username_env) and server_secret(item.password_env)) if item.auth_type == 'basic'
+                                          else bool(server_secret(item.token_env)) if item.token_env else None)}
                 for item in settings.OSLC_PROVIDERS],
             'pipelines': [{'id': item.id, 'label': item.label, 'platform': item.platform, 'repository_id': item.repository_id}
                           for item in settings.CI_PROVIDERS],
             'ai': {'provider': settings.AI_PROVIDER, 'model': settings.AI_MODEL,
                    'timeout_seconds': settings.AI_TIMEOUT_SECONDS},
             'settings': {'request_timeout_seconds': settings.REQUEST_TIMEOUT_SECONDS,
+                         'collaboration_timeout_seconds': settings.OSLC_TIMEOUT_SECONDS * 3 + 15,
                          'render_nodes': settings.WORKSPACE_RENDER_NODES, 'render_edges': settings.WORKSPACE_RENDER_EDGES},
+            'link_predicates': sorted(LINK_PREDICATES),
             'configuration': 'root .env.local; changes require a service restart'}
 
 
@@ -106,3 +111,12 @@ def workspace_companion(request: CompanionQuery, x_codetrace_session: Optional[s
         return answer
     finally:
         store.workers.release()
+
+
+@workspace_router.get('/sbom/{review_id}')
+def export_sbom(review_id: str, x_codetrace_session: Optional[str] = Header(default=None)):
+    record = review_routes.store.get(x_codetrace_session, review_id, export=True)
+    sbom = record.get('result', {}).get('sbom')
+    if not sbom:
+        raise HTTPException(404, 'This review has no imported or generated SBOM')
+    return sbom

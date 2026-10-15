@@ -1,7 +1,7 @@
-"""Bounded, local-only review sessions. No source content is persisted to disk.
+"""Bounded review sessions, using memory or an administrator-selected SQLite store.
 
-Run a single backend worker: sessions intentionally expire on process restart.
-Session tokens isolate browser tabs; they are not user authentication.
+Memory mode requires one worker and clears on restart. SQLite mode persists until
+expiry/end and supports workers sharing local disk. Tokens are not authentication.
 """
 import hashlib
 import json
@@ -183,7 +183,11 @@ class ReviewStore:
             return self._view(record)
 
 
-store = ReviewStore()
+if settings.SESSION_STORE == 'sqlite':
+    from services.shared_reviews import SQLiteReviewStore
+    store = SQLiteReviewStore(settings.SESSION_DB_PATH)
+else:
+    store = ReviewStore()
 
 
 @review_router.post('/session')

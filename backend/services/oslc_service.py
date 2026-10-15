@@ -6,6 +6,7 @@ never followed as arbitrary navigation; external JSON-LD contexts are disabled.
 import json
 import os
 import base64
+import sqlite3
 from pathlib import Path
 from urllib.parse import unquote, urlsplit, urljoin
 
@@ -142,8 +143,8 @@ def parse_rdf(content, content_type='', suffix=''):
     return graph
 
 
-def ingest_provider(provider, client):
-    graph = Graph()
+def ingest_provider(provider, client, supplied_graph=None):
+    graph = Graph() if supplied_graph is None else supplied_graph
     complete = True
     pages = 0
     visited = set()
@@ -170,7 +171,9 @@ def ingest_provider(provider, client):
             raise ValueError('Combined provider RDF exceeds the graph triple limit')
         return page
 
-    if provider.file_path:
+    if supplied_graph is not None:
+        pass
+    elif provider.file_path:
         path = local_path(provider.file_path)
         if path.stat().st_size > settings.OSLC_MAX_RESPONSE_BYTES:
             raise ValueError('Provider RDF file exceeds OSLC_MAX_RESPONSE_BYTES')
@@ -299,10 +302,14 @@ def collect_oslc(repository_id):
             if provider.repository_ids and repository_id not in provider.repository_ids:
                 continue
             try:
-                nodes, edges, enrich, changes, status = ingest_provider(provider, client)
+                if provider.domain == 'TRS' and provider.endpoint and settings.TRS_INCREMENTAL:
+                    from services.trs_cache import collect_incremental
+                    nodes, edges, enrich, changes, status = collect_incremental(provider, client)
+                else:
+                    nodes, edges, enrich, changes, status = ingest_provider(provider, client)
                 resources.update({node['uri']: node for node in nodes})
                 links.extend(edges); properties.update(enrich); events.extend(changes); statuses.append(status)
-            except (ValueError, OSError, httpx.HTTPError) as exc:
+            except (ValueError, OSError, sqlite3.Error, httpx.HTTPError) as exc:
                 # Endpoint URLs and credentials must not leak through exception strings.
                 statuses.append({'id': provider.id, 'label': provider.label, 'domain': provider.domain,
                                  'status': 'unavailable', 'resources': 0,

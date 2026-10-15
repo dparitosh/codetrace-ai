@@ -83,7 +83,7 @@ def test_invalid_pipeline_payload_is_atomic(monkeypatch):
     monkeypatch.setattr(settings, 'CI_PROVIDERS', [PipelineProvider(id='ci', label='CI', platform='gitlab',
         repository_id='repo', endpoint='https://gitlab.com/api/v4/projects/1/pipelines')])
     payload = json.dumps([{'id': 1, 'sha': 'abc'}, 42]).encode()
-    with patch('services.workspace_service.read_response', return_value=(payload, 'application/json')):
+    with patch('services.workspace_service.read_response', return_value=(payload, 'application/json', None)):
         runs, statuses = pipeline_context('repo', 'urn:repo', 'abc')
     assert runs == []
     assert statuses[0]['status'] == 'unavailable'

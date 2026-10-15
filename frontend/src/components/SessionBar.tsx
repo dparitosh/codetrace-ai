@@ -1,7 +1,7 @@
 import { IxButton } from '@siemens/ix-react'
-import { memo, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, memo, useEffect, useMemo, useState } from 'react'
 import { endSession, getReview, listReviews, refreshSession, ReviewRecord, startSession, useReviewSession } from '../reviewSession'
-import ReviewPanel from './ReviewPanel'
+const ReviewPanel = lazy(() => import('./ReviewPanel'))
 
 const ResultPreview = memo(function ResultPreview({ result }: { result: unknown }) {
   const [open, setOpen] = useState(false)
@@ -37,7 +37,7 @@ export default function SessionBar() {
         <IxButton disabled={busy} onClick={() => run(async () => setReviews(await listReviews()))} className="underline">Review history</IxButton>
         <IxButton disabled={busy} onClick={() => run(endSession)} className="underline">End session and clear reviews</IxButton>
       </> : <IxButton disabled={busy} onClick={() => run(startSession)} className="underline">Start session</IxButton>}
-      <span>Reviews are held in memory and cleared on expiry or backend restart.</span>
+      <span>{session?.retention || 'Reviews are cleared when the session ends or expires.'}</span>
     </div>
     {error && <p role="alert" className="mt-2 text-red-700">{error}</p>}
     {reviews && remaining > 0 && <div className="mt-3 flex flex-wrap gap-3">
@@ -48,11 +48,11 @@ export default function SessionBar() {
       </IxButton>)}
       <IxButton onClick={() => { setReviews(null); setSelected(null) }} className="underline">Close history</IxButton>
     </div>}
-    {selected && remaining > 0 && <>
+    {selected && remaining > 0 && <Suspense fallback={<p>Loading review...</p>}>
       <ReviewPanel key={selected.id} review={selected} onChange={value => {
         setSelected(value); setReviews(items => items?.map(item => item.id === value.id ? value : item) || null)
       }} />
       <ResultPreview result={selected.result} />
-    </>}
+    </Suspense>}
   </aside>
 }

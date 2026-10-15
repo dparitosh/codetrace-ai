@@ -1,9 +1,8 @@
 import { domainOf } from './types'
 import type { TraceGraph, TraceNode } from './types'
 
-export function containmentDescendants(graph: TraceGraph, root: string) {
+function containmentIndex(graph: TraceGraph) {
   const known = new Set(graph.nodes.map(node => node.id))
-  if (!known.has(root)) return new Set<string>()
   const children = new Map<string, string[]>()
   graph.edges.forEach(edge => {
     if (!known.has(edge.source) || !known.has(edge.target)) return
@@ -12,6 +11,12 @@ export function containmentDescendants(graph: TraceGraph, root: string) {
       children.get(edge.source)!.push(edge.target)
     }
   })
+  return { known, children }
+}
+
+function walkDescendants(index: ReturnType<typeof containmentIndex>, root: string) {
+  const { known, children } = index
+  if (!known.has(root)) return new Set<string>()
   const visited = new Set([root]); const queue = [root]
   for (let index = 0; index < queue.length; index++) {
     for (const child of children.get(queue[index]) || []) {
@@ -22,8 +27,14 @@ export function containmentDescendants(graph: TraceGraph, root: string) {
   return visited
 }
 
+export function containmentDescendants(graph: TraceGraph, root: string) {
+  return walkDescendants(containmentIndex(graph), root)
+}
+
 export function revealContextRoot(graph: TraceGraph, collapsedIds: Set<string>, nodeId: string) {
-  return new Set([...collapsedIds].filter(root => !containmentDescendants(graph, root).has(nodeId)))
+  if (!collapsedIds.size) return new Set<string>()
+  const index = containmentIndex(graph)
+  return new Set([...collapsedIds].filter(root => !walkDescendants(index, root).has(nodeId)))
 }
 
 export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean, limit: number, edgeLimit: number, focusIds?: Set<string>, collapsedIds = new Set<string>(), selectedId?: string | null, relationScope: RelationScope = 'all') {
@@ -37,7 +48,10 @@ export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean,
     && (detail || node.id === selectedId || lifecycleEndpoints.has(node.id) || !['variable', 'external_symbol', 'function', 'method', 'symbol'].includes(node.type)))
   if (focusIds) candidates = graph.nodes.filter(node => focusIds.has(node.id) && (domain === 'ALL' || domainOf(node) === domain))
   const hidden = new Set<string>()
-  collapsedIds.forEach(root => containmentDescendants(graph, root).forEach(id => hidden.add(id)))
+  if (collapsedIds.size) {
+    const index = containmentIndex(graph)
+    collapsedIds.forEach(root => walkDescendants(index, root).forEach(id => hidden.add(id)))
+  }
   candidates = candidates.filter(node => !hidden.has(node.id))
   const degree = new Map<string, number>()
   const contextOrder = focusIds ? new Map([...focusIds].map((id, index) => [id, index])) : null
@@ -45,7 +59,8 @@ export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean,
   candidates.sort((a, b) => Number(b.id === selectedId) - Number(a.id === selectedId)
     || (contextOrder ? contextOrder.get(a.id)! - contextOrder.get(b.id)! : 0)
     || Number(lifecycleEndpoints.has(b.id)) - Number(lifecycleEndpoints.has(a.id))
-    || Number(domainOf(b) !== 'CODE') - Number(domainOf(a) !== 'CODE')
+    || Number(b.type === 'repository') - Number(a.type === 'repository')
+    || (domainOf(b) === 'SBOM' ? -1 : Number(domainOf(b) !== 'CODE')) - (domainOf(a) === 'SBOM' ? -1 : Number(domainOf(a) !== 'CODE'))
     || (degree.get(b.id) || 0) - (degree.get(a.id) || 0) || a.id.localeCompare(b.id))
   const nodes = candidates.slice(0, limit)
   const visible = new Set(nodes.map(node => node.id))

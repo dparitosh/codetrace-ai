@@ -97,3 +97,10 @@ html[data-ix-color-schema='dark'] { color-scheme: dark; }
 
 .ix-workspace .search-results { max-height: 360px; overflow-y: auto; }
 .ix-workspace .search-results small { display: block; overflow-wrap: anywhere; white-space: normal; }
+
+.collaboration-panel { padding: 20px; color: var(--ct-text); background: var(--ct-surface); }
+.collaboration-panel label { display: grid; gap: 6px; margin: 12px 0; }
+.collaboration-panel input, .collaboration-panel select, .collaboration-panel textarea { width: 100%; min-width: 0; padding: 8px; color: var(--ct-text); background: var(--ct-background); border: 1px solid var(--ct-border); }
+.link-proposal { margin-top: 16px; padding: 12px; border: 1px solid var(--ct-border); overflow-wrap: anywhere; }
+.collaboration-panel ix-button { margin: 5px; }
+.ix-workspace .focus-chip { background: var(--ct-surface); color: var(--ct-text); border-color: var(--ct-border); }

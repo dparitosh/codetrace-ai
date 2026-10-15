@@ -37,7 +37,7 @@ async def lifespan(_: FastAPI):
     async def expire_sessions():
         while True:
             await asyncio.sleep(min(30, settings.SESSION_IDLE_SECONDS))
-            review_store.prune()
+            await asyncio.to_thread(review_store.prune)
     sweeper = asyncio.create_task(expire_sessions())
     try:
         yield
@@ -45,9 +45,12 @@ async def lifespan(_: FastAPI):
         sweeper.cancel()
         with suppress(asyncio.CancelledError):
             await sweeper
-        with review_store.lock:
-            review_store.sessions.clear()
-            review_store.bytes = 0
+        if hasattr(review_store, 'close'):
+            review_store.close()
+        else:
+            with review_store.lock:
+                review_store.sessions.clear()
+                review_store.bytes = 0
         gc.collect()
         logger.info("CodeTrace AI local source service stopped")
 

@@ -9,6 +9,7 @@ test('npm root dependency specifications agree with the committed lockfile', () 
   for (const section of ['dependencies', 'devDependencies']) {
     assert.deepEqual(lock.packages[''][section], manifest[section])
   }
+  assert.deepEqual(lock.packages[''].engines, manifest.engines)
 })
 test('web frontend does not install unused native and 3D animation renderers', () => {
   for (const name of ['react-native', 'react-spring', '@react-spring/native', '@react-three/fiber']) {

@@ -66,6 +66,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
         { selector: 'node', style: { 'background-color': 'data(color)', 'shape': 'ellipse', width: 'data(weight)', height: 'data(weight)',
           'border-width': 2, 'border-color': palette.surface, 'label': 'data(label)', 'font-size': 10,
           'font-family': 'Siemens Sans, system-ui, sans-serif', 'color': palette.text, 'text-valign': 'bottom', 'text-margin-y': 9,
+          'text-wrap': 'wrap', 'text-max-width': '72px', 'text-overflow-wrap': 'anywhere',
           'text-background-color': palette.surface, 'text-background-opacity': 0.9, 'text-background-padding': '3px' } },
         { selector: 'edge', style: { width: 1.2, 'line-color': palette.edge, 'target-arrow-color': palette.edge,
           'target-arrow-shape': 'triangle', 'arrow-scale': 0.65, 'curve-style': 'bezier', opacity: 0.65 } },
@@ -79,7 +80,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
       ],
       layout: reuseLayout ? { name: 'preset', positions: Object.fromEntries(previous.positions), fit: false }
         : { name: layout, directed: true, roots: focus && direction === 'outgoing' ? [focus] : undefined,
-          spacingFactor: 1.25, avoidOverlap: true, animate: false, padding: 55, randomize: true, nodeRepulsion: 13000,
+          spacingFactor: 1.25, avoidOverlap: true, nodeDimensionsIncludeLabels: true, animate: false, padding: 55, randomize: true, nodeRepulsion: 13000,
           idealEdgeLength: 100, gravity: 0.35, numIter: 600 } as cytoscape.LayoutOptions,
     })
     cy.current = engine

@@ -12,15 +12,15 @@ if ($python -and $python.Source -match 'WindowsApps') { $python = $null }
 $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
 if (-not $npm) { $npm = Get-Command npm -ErrorAction SilentlyContinue }
 if (-not $python) { throw 'Python 3.10+ is required. Install Python or pass -PythonPath with a working executable path.' }
-if (-not $npm) { throw 'Node.js 22.12+ (22.x), 24.x or 26+ with npm is required. Install it from https://nodejs.org/ and reopen PowerShell.' }
+if (-not $npm) { throw 'Node.js 22.19+ (22.x), 24.x or 26+ with npm is required. Install it from https://nodejs.org/ and reopen PowerShell.' }
 
 Push-Location $root
 try {
     if (-not (Test-Path '.env.local')) { Copy-Item '.env.local.example' '.env.local' }
     $nodeVersion = (& node --version).TrimStart('v')
     $parsedNodeVersion = [version]$nodeVersion
-    $supportedNode = ($parsedNodeVersion.Major -eq 22 -and $parsedNodeVersion.Minor -ge 12) -or $parsedNodeVersion.Major -eq 24 -or $parsedNodeVersion.Major -ge 26
-    if ($LASTEXITCODE -ne 0 -or -not $supportedNode) { throw 'Use Node.js 22.12+ (22.x), 24.x or 26+ for the patched toolchain.' }
+    $supportedNode = ($parsedNodeVersion.Major -eq 22 -and $parsedNodeVersion.Minor -ge 19) -or $parsedNodeVersion.Major -eq 24 -or $parsedNodeVersion.Major -ge 26
+    if ($LASTEXITCODE -ne 0 -or -not $supportedNode) { throw 'Use Node.js 22.19+ (22.x), 24.x or 26+ for the patched toolchain.' }
     if (-not (Test-Path '.venv\Scripts\python.exe')) {
         & $python.Source -m venv .venv
         if ($LASTEXITCODE -ne 0) { throw 'Virtual environment creation failed.' }

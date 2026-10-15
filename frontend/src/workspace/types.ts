@@ -10,10 +10,11 @@ export interface TraceGraph {
 }
 export interface Catalog {
   sources: { id: string; label: string; kind: string; ref: string | null }[]
-  providers: { id: string; label: string; domain: string; transport: string; credential_configured: boolean | null }[]
+  providers: { id: string; label: string; domain: string; transport: string; credential_configured: boolean | null; allow_writes?: boolean }[]
+  link_predicates?: string[]
   pipelines: { id: string; label: string; platform: string; repository_id: string }[]
   ai: { provider: string; model: string; timeout_seconds: number }
-  settings: { request_timeout_seconds: number; render_nodes: number; render_edges: number }
+  settings: { request_timeout_seconds: number; render_nodes: number; render_edges: number; collaboration_timeout_seconds?: number }
   configuration: string
 }
 export interface CompanionAnswer {
@@ -25,7 +26,7 @@ export interface CompanionAnswer {
 
 export const domainColors: Record<string, string> = {
   CODE: '#687fa1', AM: '#0e9c91', RM: '#7963bd', CM: '#d89239', QM: '#548f65',
-  TRS: '#d26873', CONFIG: '#69899e', SCHEMA: '#778590', CI: '#548bc4', EXTERNAL: '#9ba5af',
+  TRS: '#d26873', CONFIG: '#69899e', SCHEMA: '#778590', CI: '#548bc4', SBOM: '#ae784b', EXTERNAL: '#9ba5af',
 }
 export const domainOf = (node: TraceNode) => String(node.properties.domain || 'CODE')
 export const relationLabel = (value: string) => value.split('#').pop()?.split(':').pop() || value

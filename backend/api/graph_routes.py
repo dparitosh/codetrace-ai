@@ -16,6 +16,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from core.config import settings
+from services.git_isolation import git_command, git_environment
 
 graph_router = APIRouter(tags=["Graph Analysis"])
 MAX_LOCAL_FILES = settings.MAX_LOCAL_FILES
@@ -198,14 +199,14 @@ def analyze_local_sources(request: LocalGraphRequest):
 def generate_gitlab_graph(request: GitLabGraphRequest):
     project_url = _validate_gitlab_url(str(request.project_url))
     clone_url = project_url if project_url.endswith(".git") else f"{project_url}.git"
-    command = ["git", "-c", "http.followRedirects=false", "-c", "core.hooksPath=", "clone", "--depth", "1"]
+    command = git_command() + ["clone", "--depth", "1"]
     if request.ref:
         command.extend(["--branch", request.ref])
     with tempfile.TemporaryDirectory(prefix="codetrace-gitlab-") as temp_dir:
         target = Path(temp_dir) / "project"
         try:
             completed = subprocess.run(command + ["--", clone_url, str(target)], capture_output=True, text=True, timeout=settings.GITLAB_CLONE_TIMEOUT_SECONDS, check=False,
-                                       env={**os.environ, "GIT_TERMINAL_PROMPT": "0", "GCM_INTERACTIVE": "Never"})
+                                       env=git_environment(Path(temp_dir) / 'git-home'))
         except FileNotFoundError as exc:
             raise HTTPException(status_code=503, detail="Git is required for GitLab project analysis") from exc
         except subprocess.TimeoutExpired as exc:

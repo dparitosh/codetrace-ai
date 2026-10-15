@@ -14,6 +14,10 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 
+class DatabaseUnavailable(RuntimeError):
+    """A storage failure, distinct from a successful query with no matching rows."""
+
+
 class DatabaseFallback:
     """In-memory fallback database for when PostgreSQL is unavailable"""
 
@@ -94,51 +98,25 @@ class EnhancedDatabase:
                 await asyncio.sleep(2)
                 await self.initialize()
 
-    async def execute(self, query: str, values: Optional[Dict] = None):
-        """Execute query with fallback handling"""
-        if self.use_fallback:
-            logger.debug(f"Database in fallback mode, skipping query: {query[:50]}...")
-            return None
-
+    async def _query(self, method, query, values=None):
+        if self.use_fallback or not self.database or not self.is_connected:
+            raise DatabaseUnavailable('PostgreSQL is unavailable; no query was executed')
         try:
-            if self.database and self.is_connected:
-                return await self.database.execute(query, values)
-        except Exception as e:
-            logger.error(f"Database query failed: {e}")
-            await self._handle_connection_error()
-            return None
+            return await getattr(self.database, method)(query, values)
+        except Exception as exc:
+            self.is_connected = False
+            logger.error('PostgreSQL operation failed (%s)', type(exc).__name__)
+            # Never replay an ambiguous write or return an apparent empty success.
+            raise DatabaseUnavailable('PostgreSQL operation failed; verify its outcome before retrying') from exc
+
+    async def execute(self, query: str, values: Optional[Dict] = None):
+        return await self._query('execute', query, values)
 
     async def fetch_all(self, query: str, values: Optional[Dict] = None):
-        """Fetch all results with fallback handling"""
-        if self.use_fallback:
-            logger.debug(
-                f"Database in fallback mode, returning empty results for: {query[:50]}..."
-            )
-            return []
-
-        try:
-            if self.database and self.is_connected:
-                return await self.database.fetch_all(query, values)
-        except Exception as e:
-            logger.error(f"Database fetch failed: {e}")
-            await self._handle_connection_error()
-            return []
+        return await self._query('fetch_all', query, values)
 
     async def fetch_one(self, query: str, values: Optional[Dict] = None):
-        """Fetch one result with fallback handling"""
-        if self.use_fallback:
-            logger.debug(
-                f"Database in fallback mode, returning None for: {query[:50]}..."
-            )
-            return None
-
-        try:
-            if self.database and self.is_connected:
-                return await self.database.fetch_one(query, values)
-        except Exception as e:
-            logger.error(f"Database fetch one failed: {e}")
-            await self._handle_connection_error()
-            return None
+        return await self._query('fetch_one', query, values)
 
     async def _handle_connection_error(self):
         """Handle database connection errors"""
@@ -219,7 +197,8 @@ def create_tables():
             Base.metadata.create_all(bind=engine)
             logger.info("Database tables created successfully")
         except Exception as e:
-            logger.error(f"Failed to create database tables: {e}")
+            logger.error("Failed to create database tables (%s)", type(e).__name__)
+            raise DatabaseUnavailable("PostgreSQL schema initialization failed") from e
     else:
         logger.info("Skipping table creation - using fallback mode")
 

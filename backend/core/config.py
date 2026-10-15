@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     SESSION_IDLE_SECONDS: int = Field(default=DEFAULTS['SESSION_IDLE_SECONDS'], ge=1)
     SESSION_MAX_SECONDS: int = Field(default=DEFAULTS['SESSION_MAX_SECONDS'], ge=1)
     MAX_SESSIONS: int = Field(default=DEFAULTS['MAX_SESSIONS'], ge=1)
+    SESSION_STORE: Literal['memory', 'sqlite'] = 'memory'
+    SESSION_DB_PATH: Path = PROJECT_ROOT / 'data/reviews.sqlite3'
     MAX_REVIEWS_PER_SESSION: int = Field(default=DEFAULTS['MAX_REVIEWS_PER_SESSION'], ge=1)
     MAX_REVIEW_STORAGE_BYTES: int = Field(default=DEFAULTS['MAX_REVIEW_STORAGE_BYTES'], ge=1)
     MAX_CONCURRENT_ANALYSES: int = Field(default=DEFAULTS['MAX_CONCURRENT_ANALYSES'], ge=1)
@@ -61,11 +63,19 @@ class Settings(BaseSettings):
     MANAGED_REPOSITORIES: List[ManagedRepository] = Field(default_factory=lambda: [
         ManagedRepository(id='workspace', label='CodeTrace workspace', kind='local', path='.')])
     OSLC_PROVIDERS: List[OSLCProvider] = Field(default_factory=list)
+    CI_MAX_PAGES: int = Field(default=5, ge=1, le=100)
+    CI_MAX_RUNS: int = Field(default=100, ge=1, le=2000)
     CI_PROVIDERS: List[PipelineProvider] = Field(default_factory=list)
     OSLC_TIMEOUT_SECONDS: int = Field(default=20, ge=1, le=120)
     OSLC_MAX_PAGES: int = Field(default=10, ge=1, le=100)
     OSLC_MAX_RESOURCES: int = Field(default=500, ge=1, le=5000)
     OSLC_MAX_RESPONSE_BYTES: int = Field(default=2000000, ge=1)
+    SBOM_MAX_BYTES: int = Field(default=10000000, ge=1)
+    SBOM_MAX_COMPONENTS: int = Field(default=2000, ge=1, le=10000)
+    TRS_INCREMENTAL: bool = True
+    TRS_CACHE_PATH: Path = PROJECT_ROOT / 'data/trs.sqlite3'
+    TRS_CACHE_EVENTS: int = Field(default=1000, ge=1, le=10000)
+    TRS_CACHE_MAX_BYTES: int = Field(default=20000000, ge=1)
     AI_PROVIDER: Literal['disabled', 'ollama', 'openai-compatible'] = 'disabled'
     AI_BASE_URL: str = 'http://127.0.0.1:11434'
     AI_MODEL: str = ''
@@ -127,7 +137,7 @@ class Settings(BaseSettings):
                 self.frontend_url, f'http://localhost:{self.FRONTEND_PORT}',
                 f'http://127.0.0.1:{self.FRONTEND_PORT}',
             ]))
-        for name in ('UPLOAD_DIR', 'TEMP_DIR', 'LOG_DIR', 'OSLC_DB_PATH'):
+        for name in ('UPLOAD_DIR', 'TEMP_DIR', 'LOG_DIR', 'OSLC_DB_PATH', 'SESSION_DB_PATH', 'TRS_CACHE_PATH'):
             value = getattr(self, name)
             if not value.is_absolute():
                 setattr(self, name, PROJECT_ROOT / value)

@@ -19,11 +19,12 @@ from core.config import settings
 from graph.traceability import TYPE_URIS, CT
 from services.oslc_service import parse_rdf, server_secret
 from services.oslc_client import OSLCClient
-from services.oslc_store import OSLCStore, OSLC, AM, QM, TRS, LINK_PREDICATES, graph_from_body
+from api.trace_routes import URI
+from services.oslc_store import OSLCStore, OSLC, AM, QM, TRS, LINK_PREDICATES, graph_from_body, now
 
 oslc_router = APIRouter(tags=['OSLC Server'])
 collaboration_router = APIRouter(tags=['OSLC Collaboration'])
-KINDS = sorted(set(TYPE_URIS) | {'repository', 'package', 'file', 'module', 'class', 'function', 'method', 'variable', 'symbol', 'external_symbol', 'external_resource', 'build', 'feature', 'variant', 'product'})
+KINDS = sorted(set(TYPE_URIS) | {'repository', 'package', 'file', 'module', 'class', 'function', 'method', 'variable', 'symbol', 'external_symbol', 'external_resource', 'build', 'feature', 'variant', 'product', 'sbom_component'})
 
 
 @lru_cache(maxsize=1)
@@ -319,3 +320,111 @@ def discover_provider(provider_id: str, x_codetrace_session: Optional[str] = Hea
             return client.discovery()
     except (ValueError, httpx.HTTPError) as exc:
         raise HTTPException(502, 'Service discovery failed. Check central provider settings and credentials.') from exc
+
+
+class LinkProposalRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    review_id: str = Field(min_length=1, max_length=128)
+    provider_id: str = Field(min_length=1, max_length=80)
+    source: URI
+    predicate: URI
+    target: URI
+
+
+class ProposalAction(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    version: int = Field(ge=0)
+    note: str = Field(default='', max_length=2000)
+
+
+class ProposalDecision(ProposalAction):
+    action: Literal['approved', 'rejected']
+
+
+def writable_provider(provider_id):
+    provider = next((item for item in settings.OSLC_PROVIDERS if item.id == provider_id), None)
+    if not provider or not provider.endpoint:
+        raise HTTPException(404, 'Network OSLC provider was not found')
+    if not provider.allow_writes:
+        raise HTTPException(403, 'Provider writes are disabled in central configuration')
+    return provider
+
+
+@collaboration_router.get('/proposals')
+def list_proposals(offset: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=100), x_codetrace_session: Optional[str] = Header(None)):
+    return publication_store().proposals(session_owner(x_codetrace_session), offset, limit)
+
+
+@collaboration_router.post('/proposals')
+def propose_link(request: LinkProposalRequest, x_codetrace_session: Optional[str] = Header(None)):
+    owner = session_owner(x_codetrace_session)
+    record = review_routes.store.get(x_codetrace_session, request.review_id, export=True)
+    nodes = {node['id']: node for node in record.get('result', {}).get('nodes', [])}
+    source, target = nodes.get(request.source), nodes.get(request.target)
+    if not source or not target or source['properties'].get('deleted') or target['properties'].get('deleted'):
+        raise HTTPException(422, 'Both link endpoints must be active resources in the approved graph')
+    if source['properties'].get('provider_id') != request.provider_id or request.predicate not in LINK_PREDICATES:
+        raise HTTPException(422, 'Select the source provider and a supported contextual predicate')
+    provider = writable_provider(request.provider_id)
+    try:
+        with OSLCClient(provider) as client:
+            prepared = client.prepare_link(request.source, request.predicate, request.target)
+    except (ValueError, httpx.HTTPError) as exc:
+        raise HTTPException(502, 'Cannot prepare remote link; check access, representation and strong ETag support') from exc
+    session_owner(x_codetrace_session)
+    if prepared['already_linked']:
+        raise HTTPException(409, 'The remote resource already contains this link')
+    return publication_store().propose(owner, {**request.model_dump(), **prepared, 'result_digest': record['result_digest'],
+                                             'audit': [{'action': 'prepared', 'at': now()}]})
+
+
+@collaboration_router.post('/proposals/{proposal_id}/decision')
+def decide_link(proposal_id: str, request: ProposalDecision, x_codetrace_session: Optional[str] = Header(None)):
+    owner = session_owner(x_codetrace_session)
+    return publication_store().transition(proposal_id, owner, 'pending', request.version, request.action, {'note': request.note})
+
+
+@collaboration_router.post('/proposals/{proposal_id}/apply')
+def apply_link(proposal_id: str, request: ProposalAction, x_codetrace_session: Optional[str] = Header(None)):
+    owner = session_owner(x_codetrace_session)
+    store = publication_store()
+    proposal = store.proposal(proposal_id, owner)
+    provider = writable_provider(proposal['provider_id'])
+    record = review_routes.store.get(x_codetrace_session, proposal['review_id'], export=True)
+    if record['result_digest'] != proposal['result_digest']:
+        raise HTTPException(409, 'Approved graph changed; prepare a new proposal')
+    applying = store.transition(proposal_id, owner, 'approved', request.version, 'applying')
+    try:
+        with OSLCClient(provider) as client:
+            outcome = client.apply_link(proposal['source'], proposal['predicate'], proposal['target'], proposal['expected_etag'],
+                                        authorize=lambda: session_owner(x_codetrace_session))
+    except (ValueError, httpx.HTTPError, HTTPException) as exc:
+        state = 'conflict' if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 412 else 'unknown'
+        result = store.transition(proposal_id, owner, 'applying', applying['version'], state,
+                                  {'message': 'Remote outcome requires reconciliation; no automatic write retry.'})
+    else:
+        state = 'unknown' if outcome.get('status_code') == 202 else 'applied'
+        result = store.transition(proposal_id, owner, 'applying', applying['version'], state, {'remote_etag': outcome.get('etag')})
+    session_owner(x_codetrace_session)  # Persist the audit, but never disclose a late response after expiry.
+    return result
+
+
+@collaboration_router.post('/proposals/{proposal_id}/reconcile')
+def reconcile_link(proposal_id: str, request: ProposalAction, x_codetrace_session: Optional[str] = Header(None)):
+    from datetime import datetime, timezone
+    owner = session_owner(x_codetrace_session)
+    store = publication_store()
+    proposal = store.proposal(proposal_id, owner)
+    if proposal['status'] not in {'unknown', 'conflict', 'not_observed', 'applying'}:
+        raise HTTPException(409, 'Only uncertain or conflicted remote outcomes require reconciliation')
+    if proposal['status'] == 'applying' and (datetime.now(timezone.utc) - datetime.fromisoformat(proposal['updated_at'])).total_seconds() < settings.OSLC_TIMEOUT_SECONDS * 2 + 60:
+        raise HTTPException(409, 'The write may still be active; wait before reconciling')
+    provider = writable_provider(proposal['provider_id'])
+    try:
+        with OSLCClient(provider) as client:
+            exists = client.link_exists(proposal['source'], proposal['predicate'], proposal['target'])
+    except (ValueError, httpx.HTTPError) as exc:
+        raise HTTPException(502, 'Remote link state could not be read; outcome remains uncertain') from exc
+    session_owner(x_codetrace_session)
+    return store.transition(proposal_id, owner, proposal['status'], request.version, 'applied' if exists else 'not_observed',
+                            {'message': 'Remote link observed.' if exists else 'Link not currently observed. Prepare a new proposal with a fresh ETag before any new write.'})

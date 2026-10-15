@@ -1,17 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Activity, ArrowUpRight, Boxes, CheckCircle2, CircleDot, GitBranch, Network, Search, Settings2, ShieldCheck, Sparkles, Workflow, FileCode2, AlertCircle, X, Link2 } from 'lucide-react'
 import { IxApplication, IxApplicationHeader, IxMenu, IxMenuItem, IxMenuCategory, IxContent, IxButton, IxSelect, IxSelectItem, IxAvatar } from '@siemens/ix-react'
 import { iconGraph, iconTable, iconHistory, iconCheck, iconUserSettings, iconCode, iconRefresh, iconNetworkDevice } from '@siemens/ix-icons/icons'
 import { requestJson, ReviewRecord, workspaceRequest, useReviewSession } from '../reviewSession'
 import { Catalog, domainColors, domainOf, TraceGraph, TraceNode } from './types'
-import InteractiveGraph from './InteractiveGraph'
+const InteractiveGraph = lazy(() => import('./InteractiveGraph'))
 import { matchingNodes } from './graphModel'
-import Companion from './Companion'
+const Companion = lazy(() => import('./Companion'))
+const CollaborationPanel = lazy(() => import('./CollaborationPanel'))
 import SessionBar from '../components/SessionBar'
-import ReviewPanel from '../components/ReviewPanel'
-import AnalysisPage from '../components/AnalysisPage'
-import QualityPage from '../components/QualityPage'
-import SecurityPage from '../components/SecurityPage'
+const ReviewPanel = lazy(() => import('../components/ReviewPanel'))
+const AnalysisPage = lazy(() => import('../components/AnalysisPage'))
+const QualityPage = lazy(() => import('../components/QualityPage'))
+const SecurityPage = lazy(() => import('../components/SecurityPage'))
 import './workspace.css'
 import './siemens-ui.css'
 
@@ -61,7 +62,7 @@ export default function Workspace() {
   }, [graph])
   const filteredResources = useMemo(() => (resourceQuery.trim() ? matchingNodes(graph, resourceQuery, Infinity) : graph?.nodes || []).filter(node => resourceDomain === 'ALL' || domainOf(node) === resourceDomain), [graph, resourceQuery, resourceDomain])
   const resources = filteredResources.slice(0, resourceLimit)
-  const lifecycleCount = graph?.nodes.filter(node => domainOf(node) !== 'CODE').length || 0
+  const lifecycleCount = graph?.nodes.filter(node => ['AM', 'RM', 'CM', 'QM', 'TRS', 'CONFIG', 'SCHEMA'].includes(domainOf(node))).length || 0
   const lifecycleLinks = graph?.edges.filter(edge => edge.properties.origin === 'lifecycle_assertion').length || 0
   const connectors = graph?.metadata.connectors || []
   const sourceLabel = catalog?.sources.find(item => item.id === source)?.label || 'Managed workspace'
@@ -100,10 +101,11 @@ export default function Workspace() {
         {graph && connectors.some((item: any) => item.status !== 'ready') && <div className="workspace-alert caution"><AlertCircle size={16} /><span>Some lifecycle connections are partial or unavailable. Review connection evidence before making impact claims.</span><button onClick={() => navigate('connections')}>View status</button></div>}
         {['graph', 'resources', 'activity', 'review'].includes(view) && <div className="metric-strip">
           <Metric label="SOURCE FILES" value={graph?.metadata.files || 0} note={graph ? sourceLabel : 'Awaiting synchronization'} icon={<FileCode2 size={17} />} />
-          <Metric label="GRAPH RESOURCES" value={graph?.nodes.length || 0} note={`${domainCounts.CODE || 0} code · ${lifecycleCount} lifecycle`} icon={<Boxes size={17} />} />
+          <Metric label="GRAPH RESOURCES" value={graph?.nodes.length || 0} note={`${domainCounts.CODE || 0} code · ${lifecycleCount} lifecycle · ${domainCounts.SBOM || 0} SBOM`} icon={<Boxes size={17} />} />
           <Metric label="LIFECYCLE LINKS" value={lifecycleLinks} note={catalog?.providers.length ? 'Explicit provider assertions' : 'Configure OSLC providers to connect'} icon={<Link2 size={17} />} />
           <Metric label="REVIEW STATE" value={review?.status || 'Ready'} note={review ? `Snapshot · ${review.elapsed_seconds}s to index` : 'Every result starts pending'} icon={<ShieldCheck size={17} />} />
         </div>}
+        <Suspense fallback={<p role="status">Loading workspace tools...</p>}>
         {view === 'graph' && <div className="explorer-grid"><div className="explorer-left"><InteractiveGraph graph={graph} selected={selected?.id || null} onSelect={setSelected} busy={busy} />
           <div className="evidence-strip"><div><span className="live-dot" /><strong>{graph ? 'Evidence synchronized' : 'Source catalog ready'}</strong><span>{graph ? new Date(graph.metadata.indexed_at).toLocaleString() : 'Managed connections are configured centrally'}</span></div><button onClick={() => navigate('activity')}>Track changes<ArrowRightIcon /></button></div>
         </div><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={setSelected} /></div>}
@@ -114,11 +116,12 @@ export default function Workspace() {
           {graph?.trs_events?.length ? [...graph.trs_events].reverse().map(event => <div className="timeline-event" key={event.id}><div className={'event-dot ' + event.action.toLowerCase()} /><div><span className="event-label">{event.action} <small>#{event.order}</small></span><button onClick={() => { const node = graph.nodes.find(item => item.id === event.resource_uri); if (node) { setSelected(node); setView('resources') } }}>{graph.nodes.find(item => item.id === event.resource_uri)?.label || event.resource_uri}</button><p>{event.provider_id} · {event.at ? new Date(event.at).toLocaleString() : 'Time not supplied by provider'}</p></div></div>) : <div className="empty-section"><Activity size={25} /><h3>No imported TRS events yet.</h3><p>Configure a TRS endpoint or RDF export centrally. Change order, checkpoints, and deletion tombstones appear here after sync.</p></div>}
           <div className="checkpoint-list">{connectors.filter((item: any) => item.domain === 'TRS').map((item: any) => <div key={item.id}><strong>{item.label}</strong><span>Checkpoint {item.checkpoint?.latest_order ?? 'unavailable'} · {item.status}</span></div>)}</div></section>
           <section className="plain-panel"><div className="section-title"><div><span className="eyebrow">CONTINUOUS DELIVERY</span><h2>Build evidence</h2></div><Workflow size={20} /></div>{graph?.pipeline_runs?.length ? graph.pipeline_runs.map(run => <div className="pipeline-run" key={run.id}><CheckCircle2 size={18} /><div><strong>{run.label}</strong><p>{run.branch} · {run.revision?.slice(0, 8)}</p></div><span className={'pipeline-status ' + (run.matches_revision ? 'matched' : '')}>{run.status}</span><small>{run.matches_revision ? 'Matches indexed revision' : 'Different revision'}</small></div>) : <div className="empty-section"><Workflow size={25} /><h3>Bring delivery into the picture.</h3><p>Add GitHub Actions or GitLab CI connections to the central catalog. Build status is linked only when its revision matches the source.</p></div>}</section></div>}
-        {view === 'review' && <section className="review-center"><div className="section-title"><div><span className="eyebrow">REVIEW WITH PROVENANCE</span><h2>Snapshot decision</h2></div><ShieldCheck size={22} /></div>{review ? <><div className="review-summary"><CircleDot size={18} /><div><strong>{graph?.metadata.source_label}</strong><p>{graph?.nodes.length} resources · {graph?.edges.length} relationships · revision {String(graph?.metadata.revision || 'unversioned').slice(0, 12)}</p></div><span className={'status-pill ' + review.status}>{review.status}</span></div><ReviewPanel key={review.id} review={review} onChange={setReview} /><div className="review-caveat">Review covers this snapshot. Provider gaps and static-analysis limitations remain visible in its evidence.</div></> : <div className="empty-section">Synchronize a managed source to create a reviewable graph snapshot.</div>}</section>}
+        {view === 'review' && <section className="review-center"><div className="section-title"><div><span className="eyebrow">REVIEW WITH PROVENANCE</span><h2>Snapshot decision</h2></div><ShieldCheck size={22} /></div>{review ? <><div className="review-summary"><CircleDot size={18} /><div><strong>{graph?.metadata.source_label}</strong><p>{graph?.nodes.length} resources · {graph?.edges.length} relationships · revision {String(graph?.metadata.revision || 'unversioned').slice(0, 12)}</p></div><span className={'status-pill ' + review.status}>{review.status}</span></div><ReviewPanel key={review.id} review={review} onChange={setReview} />{graph && <Suspense fallback={<p>Loading link collaboration...</p>}><CollaborationPanel key={review.id} review={review} graph={graph} catalog={catalog} selected={selected} /></Suspense>}<div className="review-caveat">Review covers this snapshot. Provider gaps and static-analysis limitations remain visible in its evidence.</div></> : <div className="empty-section">Synchronize a managed source to create a reviewable graph snapshot.</div>}</section>}
         {view === 'connections' && <Connections catalog={catalog} connectors={connectors} />}
         {view === 'analysis' && <AnalysisPage onBack={() => navigate('graph')} onNavigateToGraph={() => navigate('graph')} onNavigateToQuality={() => navigate('quality')} />}
         {view === 'quality' && <QualityPage onBack={() => navigate('graph')} />}
-        {view === 'security' && <SecurityPage />}
+        {view === 'security' && <Suspense fallback={<p>Loading analysis tools...</p>}><SecurityPage /></Suspense>}
+        </Suspense>
         <footer className="workspace-footer"><span>CODETRACE INTELLIGENCE WORKSPACE</span><span>OSLC contextual evidence · local reviewer decisions · session bounded</span><button onClick={() => navigate('connections')}><Settings2 size={12} />Central administration</button></footer>
       </main>
     </IxContent>

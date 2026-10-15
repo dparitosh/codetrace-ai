@@ -277,6 +277,7 @@ class RepositoryService:
                 )
                 session.add(node)
             
+            session.flush()  # Materialize endpoint keys before edge foreign keys.
             # Save edges
             for edge_data in graph_data.get('edges', []):
                 edge = EnhancedGraphEdge(

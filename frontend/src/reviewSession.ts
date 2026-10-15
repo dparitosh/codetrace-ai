@@ -13,7 +13,7 @@ export interface ReviewRecord {
   sessionToken?: string
 }
 
-type Session = { token: string; deadline: number; absoluteDeadline: number }
+type Session = { token: string; deadline: number; absoluteDeadline: number; retention?: string }
 let session: Session | null = null
 let creating: Promise<Session> | null = null
 let generation = 0
@@ -45,7 +45,7 @@ export async function requestJson(url: string, options: RequestInit = {}, timeou
 
 function updateTiming(token: string, data: any) {
   session = { token, deadline: Date.now() + data.expires_in_seconds * 1000,
-    absoluteDeadline: Date.now() + data.absolute_remaining_seconds * 1000 }
+    absoluteDeadline: Date.now() + data.absolute_remaining_seconds * 1000, retention: data.retention }
   notify()
   return session
 }
@@ -134,6 +134,18 @@ export async function exportReview(id: string) {
   await refreshSession().catch(() => undefined)
 }
 
+export async function exportWorkspaceSbom(record: ReviewRecord) {
+  const current = activeSession()
+  if (record.sessionToken !== current.token) throw new Error('This review belongs to a previous session.')
+  const data = await requestJson('/api/v1/workspace/sbom/' + encodeURIComponent(record.id), { headers: headers(current.token) })
+  if (session?.token !== current.token) throw new Error('Session changed while exporting the SBOM.')
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data.document, null, 2)], { type: 'application/json' }))
+  const link = document.createElement('a')
+  link.href = url; link.download = 'codetrace-approved-sbom.json'; link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  await refreshSession().catch(() => undefined)
+}
+
 export async function workspaceRequest<T>(path: string, body: unknown, timeout: number, expectedSession?: string): Promise<T> {
   const current = await startSession()
   if (expectedSession && expectedSession !== current.token) throw new Error('The graph belongs to a previous session. Synchronize the source again.')
@@ -141,4 +153,16 @@ export async function workspaceRequest<T>(path: string, body: unknown, timeout: 
   if (session?.token !== current.token) throw new Error('The session changed during this request.')
   await refreshSession().catch(() => undefined)
   return { ...result, sessionToken: current.token }
+}
+
+export async function collaborationRequest<T>(path: string, expectedSession: string | undefined, body?: unknown, timeout = __APP_CONFIG__.controlTimeout): Promise<T> {
+  const current = activeSession()
+  if (current.token !== expectedSession) throw new Error('This graph belongs to a previous session.')
+  const result = await requestJson('/api/v1/oslc/' + path, {
+    method: body === undefined ? 'GET' : 'POST', headers: headers(current.token),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  }, timeout)
+  if (session?.token !== current.token || current.deadline <= Date.now()) throw new Error('Session expired or changed during collaboration.')
+  await refreshSession().catch(() => undefined)
+  return result
 }

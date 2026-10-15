@@ -37,6 +37,8 @@ export default defineConfig(({ mode }) => {
     preview: { host, port: frontendPort, strictPort: true, proxy },
     build: { outDir: 'dist', sourcemap: true, rollupOptions: { output: { manualChunks: {
       graph: ['cytoscape'],
+      react: ['react', 'react-dom', 'react-dom/client'],
+      icons: ['@siemens/ix-icons/icons'],
     } } } },
     // Only this explicit public projection is bundled into browser code.
     define: { __APP_CONFIG__: JSON.stringify({ host: browserHost, backendPort, frontendPort, backendUrl, controlTimeout, reviewPreviewItems }) },

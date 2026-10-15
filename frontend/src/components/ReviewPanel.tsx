@@ -1,6 +1,6 @@
 import { IxButton } from '@siemens/ix-react'
 import { useEffect, useState } from 'react'
-import { decideReview, exportReview, getReview, ReviewRecord, useReviewSession } from '../reviewSession'
+import { decideReview, exportReview, exportWorkspaceSbom, getReview, ReviewRecord, useReviewSession } from '../reviewSession'
 
 export default function ReviewPanel({ review, onChange }: { review: ReviewRecord; onChange: (review: ReviewRecord) => void }) {
   const [note, setNote] = useState('')
@@ -33,6 +33,7 @@ export default function ReviewPanel({ review, onChange }: { review: ReviewRecord
       </>}
       <IxButton disabled={busy || expired} onClick={() => run(async () => onChange(await getReview(review.id)))} className="rounded border px-4 py-2 disabled:opacity-50">Refresh review</IxButton>
       <IxButton disabled={busy || expired || review.status !== 'approved'} onClick={() => run(() => exportReview(review.id))} className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-50">Download approved result</IxButton>
+      {review.result?.sbom && <IxButton disabled={busy || expired || review.status !== 'approved'} onClick={() => run(() => exportWorkspaceSbom(review))}>Download approved SBOM</IxButton>}
     </div>
     {expired && <p className="mt-3 text-amber-800">Session expired or ended. This displayed result cannot be approved or exported; start a new analysis.</p>}
     {error && <p role="alert" className="mt-3 text-red-700">{error}</p>}

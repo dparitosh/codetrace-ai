@@ -281,7 +281,12 @@ class OSLCStore:
             row = db.execute('SELECT * FROM proposals WHERE id=? AND owner_hash=?', (proposal_id, owner_hash)).fetchone()
             if not row:
                 raise HTTPException(404, 'Link proposal was not found in this session')
-            return {**dict(row), **json.loads(row['body'])}
+            return {key: value for key, value in {**dict(row), **json.loads(row['body'])}.items() if key not in {'owner_hash', 'body'}}
+
+    def proposals(self, owner_hash, offset=0, limit=100):
+        with self.transaction() as db:
+            rows = db.execute('SELECT * FROM proposals WHERE owner_hash=? ORDER BY created_at DESC,id LIMIT ? OFFSET ?', (owner_hash, limit, offset)).fetchall()
+            return [{key: value for key, value in {**dict(row), **json.loads(row['body'])}.items() if key not in {'owner_hash', 'body'}} for row in rows]
 
     def transition(self, proposal_id, owner_hash, expected_status, expected_version, status, details=None):
         with self.transaction(write=True) as db:

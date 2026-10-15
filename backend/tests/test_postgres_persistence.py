@@ -49,3 +49,29 @@ def test_analysis_graph_nodes_and_edges_commit_together(persistence):
         assert session.query(Analysis).count() == 1
         assert session.query(EnhancedGraphNode).count() == 2
         assert session.query(EnhancedGraphEdge).count() == 1
+
+
+def test_graph_identity_is_scoped_and_accepts_long_unicode_ids(persistence):
+    identity = 'https://alm.example/' + '\u6d4b' * 1600
+    for _ in range(2):
+        asyncio.run(persistence.save_analysis_result(1, {'graph': {
+            'nodes': [{'id': identity, 'label': 'Long resource'}], 'edges': []}}))
+    with persistence.get_session() as session:
+        nodes = session.query(EnhancedGraphNode).all()
+        assert len(nodes) == 2 and all(node.node_id == identity for node in nodes)
+        assert all(len(node.node_key) == 64 for node in nodes)
+    with pytest.raises(sqlalchemy.exc.IntegrityError):
+        asyncio.run(persistence.save_analysis_result(1, {'graph': {
+            'nodes': [{'id': identity}, {'id': identity}], 'edges': []}}))
+
+
+def test_graph_edge_cannot_reference_another_graph(persistence):
+    from sqlalchemy import event
+    engine = persistence.Session.kw['bind']
+    with engine.connect() as connection:
+        connection.exec_driver_sql('PRAGMA foreign_keys=ON')
+    with pytest.raises(sqlalchemy.exc.IntegrityError):
+        asyncio.run(persistence.save_analysis_result(1, {'graph': {
+            'nodes': [{'id': 'one'}], 'edges': [{'source': 'one', 'target': 'missing'}]}}))
+    with persistence.get_session() as session:
+        assert session.query(GraphAnalysis).count() == 0

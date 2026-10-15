@@ -3,10 +3,15 @@ Enhanced Database Models for Graph Data + Security Compliance (CVSS, SBOM, SPDX)
 This file extends the existing models.py with enhanced capabilities
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, JSON, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, JSON, Float, ForeignKey, UniqueConstraint, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database.connection import Base
+import hashlib
+
+def identity_key(field):
+    return lambda context: hashlib.sha256(context.get_current_parameters()[field].encode()).hexdigest()
+
 
 # ========================================
 # ENHANCED GRAPH DATA MODELS
@@ -36,15 +41,17 @@ class GraphAnalysis(Base):
 class EnhancedGraphNode(Base):
     """Enhanced graph nodes with hierarchical support"""
     __tablename__ = "enhanced_graph_nodes"
+    __table_args__ = (UniqueConstraint("graph_analysis_id", "node_key", name="uq_graph_node_identity"),)
     
     id = Column(Integer, primary_key=True, index=True)
     graph_analysis_id = Column(Integer, ForeignKey("graph_analyses.id"), nullable=False)
-    node_id = Column(String(255), nullable=False)
-    label = Column(String(255), nullable=False)
+    node_id = Column(Text, nullable=False)
+    node_key = Column(String(64), nullable=False, default=identity_key("node_id"))
+    label = Column(Text, nullable=False)
     node_type = Column(String(100), nullable=False)  # 'file', 'function', 'class', 'module'
     
     # Hierarchical structure
-    parent_node_id = Column(String(255))  # For tree structures
+    parent_node_id = Column(Text)  # For tree structures
     depth_level = Column(Integer, default=0)
     children_count = Column(Integer, default=0)
     
@@ -78,14 +85,20 @@ class EnhancedGraphNode(Base):
 class EnhancedGraphEdge(Base):
     """Enhanced graph edges with detailed relationship types"""
     __tablename__ = "enhanced_graph_edges"
+    __table_args__ = (
+        ForeignKeyConstraint(["graph_analysis_id", "source_key"], ["enhanced_graph_nodes.graph_analysis_id", "enhanced_graph_nodes.node_key"], name="fk_graph_edge_source"),
+        ForeignKeyConstraint(["graph_analysis_id", "target_key"], ["enhanced_graph_nodes.graph_analysis_id", "enhanced_graph_nodes.node_key"], name="fk_graph_edge_target"),
+    )
     
     id = Column(Integer, primary_key=True, index=True)
     graph_analysis_id = Column(Integer, ForeignKey("graph_analyses.id"), nullable=False)
-    source_node_id = Column(String(255), nullable=False)
-    target_node_id = Column(String(255), nullable=False)
+    source_node_id = Column(Text, nullable=False)
+    source_key = Column(String(64), nullable=False, default=identity_key("source_node_id"))
+    target_node_id = Column(Text, nullable=False)
+    target_key = Column(String(64), nullable=False, default=identity_key("target_node_id"))
     
     # Relationship details
-    edge_type = Column(String(100), nullable=False)  # 'imports', 'calls', 'inherits', 'uses'
+    edge_type = Column(Text, nullable=False)  # 'imports', 'calls', 'inherits', 'uses'
     relationship_strength = Column(Float, default=1.0)
     bidirectional = Column(Boolean, default=False)
     

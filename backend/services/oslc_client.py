@@ -62,7 +62,7 @@ class OSLCClient:
             raise ValueError('The provider response does not describe the selected resource')
         return {'expected_etag': etag, 'already_linked': (URIRef(source), URIRef(predicate), URIRef(target)) in graph}
 
-    def apply_link(self, source, predicate, target, expected_etag):
+    def apply_link(self, source, predicate, target, expected_etag, authorize=None):
         if not self.provider.allow_writes or predicate not in LINK_PREDICATES:
             raise ValueError('This provider or predicate is read-only')
         graph, current_etag = self.resource(source)
@@ -73,6 +73,8 @@ class OSLCClient:
         body = graph.serialize(format='xml' if content_type == 'application/rdf+xml' else 'turtle').encode()
         if len(body) > settings.OSLC_MAX_RESPONSE_BYTES:
             raise ValueError('Updated OSLC representation exceeds the size limit')
+        if authorize:
+            authorize()
         # Redirects remain disabled, so credential-bearing writes never follow another endpoint.
         with self.client.stream('PUT', source, content=body, headers={**self.headers, 'Content-Type': content_type, 'If-Match': expected_etag}) as response:
             response.raise_for_status()
@@ -85,4 +87,6 @@ class OSLCClient:
 
     def link_exists(self, source, predicate, target):
         graph, _ = self.resource(source)
+        if not any(graph.triples((URIRef(source), None, None))):
+            raise ValueError('The response does not describe the selected resource')
         return (URIRef(source), URIRef(predicate), URIRef(target)) in graph

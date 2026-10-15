@@ -30,6 +30,9 @@ class ManagedRepository(Connection):
     ref: Optional[str] = Field(default=None, max_length=200)
     uri: Optional[str] = None
     manifest_path: Optional[str] = None
+    token_env: Optional[str] = Field(default=None, pattern=r'^[A-Za-z_][A-Za-z0-9_]*$')
+    sbom_path: Optional[str] = None
+    sbom_lockfiles: list[str] = Field(default_factory=lambda: ['package-lock.json', 'frontend/package-lock.json'], max_length=20)
 
     @field_validator('url')
     @classmethod

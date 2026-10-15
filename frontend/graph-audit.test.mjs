@@ -99,3 +99,12 @@ test('search finds identities and lets callers page all duplicate labels', () =>
   assert.equal(matchingNodes(snapshot, ' QM-159 ')[0].id, nodes[159].id)
   assert.equal(matchingNodes(snapshot, 'QM', Infinity).length, 160)
 })
+
+test('SBOM inventory does not crowd the code root out of a capped overview', () => {
+  const snapshot = { nodes: [
+    { id: 'repo', label: 'Repo', type: 'repository', properties: { domain: 'CODE' } },
+    { id: 'file', label: 'File', type: 'file', properties: { domain: 'CODE' } },
+    ...Array.from({ length: 20 }, (_, index) => ({ id: `sbom-${index}`, label: 'Dependency', type: 'sbom_component', properties: { domain: 'SBOM' } })),
+  ], edges: [], metadata: {} }
+  assert.deepEqual(visibleGraph(snapshot, 'ALL', false, 2, 10).nodes.map(node => node.id), ['repo', 'file'])
+})
