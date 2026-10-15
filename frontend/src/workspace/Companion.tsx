@@ -11,6 +11,8 @@ export default function Companion({ graph, review, selected, catalog, onSelect }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const requestGeneration = useRef(0)
+  const [edgeLimit, setEdgeLimit] = useState(12)
+  useEffect(() => setEdgeLimit(12), [selected?.id, graph])
   useEffect(() => {
     const invalidate = () => { requestGeneration.current++ }
     invalidate(); setAnswer(null); setError(''); setBusy(false)
@@ -30,7 +32,7 @@ export default function Companion({ graph, review, selected, catalog, onSelect }
     } catch (cause) { if (generation === requestGeneration.current) setError(cause instanceof Error ? cause.message : 'Companion request failed') }
     finally { if (generation === requestGeneration.current) setBusy(false) }
   }
-  const edges = graph && selected ? graph.edges.filter(edge => edge.source === selected.id || edge.target === selected.id).slice(0, 12) : []
+  const edges = graph && selected ? graph.edges.filter(edge => edge.source === selected.id || edge.target === selected.id) : []
   const nodes = useMemo(() => new Map(graph?.nodes.map(node => [node.id, node]) || []), [graph])
   const prompts = ['Where are the traceability gaps?', 'Explain the selected resource', 'Find similar resources to the selected resource', 'Which builds match this revision?']
   return <aside className="companion-panel">
@@ -61,11 +63,13 @@ export default function Companion({ graph, review, selected, catalog, onSelect }
           {selected.properties.deleted && <><dt>TRS state</dt><dd className="deleted-state">Deleted resource · tombstone retained</dd></>}
         </dl>
         <button className="inspect-ask" disabled={busy} onClick={() => ask('Explain this resource and its trace links. Identify any missing evidence.')}><Sparkles size={14} />Explain this context<ArrowRight size={14} /></button>
-        <h4>Connected resources <span>{edges.length}</span></h4>
-        <div className="connected-list">{edges.length ? edges.map((edge, index) => {
+        <h4>Relationships <span>{edges.length}</span></h4>
+        <p>{new Set(edges.map(edge => edge.source === selected?.id ? edge.target : edge.source)).size} connected resources · showing {Math.min(edgeLimit, edges.length)} of {edges.length} relationships</p>
+        <div className="connected-list">{edges.length ? edges.slice(0, edgeLimit).map((edge, index) => {
           const target = nodes.get(edge.source === selected.id ? edge.target : edge.source)
           return target && <button key={index} onClick={() => onSelect(target)}><span className="relationship-direction">{edge.source === selected.id ? 'OUT' : 'IN'}</span><span>{target.label}<small>{relationLabel(edge.type)}</small></span><ChevronRight size={12} /></button>
         }) : <p>No explicit relationships found.</p>}</div>
+        {edges.length > edgeLimit && <button onClick={() => setEdgeLimit(current => current + 12)}>Show more relationships</button>}
         <details className="resource-identity"><summary>Resource identity & provenance</summary><code>{selected.id}</code><pre>{JSON.stringify(selected.properties, null, 2)}</pre></details>
       </div> : <div className="inspector-empty"><Code2 size={28} /><h3>Every node has a story.</h3><p>Select a graph resource or use the resource index to inspect its source, schema, and relationships.</p></div>}
       {error && <p className="companion-error" role="alert">{error}</p>}

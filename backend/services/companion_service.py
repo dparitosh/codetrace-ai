@@ -53,7 +53,11 @@ def context_evidence(graph, question, selected_id=None):
     citations = [{'citation_id': ids[node_id], 'node_id': node_id, 'label': nodes[node_id]['label'],
                   'type': nodes[node_id]['type'], 'domain': nodes[node_id]['properties'].get('domain', 'CODE'),
                   'path': nodes[node_id]['properties'].get('path'), 'line': nodes[node_id]['properties'].get('start'),
-                  'provider_id': nodes[node_id]['properties'].get('provider_id')} for node_id in chosen]
+                  'provider_id': nodes[node_id]['properties'].get('provider_id'),
+                  'properties': {key: (value[:2000] if isinstance(value, str) else value)
+                                 for key in ('status', 'outcome', 'deleted', 'revision', 'identifier', 'description', 'resource_shape')
+                                 if (value := nodes[node_id]['properties'].get(key)) is not None
+                                 and isinstance(value, (str, bool, int, float))}} for node_id in chosen]
     edges = [{'source': ids[edge['source']], 'target': ids[edge['target']], 'predicate': edge['type'],
               'origin': edge['properties'].get('origin')}
              for edge in relations if edge['source'] in ids and edge['target'] in ids][:settings.AI_CONTEXT_RELATIONS]

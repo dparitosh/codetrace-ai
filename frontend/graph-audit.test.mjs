@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 const moduleUrl = source => 'data:text/javascript;base64,' + Buffer.from(source).toString('base64')
 const types = moduleUrl(stripTypeScriptTypes(readFileSync(new URL('./src/workspace/types.ts', import.meta.url), 'utf8')))
 const source = stripTypeScriptTypes(readFileSync(new URL('./src/workspace/graphModel.ts', import.meta.url), 'utf8'))
-const { visibleGraph, localContext, containmentDescendants, revealContextRoot } = await import(moduleUrl(source.replace("'./types'", JSON.stringify(types))))
+const { visibleGraph, localContext, containmentDescendants, revealContextRoot, matchingNodes } = await import(moduleUrl(source.replace("'./types'", JSON.stringify(types))))
 const graph = { nodes: [
   { id: 'file', label: 'File', type: 'file', properties: { domain: 'CODE' } },
   { id: 'fn', label: 'Function', type: 'function', properties: { domain: 'CODE' } },
@@ -88,4 +88,14 @@ test('a foreign predicate named contains cannot hide resources as code containme
   const foreign = { ...graph, edges: [{ source: 'req', target: 'fn', type: 'https://example.org/contains', properties: {} }] }
   assert.equal(containmentDescendants(foreign, 'req').size, 0)
   assert.deepEqual([...localContext(foreign, 'req', 1, 'outgoing', 'hierarchy')], ['req'])
+})
+
+
+test('search finds identities and lets callers page all duplicate labels', () => {
+  const nodes = Array.from({ length: 160 }, (_, index) => ({ id: `https://alm.example/resources/${index}`, label: 'Verification', type: 'test', properties: { domain: 'QM', identifier: `QM-${index}` } }))
+  const snapshot = { nodes, edges: [], metadata: {} }
+  assert.equal(matchingNodes(snapshot, 'Verification', Infinity).length, 160)
+  assert.equal(matchingNodes(snapshot, nodes[159].id)[0].id, nodes[159].id)
+  assert.equal(matchingNodes(snapshot, ' QM-159 ')[0].id, nodes[159].id)
+  assert.equal(matchingNodes(snapshot, 'QM', Infinity).length, 160)
 })

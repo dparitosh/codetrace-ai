@@ -56,7 +56,7 @@ html[data-ix-color-schema='dark'] { color-scheme: dark; }
 .ix-workspace .graph-search input, .ix-workspace .index-search input {
   color: var(--ct-text); border-color: var(--ct-border); background: var(--ct-surface);
 }
-.ix-workspace .domain-filters button.active { color: var(--theme-color-primary); border-color: var(--theme-color-primary); }
+.ix-workspace .domain-filters ix-button[aria-pressed="true"] { color: var(--theme-color-primary); border-color: var(--theme-color-primary); }
 .ix-workspace .search-results { background: var(--ct-surface); border-color: var(--ct-border); }
 .ix-workspace .search-results ix-button { display: block; width: 100%; text-align: left; }
 .ix-workspace .canvas-watermark { background: var(--ct-surface); color: var(--ct-muted); }
@@ -94,3 +94,6 @@ html[data-ix-color-schema='dark'] { color-scheme: dark; }
   .ix-workspace .source-actions { width: 100%; flex-wrap: wrap; }
   .ix-workspace .graph-filter-bar { flex-wrap: wrap; gap: 12px; }
 }
+
+.ix-workspace .search-results { max-height: 360px; overflow-y: auto; }
+.ix-workspace .search-results small { display: block; overflow-wrap: anywhere; white-space: normal; }

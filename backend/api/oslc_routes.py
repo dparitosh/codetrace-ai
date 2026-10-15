@@ -189,7 +189,10 @@ def query_resources(source_id: str, request: Request, page: int = Query(1, ge=1)
             kinds = [value for value in KINDS if type_for_kind(value) == type_match[1]]
             kind = kinds if kinds else ['__unsupported_type__']
         elif title_match:
-            title = json.loads(title_match[1])
+            try:
+                title = json.loads(title_match[1])
+            except ValueError as exc:
+                raise HTTPException(400, 'Invalid string literal in oslc.where') from exc
         else:
             raise HTTPException(400, 'Supported oslc.where clauses: rdf:type=<URI> or dcterms:title="title"')
     store = publication_store()

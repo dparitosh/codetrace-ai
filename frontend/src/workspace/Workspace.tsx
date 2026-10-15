@@ -5,6 +5,7 @@ import { iconGraph, iconTable, iconHistory, iconCheck, iconUserSettings, iconCod
 import { requestJson, ReviewRecord, workspaceRequest, useReviewSession } from '../reviewSession'
 import { Catalog, domainColors, domainOf, TraceGraph, TraceNode } from './types'
 import InteractiveGraph from './InteractiveGraph'
+import { matchingNodes } from './graphModel'
 import Companion from './Companion'
 import SessionBar from '../components/SessionBar'
 import ReviewPanel from '../components/ReviewPanel'
@@ -25,8 +26,10 @@ export default function Workspace() {
   const [error, setError] = useState('')
   const [resourceQuery, setResourceQuery] = useState('')
   const [resourceDomain, setResourceDomain] = useState('ALL')
+  const [resourceLimit, setResourceLimit] = useState(150)
   const session = useReviewSession()
   const graph = (review?.result || null) as TraceGraph | null
+  useEffect(() => setResourceLimit(150), [resourceQuery, resourceDomain, graph])
   useEffect(() => {
     const clearExpired = () => {
       if (review && (!session || review.sessionToken !== session.token || Math.min(session.deadline, session.absoluteDeadline) <= Date.now())) {
@@ -56,7 +59,8 @@ export default function Workspace() {
     graph?.nodes.forEach(node => { const domain = domainOf(node); counts[domain] = (counts[domain] || 0) + 1 })
     return counts
   }, [graph])
-  const resources = useMemo(() => graph?.nodes.filter(node => (resourceDomain === 'ALL' || domainOf(node) === resourceDomain) && `${node.label} ${node.type} ${domainOf(node)} ${node.properties.path || ''}`.toLowerCase().includes(resourceQuery.toLowerCase())).slice(0, 150) || [], [graph, resourceQuery, resourceDomain])
+  const filteredResources = useMemo(() => (resourceQuery.trim() ? matchingNodes(graph, resourceQuery, Infinity) : graph?.nodes || []).filter(node => resourceDomain === 'ALL' || domainOf(node) === resourceDomain), [graph, resourceQuery, resourceDomain])
+  const resources = filteredResources.slice(0, resourceLimit)
   const lifecycleCount = graph?.nodes.filter(node => domainOf(node) !== 'CODE').length || 0
   const lifecycleLinks = graph?.edges.filter(edge => edge.properties.origin === 'lifecycle_assertion').length || 0
   const connectors = graph?.metadata.connectors || []
@@ -105,7 +109,7 @@ export default function Workspace() {
         </div><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={setSelected} /></div>}
         {view === 'resources' && <div className="explorer-grid"><section className="resource-panel"><div className="section-title"><div><span className="eyebrow">EVERY RESOURCE, IN CONTEXT</span><h2>Resource index</h2></div><div className="index-search"><Search size={14} /><input aria-label="Filter resource index" placeholder="Search type, domain, or source…" value={resourceQuery} onChange={event => setResourceQuery(event.target.value)} /></div></div>
           <div className="resource-table-wrap"><table className="resource-table"><thead><tr><th>Resource</th><th>Domain</th><th>Evidence</th><th /></tr></thead><tbody>{resources.map(node => <tr key={node.id} className={selected?.id === node.id ? 'selected' : ''} onClick={() => setSelected(node)}><td><button onClick={() => setSelected(node)}><i style={{ background: domainColors[domainOf(node)] || '#aaa' }} /><strong>{node.label}</strong><small>{node.type.replace(/_/g, ' ')}</small></button></td><td><span className="domain-tag">{domainOf(node)}</span></td><td className="resource-path">{node.properties.path || node.properties.provider_id || 'Graph provenance'}</td><td><ArrowUpRight size={13} /></td></tr>)}</tbody></table>
-            {!resources.length && <div className="empty-section">{graph ? 'No resources match this filter.' : 'Synchronize a managed source to inspect its resource index.'}</div>}</div><div className="table-footer">Showing {resources.length} of {graph?.nodes.length || 0} resources. Search narrows the indexed graph.</div></section><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={setSelected} /></div>}
+            {!resources.length && <div className="empty-section">{graph ? 'No resources match this filter.' : 'Synchronize a managed source to inspect its resource index.'}</div>}</div><div className="table-footer">Showing {resources.length} of {filteredResources.length} matching resources. {resources.length < filteredResources.length && <button onClick={() => setResourceLimit(current => current + 150)}>Show more resources</button>}</div></section><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={setSelected} /></div>}
         {view === 'activity' && <div className="activity-grid"><section className="plain-panel"><div className="section-title"><div><span className="eyebrow">TRACKED RESOURCE SET</span><h2>Lifecycle change feed</h2></div><Activity size={20} /></div>
           {graph?.trs_events?.length ? [...graph.trs_events].reverse().map(event => <div className="timeline-event" key={event.id}><div className={'event-dot ' + event.action.toLowerCase()} /><div><span className="event-label">{event.action} <small>#{event.order}</small></span><button onClick={() => { const node = graph.nodes.find(item => item.id === event.resource_uri); if (node) { setSelected(node); setView('resources') } }}>{graph.nodes.find(item => item.id === event.resource_uri)?.label || event.resource_uri}</button><p>{event.provider_id} · {event.at ? new Date(event.at).toLocaleString() : 'Time not supplied by provider'}</p></div></div>) : <div className="empty-section"><Activity size={25} /><h3>No imported TRS events yet.</h3><p>Configure a TRS endpoint or RDF export centrally. Change order, checkpoints, and deletion tombstones appear here after sync.</p></div>}
           <div className="checkpoint-list">{connectors.filter((item: any) => item.domain === 'TRS').map((item: any) => <div key={item.id}><strong>{item.label}</strong><span>Checkpoint {item.checkpoint?.latest_order ?? 'unavailable'} · {item.status}</span></div>)}</div></section>

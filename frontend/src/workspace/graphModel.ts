@@ -55,17 +55,18 @@ export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean,
   return { nodes, edges, omittedEdges: eligibleEdges.length - edges.length, omitted: candidates.length - nodes.length, total: candidates.length }
 }
 
-export function matchingNodes(graph: TraceGraph | null, query: string): TraceNode[] {
+export function matchingNodes(graph: TraceGraph | null, query: string, limit = 12): TraceNode[] {
   if (!graph || !query.trim()) return []
   const value = query.toLowerCase().trim()
   return graph.nodes.map(node => {
     const label = node.label.toLowerCase()
-    const score = label === value ? 1000 : label.startsWith(value) ? 500 : label.includes(value) ? 100
-      : String(node.properties.identifier || '').toLowerCase().includes(value) ? 60
-      : `${node.type} ${node.properties.path || ''}`.toLowerCase().includes(value) ? 10 : 0
+    const identity = `${node.id} ${node.properties.identifier || ''} ${node.properties.code_id || ''} ${node.properties.uri || ''}`.toLowerCase()
+    const score = node.id.toLowerCase() === value ? 2000 : label === value ? 1000 : label.startsWith(value) ? 500 : label.includes(value) ? 100
+      : identity.includes(value) ? 60
+      : `${node.type} ${domainOf(node)} ${node.properties.path || ''} ${node.properties.description || ''}`.toLowerCase().includes(value) ? 10 : 0
     return { node, score }
   }).filter(item => item.score > 0).sort((a, b) => b.score - a.score || a.node.id.localeCompare(b.node.id))
-    .slice(0, 12).map(item => item.node)
+    .slice(0, limit).map(item => item.node)
 }
 
 export type TraversalDirection = 'both' | 'outgoing' | 'incoming'

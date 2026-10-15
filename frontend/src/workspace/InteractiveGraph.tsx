@@ -18,6 +18,8 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   const [direction, setDirection] = useState<TraversalDirection>('both')
   const [relationScope, setRelationScope] = useState<RelationScope>('all')
   const [query, setQuery] = useState('')
+  const [searchLimit, setSearchLimit] = useState(12)
+  useEffect(() => setSearchLimit(12), [query, graph])
   const [focus, setFocus] = useState<string | null>(null)
   const [focusDepth, setFocusDepth] = useState(1)
   const [collapsed, setCollapsed] = useState(new Set<string>())
@@ -41,7 +43,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   const view = useMemo(() => graph ? visibleGraph(graph, domain, detail, limits.render_nodes, limits.render_edges,
     focus ? localContext(graph, focus, focusDepth, direction, relationScope) : undefined, collapsed, selected, relationScope) : null,
     [graph, domain, detail, focus, focusDepth, direction, relationScope, collapsed, selected, limits.render_nodes, limits.render_edges])
-  const matches = useMemo(() => matchingNodes(graph, query), [graph, query])
+  const matches = useMemo(() => matchingNodes(graph, query, Infinity), [graph, query])
   const domains = useMemo(() => graph ? [...new Set(graph.nodes.map(domainOf))].filter(value => value !== 'EXTERNAL').sort() : [], [graph])
   useEffect(() => { setFocus(null); setQuery(''); setDomain('ALL'); setCollapsed(new Set()); setFocusDepth(1) }, [graph])
   useEffect(() => {
@@ -143,10 +145,10 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
       </select></label>
       <small>{focus ? 'Showing the selected resource and its bounded context.' : 'Select a resource to traverse its context.'}</small>
     </div>
-    <div className="graph-filter-bar"><div className="domain-filters"><IxButton className={domain === 'ALL' ? 'active' : ''} onClick={() => { setDomain('ALL'); setFocus(null) }}>All domains</IxButton>
-      {domains.map(value => <IxButton key={value} className={domain === value ? 'active' : ''} onClick={() => { setDomain(value); setFocus(null) }}><i style={{ background: domainColors[value] }} />{value}</IxButton>)}</div>
+    <div className="graph-filter-bar"><div className="domain-filters"><IxButton variant={domain === 'ALL' ? 'primary' : 'secondary'} aria-pressed={domain === 'ALL'} onClick={() => { setDomain('ALL'); setFocus(null) }}>All domains</IxButton>
+      {domains.map(value => <IxButton key={value} variant={domain === value ? 'primary' : 'secondary'} aria-pressed={domain === value} onClick={() => { setDomain(value); setFocus(null) }}><i style={{ background: domainColors[value] }} />{value}</IxButton>)}</div>
       <div className="graph-search"><Search size={14} /><input aria-label="Search graph resources" placeholder="Find a resource…" value={query} onChange={event => setQuery(event.target.value)} />
-        {query && <div className="search-results">{matches.length ? matches.map(node => <IxButton key={node.id} onClick={() => selectMatch(node)}><span>{node.label}</span><small>{node.type}</small></IxButton>) : <p>No matching resource</p>}</div>}
+        {query && <div className="search-results">{matches.length ? matches.slice(0, searchLimit).map(node => <IxButton key={node.id} onClick={() => selectMatch(node)}><span>{node.label}</span><small>{node.type} · {node.properties.path || node.id}</small></IxButton>) : <p>No matching resource</p>}<p>Showing {Math.min(searchLimit, matches.length)} of {matches.length} matches</p>{matches.length > searchLimit && <IxButton onClick={() => setSearchLimit(current => current + 12)}>Show more matches</IxButton>}</div>}
       </div>
     </div>
     <div className="graph-canvas-wrap">
