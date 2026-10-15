@@ -2,10 +2,14 @@ import { domainOf } from './types'
 import type { TraceGraph, TraceNode } from './types'
 
 export function containmentDescendants(graph: TraceGraph, root: string) {
+  const known = new Set(graph.nodes.map(node => node.id))
+  if (!known.has(root)) return new Set<string>()
   const children = new Map<string, string[]>()
   graph.edges.forEach(edge => {
-    if (['contains', 'defines'].includes(edge.type.split('#').pop()?.split(':').pop() || '')) {
-      children.set(edge.source, [...(children.get(edge.source) || []), edge.target])
+    if (!known.has(edge.source) || !known.has(edge.target)) return
+    if (isContainment(edge.type)) {
+      if (!children.has(edge.source)) children.set(edge.source, [])
+      children.get(edge.source)!.push(edge.target)
     }
   })
   const visited = new Set([root]); const queue = [root]
@@ -18,6 +22,10 @@ export function containmentDescendants(graph: TraceGraph, root: string) {
   return visited
 }
 
+export function revealContextRoot(graph: TraceGraph, collapsedIds: Set<string>, nodeId: string) {
+  return new Set([...collapsedIds].filter(root => !containmentDescendants(graph, root).has(nodeId)))
+}
+
 export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean, limit: number, edgeLimit: number, focusIds?: Set<string>, collapsedIds = new Set<string>(), selectedId?: string | null, relationScope: RelationScope = 'all') {
   const lifecycleEndpoints = new Set<string>()
   graph.edges.forEach(edge => {
@@ -26,14 +34,16 @@ export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean,
     }
   })
   let candidates = graph.nodes.filter(node => (domain === 'ALL' || domainOf(node) === domain)
-    && (detail || lifecycleEndpoints.has(node.id) || !['variable', 'external_symbol', 'function', 'method', 'symbol'].includes(node.type)))
-  if (focusIds) candidates = graph.nodes.filter(node => focusIds.has(node.id))
+    && (detail || node.id === selectedId || lifecycleEndpoints.has(node.id) || !['variable', 'external_symbol', 'function', 'method', 'symbol'].includes(node.type)))
+  if (focusIds) candidates = graph.nodes.filter(node => focusIds.has(node.id) && (domain === 'ALL' || domainOf(node) === domain))
   const hidden = new Set<string>()
   collapsedIds.forEach(root => containmentDescendants(graph, root).forEach(id => hidden.add(id)))
   candidates = candidates.filter(node => !hidden.has(node.id))
   const degree = new Map<string, number>()
+  const contextOrder = focusIds ? new Map([...focusIds].map((id, index) => [id, index])) : null
   graph.edges.forEach(edge => { degree.set(edge.source, (degree.get(edge.source) || 0) + 1); degree.set(edge.target, (degree.get(edge.target) || 0) + 1) })
   candidates.sort((a, b) => Number(b.id === selectedId) - Number(a.id === selectedId)
+    || (contextOrder ? contextOrder.get(a.id)! - contextOrder.get(b.id)! : 0)
     || Number(lifecycleEndpoints.has(b.id)) - Number(lifecycleEndpoints.has(a.id))
     || Number(domainOf(b) !== 'CODE') - Number(domainOf(a) !== 'CODE')
     || (degree.get(b.id) || 0) - (degree.get(a.id) || 0) || a.id.localeCompare(b.id))
@@ -61,10 +71,14 @@ export function matchingNodes(graph: TraceGraph | null, query: string): TraceNod
 export type TraversalDirection = 'both' | 'outgoing' | 'incoming'
 export type RelationScope = 'all' | 'hierarchy' | 'evidence'
 
+function isContainment(type: string) {
+  return ['contains', 'defines', 'urn:codetrace:vocab:contains', 'urn:codetrace:vocab:defines'].includes(type)
+}
+
 export function matchesRelationScope(type: string, scope: RelationScope) {
-  const relation = type.split('#').pop()?.split(':').pop()
-  const hierarchy = relation === 'contains' || relation === 'defines'
-  return scope === 'all' || (scope === 'hierarchy' ? hierarchy : !hierarchy && relation !== 'instanceShape' && relation !== 'serviceProvider')
+  const hierarchy = isContainment(type)
+  const metadata = ['instanceShape', 'serviceProvider', 'http://open-services.net/ns/core#instanceShape', 'http://open-services.net/ns/core#serviceProvider'].includes(type)
+  return scope === 'all' || (scope === 'hierarchy' ? hierarchy : !hierarchy && !metadata)
 }
 
 export function localContext(graph: TraceGraph, nodeId: string, depth = 1,

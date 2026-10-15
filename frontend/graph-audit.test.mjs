@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 const moduleUrl = source => 'data:text/javascript;base64,' + Buffer.from(source).toString('base64')
 const types = moduleUrl(stripTypeScriptTypes(readFileSync(new URL('./src/workspace/types.ts', import.meta.url), 'utf8')))
 const source = stripTypeScriptTypes(readFileSync(new URL('./src/workspace/graphModel.ts', import.meta.url), 'utf8'))
-const { visibleGraph, localContext, containmentDescendants } = await import(moduleUrl(source.replace("'./types'", JSON.stringify(types))))
+const { visibleGraph, localContext, containmentDescendants, revealContextRoot } = await import(moduleUrl(source.replace("'./types'", JSON.stringify(types))))
 const graph = { nodes: [
   { id: 'file', label: 'File', type: 'file', properties: { domain: 'CODE' } },
   { id: 'fn', label: 'Function', type: 'function', properties: { domain: 'CODE' } },
@@ -64,4 +64,28 @@ test('displayed relationships respect the traversal context without rewriting gr
   const view = visibleGraph(graph, 'ALL', true, 10, 10, new Set(['file', 'fn', 'req']), new Set(), 'fn', 'evidence')
   assert.deepEqual(view.edges.map(edge => edge.type), ['implementedBy'])
   assert.equal(graph.edges.length, 2)
+})
+test('focused views still enforce an explicit domain filter', () => {
+  const view = visibleGraph(graph, 'RM', true, 10, 10, new Set(['fn', 'req']))
+  assert.deepEqual(view.nodes.map(node => node.id), ['req'])
+})
+test('relationship filters apply without needing a focused node', () => {
+  const view = visibleGraph(graph, 'ALL', true, 10, 10, undefined, new Set(), null, 'hierarchy')
+  assert.deepEqual(view.edges.map(edge => edge.type), ['contains'])
+})
+test('capped focus prioritizes the traversal frontier over distant high-degree nodes', () => {
+  const chain = { nodes: ['root', 'near', 'far', 'hub'].map(id => ({ id, label: id, type: 'file', properties: { domain: 'CODE' } })),
+    edges: [['root', 'near'], ['near', 'far'], ['far', 'hub'], ['hub', 'far'], ['hub', 'hub']].map(([source, target]) => ({ source, target, type: 'calls', properties: {} })), metadata: {} }
+  const view = visibleGraph(chain, 'ALL', true, 2, 10, new Set(['root', 'near', 'far', 'hub']))
+  assert.deepEqual(view.nodes.map(node => node.id), ['root', 'near'])
+})
+test('focusing a hidden child unfolds only its collapsed ancestors', () => {
+  const collapsed = new Set(['file', 'other'])
+  assert.deepEqual([...revealContextRoot(graph, collapsed, 'fn')], ['other'])
+  assert.deepEqual([...collapsed], ['file', 'other'])
+})
+test('a foreign predicate named contains cannot hide resources as code containment', () => {
+  const foreign = { ...graph, edges: [{ source: 'req', target: 'fn', type: 'https://example.org/contains', properties: {} }] }
+  assert.equal(containmentDescendants(foreign, 'req').size, 0)
+  assert.deepEqual([...localContext(foreign, 'req', 1, 'outgoing', 'hierarchy')], ['req'])
 })

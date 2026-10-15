@@ -130,3 +130,5 @@ These scripts create missing tables/indexes without sample records. They do not 
 Graph controls support child collapse/expand, context expansion, background-click highlight clearing and reset. Companion similarity uses label and directed-neighbor feature overlap; it does not assert semantic equivalence. Recommendations identify missing supported links and incomplete providers. See [SESSION_GRAPH_AI_AUDIT.md](SESSION_GRAPH_AI_AUDIT.md) for the final audit and validation boundaries.
 
 Graph resources use circular nodes with domain colors and an enlarged selection outline. Hierarchy is the initial layout; Circular, Organic, Concentric and Grid remain available. Select a resource to traverse upstream, downstream or both directions over 1–6 hops. Choose containment hierarchy or code/lifecycle evidence separately to avoid treating a shared container as impact evidence.
+
+The latest focused graph review and regression results are recorded in [TRAVERSAL_AUDIT.md](TRAVERSAL_AUDIT.md).

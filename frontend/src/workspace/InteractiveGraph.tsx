@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import cytoscape, { Core } from 'cytoscape'
 import { Crosshair, Minus, Plus, Maximize2, RotateCcw, Layers, Search } from 'lucide-react'
 import { domainColors, domainOf, relationLabel, TraceGraph, TraceNode } from './types'
-import { containmentDescendants, localContext, matchingNodes, visibleGraph } from './graphModel'
+import { containmentDescendants, localContext, matchingNodes, revealContextRoot, visibleGraph } from './graphModel'
 import type { TraversalDirection, RelationScope } from './graphModel'
 
 interface Props { graph: TraceGraph | null; selected: string | null; onSelect: (node: TraceNode | null) => void; busy: boolean }
@@ -39,7 +39,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   const viewport = useRef<{ graph: TraceGraph; layout: string; zoom: number; pan: { x: number; y: number }; positions: Map<string, { x: number; y: number }> } | null>(null)
   const limits = graph?.metadata.limits || { render_nodes: 400, render_edges: 1000 }
   const view = useMemo(() => graph ? visibleGraph(graph, domain, detail, limits.render_nodes, limits.render_edges,
-    focus ? localContext(graph, focus, focusDepth, direction, relationScope) : undefined, collapsed, selected, focus ? relationScope : 'all') : null,
+    focus ? localContext(graph, focus, focusDepth, direction, relationScope) : undefined, collapsed, selected, relationScope) : null,
     [graph, domain, detail, focus, focusDepth, direction, relationScope, collapsed, selected, limits.render_nodes, limits.render_edges])
   const matches = useMemo(() => matchingNodes(graph, query), [graph, query])
   const domains = useMemo(() => graph ? [...new Set(graph.nodes.map(domainOf))].filter(value => value !== 'EXTERNAL').sort() : [], [graph])
@@ -68,7 +68,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
         { selector: 'edge', style: { width: 1.2, 'line-color': palette.edge, 'target-arrow-color': palette.edge,
           'target-arrow-shape': 'triangle', 'arrow-scale': 0.65, 'curve-style': 'bezier', opacity: 0.65 } },
         { selector: 'edge[lifecycle = 1]', style: { 'line-color': palette.primary, 'target-arrow-color': palette.primary, width: 2, opacity: 0.85 } },
-        { selector: 'node:selected', style: { 'border-color': palette.primary, 'border-width': 4,
+        { selector: 'node.focused-resource', style: { 'border-color': palette.primary, 'border-width': 4,
           width: (node: cytoscape.NodeSingular) => Number(node.data('weight')) * 1.2,
           height: (node: cytoscape.NodeSingular) => Number(node.data('weight')) * 1.2 } },
         { selector: '.faded', style: { opacity: 0.12 } },
@@ -103,16 +103,20 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
     const engine = cy.current
     if (!engine) return
     engine.batch(() => {
-      engine.elements().removeClass('faded context-edge').unselect()
+      engine.elements().removeClass('faded context-edge focused-resource').unselect()
       if (!selected) return
       const node = engine.getElementById(selected)
       if (node.empty()) return
       const context = node.closedNeighborhood()
       engine.elements().not(context).addClass('faded')
-      context.edges().addClass('context-edge'); node.select()
+      context.edges().addClass('context-edge'); node.addClass('focused-resource')
     })
   }, [selected, view, layout, palette])
-  const selectMatch = (node: TraceNode) => { onSelect(node); setCollapsed(new Set()); setFocus(node.id); setFocusDepth(1); setQuery('') }
+  const focusSelection = () => {
+    if (!graph || !selected) return
+    setDomain('ALL'); setCollapsed(current => revealContextRoot(graph, current, selected)); setFocus(selected)
+  }
+  const selectMatch = (node: TraceNode) => { onSelect(node); setDomain('ALL'); setCollapsed(new Set()); setFocus(node.id); setFocusDepth(1); setQuery('') }
   const canCollapse = !!(graph && selected && containmentDescendants(graph, selected).size)
   const toggleCollapse = () => {
     if (!selected) return
@@ -122,19 +126,19 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
     <div className="graph-panel-header"><div><span className="eyebrow">CONNECTED EVIDENCE</span><h2>Lifecycle graph <span className="count-badge">{graph?.nodes.length || 0}</span></h2></div>
       <div className="graph-toolbar"><IxButton variant="secondary" onClick={() => setDetail(value => !value)}><span className="ix-button-label"><Layers size={14} />{detail ? 'Symbol view' : 'Architecture view'}</span></IxButton>
         <IxButton variant="secondary" disabled={!canCollapse} onClick={toggleCollapse}>{selected && collapsed.has(selected) ? 'Expand children' : 'Collapse children'}</IxButton>
-        <IxButton variant="secondary" disabled={!graph || !selected || (focus === selected && focusDepth >= 6)} onClick={() => { setCollapsed(new Set()); setFocus(selected); setFocusDepth(current => focus === selected ? Math.min(6, current + 1) : 1) }}>Expand context</IxButton>
+        <IxButton variant="secondary" disabled={!graph || !selected || (focus === selected && focusDepth >= 6)} onClick={() => { focusSelection(); setCollapsed(current => { const next = new Set(current); if (selected) next.delete(selected); return next }); setFocusDepth(current => focus === selected ? Math.min(6, current + 1) : 1) }}>Expand context</IxButton>
         <IxButton variant="tertiary" disabled={!graph} onClick={() => { setCollapsed(new Set()); setFocus(null); setFocusDepth(1); setDirection('both'); setRelationScope('all'); setLayout('breadthfirst'); setDomain('ALL'); onSelect(null) }}>Reset view</IxButton>
         <select aria-label="Graph layout" value={layout} onChange={event => setLayout(event.target.value)}><option value="circle">Circular</option><option value="cose">Organic layout</option><option value="breadthfirst">Hierarchy</option><option value="concentric">Concentric</option><option value="grid">Grid</option></select>
       </div>
     </div>
     <div className="graph-traversal-bar">
-      <label>Traverse <select aria-label="Traversal direction" value={direction} onChange={event => { setDirection(event.target.value as TraversalDirection); if (selected) setFocus(selected) }}>
+      <label>Traverse <select aria-label="Traversal direction" value={direction} onChange={event => { setDirection(event.target.value as TraversalDirection); focusSelection() }}>
         <option value="both">Both directions</option><option value="outgoing">Downstream · outgoing</option><option value="incoming">Upstream · incoming</option>
       </select></label>
-      <label>Context <select aria-label="Traversal relationships" value={relationScope} onChange={event => { setRelationScope(event.target.value as RelationScope); if (selected) setFocus(selected) }}>
+      <label>Context <select aria-label="Traversal relationships" value={relationScope} onChange={event => { setRelationScope(event.target.value as RelationScope); focusSelection() }}>
         <option value="all">All relationships</option><option value="hierarchy">Containment hierarchy</option><option value="evidence">Code & lifecycle evidence</option>
       </select></label>
-      <label>Depth <select aria-label="Traversal depth" value={focusDepth} onChange={event => { setFocusDepth(Number(event.target.value)); if (selected) setFocus(selected) }}>
+      <label>Depth <select aria-label="Traversal depth" value={focusDepth} onChange={event => { setFocusDepth(Number(event.target.value)); focusSelection() }}>
         {[1, 2, 3, 4, 5, 6].map(value => <option key={value} value={value}>{value} {value === 1 ? 'hop' : 'hops'}</option>)}
       </select></label>
       <small>{focus ? 'Showing the selected resource and its bounded context.' : 'Select a resource to traverse its context.'}</small>
@@ -153,7 +157,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
       <div className="canvas-controls"><IxButton variant="tertiary" aria-label="Zoom in" onClick={() => cy.current?.zoom((cy.current?.zoom() || 1) * 1.25)}><Plus size={16} /></IxButton>
         <IxButton variant="tertiary" aria-label="Zoom out" onClick={() => cy.current?.zoom((cy.current?.zoom() || 1) / 1.25)}><Minus size={16} /></IxButton>
         <IxButton variant="tertiary" aria-label="Fit graph" onClick={() => cy.current?.fit(undefined, 45)}><Maximize2 size={16} /></IxButton>
-        <IxButton variant="tertiary" aria-label="Focus selected context" disabled={!selected} onClick={() => setFocus(selected)}><Crosshair size={16} /></IxButton></div>
+        <IxButton variant="tertiary" aria-label="Focus selected context" disabled={!selected} onClick={focusSelection}><Crosshair size={16} /></IxButton></div>
       <div className="canvas-watermark"><span className="live-dot" />{view ? `${view.nodes.length} visible · ${view.edges.length} relationships` : 'Awaiting source'}{view?.omitted ? ` · ${view.omitted} nodes omitted` : ''}{view?.omittedEdges ? ` · ${view.omittedEdges} relationships omitted` : ''}</div>
     </div>
     <div className="graph-panel-footer"><span>Drag to explore. Scroll to zoom. Select a node to inspect its evidence.</span><span>{graph ? 'Snapshot ' + String(graph.metadata.snapshot_id || '').slice(0, 8) : 'No snapshot'}</span></div>
