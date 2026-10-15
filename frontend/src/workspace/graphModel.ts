@@ -18,7 +18,7 @@ export function containmentDescendants(graph: TraceGraph, root: string) {
   return visited
 }
 
-export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean, limit: number, edgeLimit: number, focusIds?: Set<string>, collapsedIds = new Set<string>(), selectedId?: string | null) {
+export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean, limit: number, edgeLimit: number, focusIds?: Set<string>, collapsedIds = new Set<string>(), selectedId?: string | null, relationScope: RelationScope = 'all') {
   const lifecycleEndpoints = new Set<string>()
   graph.edges.forEach(edge => {
     if (edge.properties.origin === 'lifecycle_assertion') {
@@ -39,7 +39,7 @@ export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean,
     || (degree.get(b.id) || 0) - (degree.get(a.id) || 0) || a.id.localeCompare(b.id))
   const nodes = candidates.slice(0, limit)
   const visible = new Set(nodes.map(node => node.id))
-  const eligibleEdges = graph.edges.filter(edge => visible.has(edge.source) && visible.has(edge.target))
+  const eligibleEdges = graph.edges.filter(edge => visible.has(edge.source) && visible.has(edge.target) && matchesRelationScope(edge.type, relationScope))
     .sort((a, b) => Number(b.properties.origin === 'lifecycle_assertion') - Number(a.properties.origin === 'lifecycle_assertion'))
   const edges = eligibleEdges.slice(0, edgeLimit)
   return { nodes, edges, omittedEdges: eligibleEdges.length - edges.length, omitted: candidates.length - nodes.length, total: candidates.length }
@@ -58,13 +58,39 @@ export function matchingNodes(graph: TraceGraph | null, query: string): TraceNod
     .slice(0, 12).map(item => item.node)
 }
 
-export function localContext(graph: TraceGraph, nodeId: string, depth = 1) {
+export type TraversalDirection = 'both' | 'outgoing' | 'incoming'
+export type RelationScope = 'all' | 'hierarchy' | 'evidence'
+
+export function matchesRelationScope(type: string, scope: RelationScope) {
+  const relation = type.split('#').pop()?.split(':').pop()
+  const hierarchy = relation === 'contains' || relation === 'defines'
+  return scope === 'all' || (scope === 'hierarchy' ? hierarchy : !hierarchy && relation !== 'instanceShape' && relation !== 'serviceProvider')
+}
+
+export function localContext(graph: TraceGraph, nodeId: string, depth = 1,
+  direction: TraversalDirection = 'both', scope: RelationScope = 'all') {
+  const known = new Set(graph.nodes.map(node => node.id))
+  if (!known.has(nodeId)) return new Set<string>()
+  const adjacency = new Map<string, Set<string>>()
+  const connect = (source: string, target: string) => {
+    if (!adjacency.has(source)) adjacency.set(source, new Set())
+    adjacency.get(source)!.add(target)
+  }
+  graph.edges.forEach(edge => {
+    if (!known.has(edge.source) || !known.has(edge.target)) return
+    if (!matchesRelationScope(edge.type, scope)) return
+    if (direction !== 'incoming') connect(edge.source, edge.target)
+    if (direction !== 'outgoing') connect(edge.target, edge.source)
+  })
   const ids = new Set([nodeId])
-  for (let iteration = 0; iteration < depth; iteration++) {
-    const boundary = new Set(ids)
-    graph.edges.forEach(edge => {
-      if (boundary.has(edge.source) || boundary.has(edge.target)) { ids.add(edge.source); ids.add(edge.target) }
+  let boundary = new Set(ids)
+  for (let iteration = 0; iteration < Math.min(6, Math.max(0, depth)); iteration++) {
+    const next = new Set<string>()
+    boundary.forEach(source => {
+      adjacency.get(source)?.forEach(target => { if (!ids.has(target)) { ids.add(target); next.add(target) } })
     })
+    if (!next.size) break
+    boundary = next
   }
   return ids
 }

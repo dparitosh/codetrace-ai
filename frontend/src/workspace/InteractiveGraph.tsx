@@ -4,6 +4,7 @@ import cytoscape, { Core } from 'cytoscape'
 import { Crosshair, Minus, Plus, Maximize2, RotateCcw, Layers, Search } from 'lucide-react'
 import { domainColors, domainOf, relationLabel, TraceGraph, TraceNode } from './types'
 import { containmentDescendants, localContext, matchingNodes, visibleGraph } from './graphModel'
+import type { TraversalDirection, RelationScope } from './graphModel'
 
 interface Props { graph: TraceGraph | null; selected: string | null; onSelect: (node: TraceNode | null) => void; busy: boolean }
 export default function InteractiveGraph({ graph, selected, onSelect, busy }: Props) {
@@ -13,11 +14,14 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   onSelectRef.current = onSelect
   const [domain, setDomain] = useState('ALL')
   const [detail, setDetail] = useState(false)
-  const [layout, setLayout] = useState('circle')
+  const [layout, setLayout] = useState('breadthfirst')
+  const [direction, setDirection] = useState<TraversalDirection>('both')
+  const [relationScope, setRelationScope] = useState<RelationScope>('all')
   const [query, setQuery] = useState('')
   const [focus, setFocus] = useState<string | null>(null)
   const [focusDepth, setFocusDepth] = useState(1)
   const [collapsed, setCollapsed] = useState(new Set<string>())
+  const layoutKey = layout === 'breadthfirst' ? `${layout}:${focus || ''}:${direction}:${relationScope}` : layout
   const [palette, setPalette] = useState({ text: '#526175', surface: '#ffffff', edge: '#b7c4d2', primary: '#3fb8aa' })
   useEffect(() => {
     const updatePalette = () => {
@@ -35,8 +39,8 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   const viewport = useRef<{ graph: TraceGraph; layout: string; zoom: number; pan: { x: number; y: number }; positions: Map<string, { x: number; y: number }> } | null>(null)
   const limits = graph?.metadata.limits || { render_nodes: 400, render_edges: 1000 }
   const view = useMemo(() => graph ? visibleGraph(graph, domain, detail, limits.render_nodes, limits.render_edges,
-    focus ? localContext(graph, focus, focusDepth) : undefined, collapsed, selected) : null,
-    [graph, domain, detail, focus, focusDepth, collapsed, selected, limits.render_nodes, limits.render_edges])
+    focus ? localContext(graph, focus, focusDepth, direction, relationScope) : undefined, collapsed, selected, focus ? relationScope : 'all') : null,
+    [graph, domain, detail, focus, focusDepth, direction, relationScope, collapsed, selected, limits.render_nodes, limits.render_edges])
   const matches = useMemo(() => matchingNodes(graph, query), [graph, query])
   const domains = useMemo(() => graph ? [...new Set(graph.nodes.map(domainOf))].filter(value => value !== 'EXTERNAL').sort() : [], [graph])
   useEffect(() => { setFocus(null); setQuery(''); setDomain('ALL'); setCollapsed(new Set()); setFocusDepth(1) }, [graph])
@@ -44,7 +48,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
     if (!container.current || !view || !graph) return
     const nodeMap = new Map(graph.nodes.map(node => [node.id, node]))
     const previous = viewport.current
-    const reuseLayout = previous?.graph === graph && previous.layout === layout
+    const reuseLayout = previous?.graph === graph && previous.layout === layoutKey
       && view.nodes.every(node => previous.positions.has(node.id))
     const engine = cytoscape({
       container: container.current, pixelRatio: Math.min(window.devicePixelRatio, 2), wheelSensitivity: 0.2,
@@ -65,13 +69,15 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
           'target-arrow-shape': 'triangle', 'arrow-scale': 0.65, 'curve-style': 'bezier', opacity: 0.65 } },
         { selector: 'edge[lifecycle = 1]', style: { 'line-color': palette.primary, 'target-arrow-color': palette.primary, width: 2, opacity: 0.85 } },
         { selector: 'node:selected', style: { 'border-color': palette.primary, 'border-width': 4,
-          width: node => Number(node.data('weight')) * 1.2, height: node => Number(node.data('weight')) * 1.2 } },
+          width: (node: cytoscape.NodeSingular) => Number(node.data('weight')) * 1.2,
+          height: (node: cytoscape.NodeSingular) => Number(node.data('weight')) * 1.2 } },
         { selector: '.faded', style: { opacity: 0.12 } },
         { selector: '.context-edge', style: { label: 'data(label)', 'font-size': 9, 'color': palette.text, 'text-rotation': 'autorotate',
           'text-background-color': palette.surface, 'text-background-opacity': 1, 'text-background-padding': '3px', width: 2, opacity: 1 } },
       ],
       layout: reuseLayout ? { name: 'preset', positions: Object.fromEntries(previous.positions), fit: false }
-        : { name: layout, animate: false, padding: 55, randomize: true, nodeRepulsion: 13000,
+        : { name: layout, directed: true, roots: focus && direction === 'outgoing' ? [focus] : undefined,
+          spacingFactor: 1.25, avoidOverlap: true, animate: false, padding: 55, randomize: true, nodeRepulsion: 13000,
           idealEdgeLength: 100, gravity: 0.35, numIter: 600 } as cytoscape.LayoutOptions,
     })
     cy.current = engine
@@ -86,13 +92,13 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
     const resize = new ResizeObserver(() => engine.resize())
     resize.observe(container.current)
     return () => {
-      const positions = viewport.current?.graph === graph && viewport.current.layout === layout
+      const positions = viewport.current?.graph === graph && viewport.current.layout === layoutKey
         ? new Map(viewport.current.positions) : new Map<string, { x: number; y: number }>()
       engine.nodes().forEach(node => { positions.set(node.id(), { ...node.position() }) })
-      viewport.current = { graph, layout, zoom: engine.zoom(), pan: engine.pan(), positions }
+      viewport.current = { graph, layout: layoutKey, zoom: engine.zoom(), pan: engine.pan(), positions }
       resize.disconnect(); engine.destroy(); cy.current = null
     }
-  }, [view, graph, layout, palette])
+  }, [view, graph, layout, layoutKey, focus, direction, palette])
   useEffect(() => {
     const engine = cy.current
     if (!engine) return
@@ -116,10 +122,22 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
     <div className="graph-panel-header"><div><span className="eyebrow">CONNECTED EVIDENCE</span><h2>Lifecycle graph <span className="count-badge">{graph?.nodes.length || 0}</span></h2></div>
       <div className="graph-toolbar"><IxButton variant="secondary" onClick={() => setDetail(value => !value)}><span className="ix-button-label"><Layers size={14} />{detail ? 'Symbol view' : 'Architecture view'}</span></IxButton>
         <IxButton variant="secondary" disabled={!canCollapse} onClick={toggleCollapse}>{selected && collapsed.has(selected) ? 'Expand children' : 'Collapse children'}</IxButton>
-        <IxButton variant="secondary" disabled={!graph || !selected} onClick={() => { setCollapsed(new Set()); setFocus(selected); setFocusDepth(current => focus === selected ? current + 1 : 1) }}>Expand context</IxButton>
-        <IxButton variant="tertiary" disabled={!graph} onClick={() => { setCollapsed(new Set()); setFocus(null); setDomain('ALL'); onSelect(null) }}>Reset view</IxButton>
+        <IxButton variant="secondary" disabled={!graph || !selected || (focus === selected && focusDepth >= 6)} onClick={() => { setCollapsed(new Set()); setFocus(selected); setFocusDepth(current => focus === selected ? Math.min(6, current + 1) : 1) }}>Expand context</IxButton>
+        <IxButton variant="tertiary" disabled={!graph} onClick={() => { setCollapsed(new Set()); setFocus(null); setFocusDepth(1); setDirection('both'); setRelationScope('all'); setLayout('breadthfirst'); setDomain('ALL'); onSelect(null) }}>Reset view</IxButton>
         <select aria-label="Graph layout" value={layout} onChange={event => setLayout(event.target.value)}><option value="circle">Circular</option><option value="cose">Organic layout</option><option value="breadthfirst">Hierarchy</option><option value="concentric">Concentric</option><option value="grid">Grid</option></select>
       </div>
+    </div>
+    <div className="graph-traversal-bar">
+      <label>Traverse <select aria-label="Traversal direction" value={direction} onChange={event => { setDirection(event.target.value as TraversalDirection); if (selected) setFocus(selected) }}>
+        <option value="both">Both directions</option><option value="outgoing">Downstream · outgoing</option><option value="incoming">Upstream · incoming</option>
+      </select></label>
+      <label>Context <select aria-label="Traversal relationships" value={relationScope} onChange={event => { setRelationScope(event.target.value as RelationScope); if (selected) setFocus(selected) }}>
+        <option value="all">All relationships</option><option value="hierarchy">Containment hierarchy</option><option value="evidence">Code & lifecycle evidence</option>
+      </select></label>
+      <label>Depth <select aria-label="Traversal depth" value={focusDepth} onChange={event => { setFocusDepth(Number(event.target.value)); if (selected) setFocus(selected) }}>
+        {[1, 2, 3, 4, 5, 6].map(value => <option key={value} value={value}>{value} {value === 1 ? 'hop' : 'hops'}</option>)}
+      </select></label>
+      <small>{focus ? 'Showing the selected resource and its bounded context.' : 'Select a resource to traverse its context.'}</small>
     </div>
     <div className="graph-filter-bar"><div className="domain-filters"><IxButton className={domain === 'ALL' ? 'active' : ''} onClick={() => { setDomain('ALL'); setFocus(null) }}>All domains</IxButton>
       {domains.map(value => <IxButton key={value} className={domain === value ? 'active' : ''} onClick={() => { setDomain(value); setFocus(null) }}><i style={{ background: domainColors[value] }} />{value}</IxButton>)}</div>

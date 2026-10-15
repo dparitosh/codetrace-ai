@@ -49,3 +49,19 @@ test('containment cycles terminate without hiding the collapsed root', () => {
 test('selected context survives preview limits', () => {
   assert.equal(visibleGraph(graph, 'ALL', true, 1, 10, undefined, new Set(), 'file').nodes[0].id, 'file')
 })
+test('hierarchical traversal follows the requested direction and context', () => {
+  assert.deepEqual([...localContext(graph, 'fn', 2, 'incoming', 'hierarchy')].sort(), ['file', 'fn'])
+  assert.deepEqual([...localContext(graph, 'fn', 2, 'outgoing', 'hierarchy')], ['fn'])
+  assert.deepEqual([...localContext(graph, 'fn', 1, 'incoming', 'evidence')].sort(), ['fn', 'req'])
+  assert.deepEqual([...localContext(graph, 'req', 1, 'outgoing', 'evidence')].sort(), ['fn', 'req'])
+})
+test('unknown traversal roots and dangling edges do not introduce resources', () => {
+  const broken = { ...graph, edges: [...graph.edges, { source: 'fn', target: 'missing', type: 'calls', properties: {} }] }
+  assert.equal(localContext(broken, 'missing').size, 0)
+  assert.ok(!localContext(broken, 'fn').has('missing'))
+})
+test('displayed relationships respect the traversal context without rewriting graph data', () => {
+  const view = visibleGraph(graph, 'ALL', true, 10, 10, new Set(['file', 'fn', 'req']), new Set(), 'fn', 'evidence')
+  assert.deepEqual(view.edges.map(edge => edge.type), ['implementedBy'])
+  assert.equal(graph.edges.length, 2)
+})
