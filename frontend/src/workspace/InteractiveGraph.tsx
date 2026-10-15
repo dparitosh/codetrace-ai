@@ -13,7 +13,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   onSelectRef.current = onSelect
   const [domain, setDomain] = useState('ALL')
   const [detail, setDetail] = useState(false)
-  const [layout, setLayout] = useState('cose')
+  const [layout, setLayout] = useState('circle')
   const [query, setQuery] = useState('')
   const [focus, setFocus] = useState<string | null>(null)
   const [focusDepth, setFocusDepth] = useState(1)
@@ -51,20 +51,21 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
       minZoom: 0.08, maxZoom: 4, selectionType: 'single',
       elements: [
         ...view.nodes.map(node => ({ data: { id: node.id, label: node.label.length > 26 ? node.label.slice(0, 24) + '…' : node.label,
-          color: domainColors[domainOf(node)] || '#93a1b3', shape: domainOf(node) === 'CODE' ? 'round-rectangle' : 'ellipse',
+          color: domainColors[domainOf(node)] || '#93a1b3',
           weight: ['repository', 'package'].includes(node.type) ? 48 : 36 } })),
         ...view.edges.map((edge, index) => ({ data: { id: 'edge-' + index, source: edge.source, target: edge.target,
           label: relationLabel(edge.type), lifecycle: edge.properties.origin === 'lifecycle_assertion' ? 1 : 0 } })),
       ],
       style: [
-        { selector: 'node', style: { 'background-color': 'data(color)', 'shape': node => node.data('shape') as cytoscape.Css.NodeShape, width: 'data(weight)', height: 'data(weight)',
-          'border-width': 5, 'border-color': palette.surface, 'label': 'data(label)', 'font-size': 10,
+        { selector: 'node', style: { 'background-color': 'data(color)', 'shape': 'ellipse', width: 'data(weight)', height: 'data(weight)',
+          'border-width': 2, 'border-color': palette.surface, 'label': 'data(label)', 'font-size': 10,
           'font-family': 'Siemens Sans, system-ui, sans-serif', 'color': palette.text, 'text-valign': 'bottom', 'text-margin-y': 9,
           'text-background-color': palette.surface, 'text-background-opacity': 0.9, 'text-background-padding': '3px' } },
         { selector: 'edge', style: { width: 1.2, 'line-color': palette.edge, 'target-arrow-color': palette.edge,
           'target-arrow-shape': 'triangle', 'arrow-scale': 0.65, 'curve-style': 'bezier', opacity: 0.65 } },
         { selector: 'edge[lifecycle = 1]', style: { 'line-color': palette.primary, 'target-arrow-color': palette.primary, width: 2, opacity: 0.85 } },
-        { selector: ':selected', style: { 'border-color': palette.primary, 'border-width': 3 } },
+        { selector: 'node:selected', style: { 'border-color': palette.primary, 'border-width': 4,
+          width: node => Number(node.data('weight')) * 1.2, height: node => Number(node.data('weight')) * 1.2 } },
         { selector: '.faded', style: { opacity: 0.12 } },
         { selector: '.context-edge', style: { label: 'data(label)', 'font-size': 9, 'color': palette.text, 'text-rotation': 'autorotate',
           'text-background-color': palette.surface, 'text-background-opacity': 1, 'text-background-padding': '3px', width: 2, opacity: 1 } },
@@ -117,7 +118,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
         <IxButton variant="secondary" disabled={!canCollapse} onClick={toggleCollapse}>{selected && collapsed.has(selected) ? 'Expand children' : 'Collapse children'}</IxButton>
         <IxButton variant="secondary" disabled={!graph || !selected} onClick={() => { setCollapsed(new Set()); setFocus(selected); setFocusDepth(current => focus === selected ? current + 1 : 1) }}>Expand context</IxButton>
         <IxButton variant="tertiary" disabled={!graph} onClick={() => { setCollapsed(new Set()); setFocus(null); setDomain('ALL'); onSelect(null) }}>Reset view</IxButton>
-        <select aria-label="Graph layout" value={layout} onChange={event => setLayout(event.target.value)}><option value="cose">Organic layout</option><option value="breadthfirst">Hierarchy</option><option value="concentric">Concentric</option><option value="grid">Grid</option></select>
+        <select aria-label="Graph layout" value={layout} onChange={event => setLayout(event.target.value)}><option value="circle">Circular</option><option value="cose">Organic layout</option><option value="breadthfirst">Hierarchy</option><option value="concentric">Concentric</option><option value="grid">Grid</option></select>
       </div>
     </div>
     <div className="graph-filter-bar"><div className="domain-filters"><IxButton className={domain === 'ALL' ? 'active' : ''} onClick={() => { setDomain('ALL'); setFocus(null) }}>All domains</IxButton>

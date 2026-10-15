@@ -128,3 +128,5 @@ Set `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_
 These scripts create missing tables/indexes without sample records. They do not upgrade existing columns. Review [GRAPH_POSTGRES_AUDIT.md](GRAPH_POSTGRES_AUDIT.md) before using legacy persistence in production.
 
 Graph controls support child collapse/expand, context expansion, background-click highlight clearing and reset. Companion similarity uses label and directed-neighbor feature overlap; it does not assert semantic equivalence. Recommendations identify missing supported links and incomplete providers. See [SESSION_GRAPH_AI_AUDIT.md](SESSION_GRAPH_AI_AUDIT.md) for the final audit and validation boundaries.
+
+Graph resources use circular nodes with domain colors and an enlarged selection outline. Circular is the initial layout; Organic, Hierarchy, Concentric and Grid remain available in the layout selector.
