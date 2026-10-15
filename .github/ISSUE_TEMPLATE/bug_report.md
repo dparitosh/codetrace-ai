@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Create a report to help us improve CodeAce AI
+about: Create a report to help us improve CodeTrace AI
 title: '[BUG] '
 labels: bug
 assignees: dparitosh
@@ -27,9 +27,9 @@ If applicable, add screenshots to help explain your problem.
 
 ## Environment
 - OS: [e.g. Windows 11, macOS, Ubuntu 22.04]
-- Browser: [e.g. Chrome 91, Firefox 89] (if frontend issue)
+- Browser: [e.g. current Chrome, Edge or Firefox] (if frontend issue)
 - Python Version: [e.g. 3.11.5] (if backend issue)
-- Node.js Version: [e.g. 18.17.0] (if CLI/frontend issue)
+- Node.js Version: [e.g. 24.x] (if CLI/frontend issue)
 
 ## Repository/Code Being Analyzed
 - Repository URL (if public): 
@@ -44,6 +44,10 @@ Paste any relevant error logs here
 ## Additional Context
 Add any other context about the problem here.
 
-## GitHub Copilot Context
-- Are you using GitHub Copilot? [Yes/No]
-- Did this issue occur while using Copilot suggestions? [Yes/No]
+## Evidence and provider context
+- Commit/branch:
+- Source mode and enabled provider profiles:
+- Does this reproduce without AI or external services?
+- Is the result partial or truncated?
+
+Do not include tokens, passwords, private `.env.local` contents or confidential source data.

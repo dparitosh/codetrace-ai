@@ -1,38 +1,24 @@
-## Description
-Brief description of changes made.
+## Problem and resulting behavior
 
-## Type of Change
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Code refactoring
+Describe the concrete trigger, previous behavior and resulting behavior.
 
-## GitHub Copilot Enhancement
-- [ ] This PR improves GitHub Copilot integration
-- [ ] This PR adds better documentation for Copilot assistance
-- [ ] This PR includes Copilot-friendly code patterns
+## Validation
 
-## Testing
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] I have tested this with GitHub Copilot enabled
+List relevant tests, browser checks and actual live integrations. Distinguish
+mocked/SQLite results from PostgreSQL, ALM vendor and real model verification.
 
-## Checklist
-- [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
+## Risks and limitations
 
-## Screenshots (if applicable)
-Add screenshots to help explain your changes.
+Describe configuration or schema changes, compatibility limits and any manual
+activation/migration steps. Explain how unknown remote-write outcomes reconcile.
 
-## Related Issues
-Closes #[issue_number]
+## Review checks
 
-## Additional Notes
-Any additional information about this PR.
+- [ ] Relevant regression checks pass.
+- [ ] Configuration examples and maintained docs match the implementation.
+- [ ] No credentials, private configuration, generated evidence or test dependencies are committed.
+- [ ] Approval, expiry, provenance and truncation behavior remain explicit.
+
+## Related issues / screenshots
+
+Link relevant issues and UI evidence where useful. Remove sensitive information.

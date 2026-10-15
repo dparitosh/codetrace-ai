@@ -1,26 +1,47 @@
-# Functional requirements — local-first product line
+# Functional requirements
 
-## Product scope
+## Scope
 
-CodeTrace AI provides reusable software-analysis capabilities for local source folders and GitLab projects. It is designed as a product line: clients discover supported features through `GET /api/v1/capabilities` and select source and analysis options through versioned OpenAPI contracts.
+CodeTrace AI is a local-first code and lifecycle evidence workspace. The Siemens
+iX React shell provides a contextual graph, resource index, property inspector,
+evidence-grounded AI companion, review center and connection status. Administrator
+configuration belongs in root `.env.local`; users select managed identities
+rather than entering provider URLs or credentials.
 
-## Mandatory capabilities
+## Implemented capabilities
 
-- Local folder graph construction from client-provided relative paths and UTF-8 contents.
-- GitLab project graph construction for approved GitLab hosts.
-- Typed code semantics for modules, classes, functions, and variables.
-- NetworkX-based architecture audit: dependency cycles, high-complexity classes, potentially uncalled functions, and orphaned nodes.
-- Local structural quality and static security checks.
-- Bounded coding-agent context at `POST /api/v1/agent/context`.
+- Analyze supported UTF-8 source uploads or centrally managed local/Git sources.
+- Extract typed code facts and bounded architecture, quality and static security
+  evidence. Coverage is structural/heuristic outside supported language parsers.
+- Combine explicit AM, RM, CM, QM, configuration and ResourceShape assertions with
+  stable repository-scoped code identities; preserve full predicate URIs.
+- Consume bounded RDF exports/network providers and TRS changes. Incremental replay
+  requires a matching base and exact event checkpoint; otherwise rebuild.
+- Import CI results from configured GitHub/GitLab endpoints. Only matching revisions
+  link builds to source; partial windows remain explicit.
+- Import supported CycloneDX/SPDX JSON or generate an npm lockfile inventory.
+  Display SBOM components/dependencies and export an approved inventory.
+- Explore circular nodes with hierarchical, circular, organic and other layouts;
+  choose traversal direction, relationship scope and depth; expand/collapse
+  containment, highlight context, and inspect identity/provenance.
+- Search labels, identifiers, URIs, domains and source paths. Additional results
+  and inspector relationships remain reachable with visible counts.
+- Ask centrally configured Ollama or compatible AI for cited answers. Retain a
+  deterministic evidence summary when AI is disabled or unavailable/invalid.
+- Bind decisions/exports to a result digest and session. Enforce idle, absolute,
+  storage and concurrency limits. Support memory or shared SQLite sessions on one host.
+- Publish approved managed snapshots through a bounded OSLC server profile.
+  Prepare, approve/reject, conditionally apply and reconcile remote link proposals
+  for centrally enabled writable provider profiles.
 
-## Quality constraints
+## Constraints and acceptance
 
-- Local browser and editor clients keep authority over which files are sent.
-- The service rejects traversal and absolute paths, limits a request to 500 files and 10 MB, and retains no selected source after the request completes.
-- Agent context is versioned and includes provenance, symbols, relations, audit evidence, and safety guidance.
-- Unsupported source extensions are rejected by the `strict` analysis profile.
-- Changes must pass scanner regression tests, API contract tests, frontend type checking, and a production frontend build before release.
+Reachability and similarity scores are retrieval evidence, not proven causal
+impact or semantic equivalence. Test links do not imply passing execution. SBOM
+inventories do not establish complete artifact provenance or compliance. Session
+tokens isolate browser sessions but do not authenticate independent users.
+The app is not a distributed hostile multi-tenant service or a certified OSLC
+implementation. Vendor-specific validation remains necessary.
 
-## Extension integration
-
-A VS Code extension should use workspace trust, explicit user approval, secret-file exclusions, cancellation, and deterministic unit tests. See [VS Code agent integration](vscode-agent.md).
+Changes must pass applicable checks in [testing.md](testing.md). Current evidence
+and deployment limitations are recorded in [audit-status.md](audit-status.md).

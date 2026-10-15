@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea for CodeAce AI
+about: Suggest an idea for CodeTrace AI
 title: '[FEATURE] '
 labels: enhancement
 assignees: dparitosh
@@ -22,8 +22,8 @@ Describe any alternative solutions or features you've considered.
 ## Use Case
 Describe how you would use this feature in your workflow.
 
-## GitHub Copilot Integration
-How would this feature work with GitHub Copilot? Would it enhance the AI-assisted development experience?
+## Integration and configuration
+Which source/provider domains and configuration are involved? Describe expected provenance, approval and session behavior.
 
 ## Implementation Ideas
 If you have ideas about how this could be implemented, share them here.

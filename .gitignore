@@ -1,7 +1,6 @@
 # Environment and secrets
 .env
 .env.*
-!.env.template
 
 # Python
 __pycache__/

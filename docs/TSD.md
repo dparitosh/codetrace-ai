@@ -1,37 +1,59 @@
-# Technical design — local-first CodeTrace AI
+# Technical design
 
 ## Components
 
 | Component | Responsibility |
 | --- | --- |
-| React frontend | Lets a user select a source folder and renders analysis results. |
-| FastAPI service | Validates bounded requests and exposes OpenAPI endpoints. |
-| `codegraph_core` | Extracts typed semantic facts using Python AST and configurable generic scanners. |
-| NetworkX audit | Evaluates architecture cycles, complex classes, potentially uncalled functions, and orphaned nodes. |
-| GitLab adapter | Clones an allowlisted project into a temporary folder and discards it after analysis. |
+| `frontend/src/workspace` | Siemens iX shell, Cytoscape graph, index, inspector, companion and ALM proposal UI |
+| `backend/api` | Bounded FastAPI contracts, sessions/reviews, managed sync, OSLC publication/collaboration |
+| `codegraph_core` | Python AST and configurable structural scanners; reusable graph/context core |
+| `services/workspace_service.py` | Assemble code, lifecycle, CI and SBOM into one fingerprinted snapshot |
+| `services/git_isolation.py` | Isolate Git configuration, templates, helpers and child environment |
+| `services/oslc_service.py`, `oslc_client.py` | Bounded RDF consumption, discovery and conditional remote links |
+| `services/trs_cache.py` | Durable per-provider/configuration checkpoints and incremental replay |
+| `services/oslc_store.py` | SQLite publication identities, ETags, TRS bases/events and proposal audit transitions |
+| `services/shared_reviews.py` | Optional shared SQLite sessions/results, atomic decisions and worker leases |
+| `services/sbom_service.py` | Supported JSON import, npm lockfile inventory and graph attachment |
+| `services/companion_service.py` | Evidence retrieval, allowlisted properties, AI requests and citation checks |
+| `database` | Optional legacy ORM persistence, explicit bootstrap and PostgreSQL migrations |
 
-## Data flow
+## Data and approval flow
 
-1. The browser or editor extension selects files under its own trust boundary.
-2. It sends relative paths and UTF-8 content to the local API.
-3. The API enforces path, size, file-count, and source-extension constraints.
-4. `codegraph_core` returns typed file/module/class/function/variable semantics.
-5. The service serializes a graph, quality/security results, or bounded agent context.
+Managed source IDs resolve through central configuration. Scans do not execute
+project code. Remote clones use isolated Git settings. OSLC pages stay inside
+configured origin/path prefixes; redirects and external JSON-LD contexts are
+disabled. Files, RDF, graph growth, AI context/output, CI windows and storage
+have separate configured bounds.
 
-## Public contracts
+Snapshots retain directed predicates, provenance, gaps, revision evidence and
+tombstones. A digest covers the enriched result. Decisions use revision/digest
+checks; exports and publication require approval. Link proposals capture a strong
+ETag and immutable endpoints, then use versioned transitions before conditional
+PUT. Conflicts/unknown outcomes cannot be automatically retried. Reconciliation
+reads the current provider graph.
 
-- `/api/v1/capabilities` is the feature-discovery manifest.
-- `/api/v1/graph/local` and `/api/v1/graph/gitlab` return graph data.
-- `/api/v1/agent/context` returns a `schema_version` and structured evidence suitable for an editor tool.
+## Storage and scaling
 
-## Security boundaries
+Memory reviews require one process. Optional SQLite reviews hash tokens, share
+transactions and worker leases across processes on one host, and survive restarts
+until end/expiry. Publication and TRS caches also use local SQLite. Do not use a
+network filesystem or treat this as multi-host coordination. Session access is
+not account authentication; protect the app and its data directory accordingly.
 
-- The API never accepts absolute or traversal source paths.
-- Browser/editor clients decide which files leave the workspace.
-- Local source payloads are limited to 500 files and 10 MB.
-- GitLab clone URLs use HTTPS and must match `GITLAB_ALLOWED_HOSTS`.
-- Source data is request-only; no selected source is persisted by these routes.
+Legacy PostgreSQL is not required by the active API. Bootstrap creates missing
+tables. Explicit versioned migrations widen existing IDs/predicates and use
+fixed-size SHA-256 endpoint keys to avoid indexing long Unicode URIs. Duplicate
+or dangling legacy data fails the transaction rather than being discarded.
+Database query failures raise storage errors instead of returning empty success.
 
-## Extensibility
+## Graph and frontend performance
 
-New product-line features should be independently discoverable in the capability manifest, version their response contracts, and include deterministic tests. Register language-specific scanners through `CodeGraph.register_scanner` rather than coupling provider or UI code to parser internals.
+Projection enforces node/edge caps and preserves breadth-first order in focus.
+Collapse builds one shared containment index per projection. Foreign predicate
+local names do not become containment. Compatible views preserve positions and
+viewport state; selection styling is independent of native Cytoscape selection.
+
+React, icons and Cytoscape have separate production chunks. Graph, companion,
+review, collaboration and optional analysis views load on demand. Run
+`node frontend/graph-performance.mjs` for model benchmarks; these do not measure
+browser layout or frame performance. See [testing.md](testing.md).

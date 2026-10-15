@@ -1,12 +1,12 @@
 # CodeTrace AI
 
-The application shell uses [Siemens Industrial Experience React](https://ix.siemens.io/docs/home/installation/react), with light/dark themes, managed-source selection, graph exploration and an evidence-grounded companion. Current audit results and open capability gaps are in [AUDIT_2026-10-15.md](AUDIT_2026-10-15.md).
+The application shell uses [Siemens Industrial Experience React](https://ix.siemens.io/docs/home/installation/react), with light/dark themes, managed-source selection, graph exploration and an evidence-grounded companion. Current verification and limitations are in [current audit status](docs/audit-status.md).
 
 Local-first source analysis, dependency graphs, quality checks, static security patterns, and explicit OSLC lifecycle links. The browser submits supported UTF-8 source files to a local FastAPI service. No database, cloud account, or access token is needed for local folders.
 
 ## Install on Windows
 
-Prerequisites: Python 3.10+ and Node.js 22.12+ (22.x), 24.x or 26+ with npm on PATH. Node 24 is used in CI. Git is required only for GitLab ingestion. Use a real Python installation, not the Windows Store app-execution alias.
+Prerequisites: Python 3.10+ and Node.js 22.19+ (22.x), 24.x or 26+ with npm on PATH. Node 24 is used in CI. Git is required for remote Git/GitLab ingestion and local revision evidence. Use a real Python installation, not the Windows Store app-execution alias.
 
 Frontend dependencies use npm and the committed `frontend/package-lock.json`. Run `npm ci` from the `frontend` directory. On Windows, use `npm.cmd ci` if PowerShell blocks `npm.ps1`. If npm reports `EUSAGE` with missing or invalid lock entries, update to this branch's repaired package manifest and lockfile together; avoid bypassing peer checks with `--force` or `--legacy-peer-deps`.
 
@@ -30,14 +30,14 @@ For foreground debugging, run `start-backend.ps1` and `start-frontend.ps1` in se
 
 ## Install on macOS or Linux
 
-Install Python 3.10+, its venv support, Node.js 20+, npm, and optionally Git. From the checkout:
+Install Python 3.10+, its venv support, Node.js 22.19+ (22.x), 24.x or 26+, npm, and optionally Git. From the checkout:
 
 ```bash
 bash install.sh              # add --dev for Python test dependencies
 bash start.sh                # Ctrl+C stops both services
 ```
 
-Set `PYTHON=/path/to/python3` to select an interpreter. Scripts anchor paths to their own checkout. Docker is not a supported installation path; the legacy compose file is not a working deployment.
+Set `PYTHON=/path/to/python3` to select an interpreter. Scripts anchor paths to their own checkout. Docker deployment is not provided; use the maintained native installers.
 
 ## Configuration
 
@@ -72,6 +72,16 @@ Precedence: process environment > root `.env.local` > root `.env` (legacy) > def
 
 Use JSON arrays for list settings, not comma-separated strings. `PORT` remains a backend compatibility alias; use `BACKEND_PORT` for new configuration. Old `VITE_HOST`/`VITE_*_PORT` overrides are replaced by the shared settings above. The old database, Redis, Neo4j, JWT, and webhook keys were removed from the template because the active app does not use those services. API routes remain relative; production hosting must proxy `/api` to the backend. `npm run preview` uses the same configured proxy.
 
+## Documentation
+
+- [Functional requirements](docs/FRS.md)
+- [Technical design](docs/TSD.md)
+- [Graph and OSLC contracts](docs/trace-knowledge-graph.md)
+- [Testing and live integration checklist](docs/testing.md)
+- [Current audit status](docs/audit-status.md)
+- [VS Code agent contract](docs/vscode-agent.md)
+- [Contributing](CONTRIBUTING.md)
+
 ## Review and session workflow
 
 1. Select a folder and analyze it. Dependency/build folders and unsupported files are filtered before reading/uploading; the UI reports the skipped count.
@@ -81,7 +91,17 @@ Use JSON arrays for list settings, not comma-separated strings. `PORT` remains a
 
 The session bar displays remaining time, an explicit keepalive, review history, and an end-session action. Reading session status/history does not prolong idle time; analysis/review actions do. Absolute expiry cannot be extended. History lets you recover results after navigation or a timed-out response. Ending/expiring a session clears server-held reviews. A browser reload loses its in-memory session token; old server data expires automatically.
 
-This is a local reviewer workflow, not authentication, independent sign-off, or certification that code is correct. Session tokens isolate browser sessions. Review records/audit events live only in memory and disappear on backend restart. Run **one backend process/worker**; multiple workers require a shared session store. Export any records you need to keep before ending a session.
+This is a local reviewer workflow, not authentication, independent sign-off, or certification that code is correct. Session tokens isolate browser sessions. `SESSION_STORE=memory` is the default and requires **one backend process/worker**. Set `SESSION_STORE=sqlite` and a shared `SESSION_DB_PATH` on private local disk for multiple workers on one host. SQLite reviews survive worker restarts until session end or expiry; ending a session deletes its reviews. Restrict file access and include the database/WAL in your storage protection and backup policy. SQLite is not a distributed multi-host session service. Export records before ending their session.
+
+Git clones run with isolated user/system configuration, templates, hooks, credential helpers and environment. A private managed repository can name `token_env`; host credential helpers are deliberately unavailable. Local repository administration and the Git executable remain trusted.
+
+Managed snapshots automatically inventory supported npm v2/v3 lockfiles (`sbom_lockfiles`, default root and frontend package-lock.json), without installing or executing packages. Set a managed repository's `sbom_path` to import CycloneDX JSON 1.4–1.6 or SPDX JSON 2.2–2.3 instead. Components and declared dependency edges appear in the SBOM graph domain. After approving the graph, `GET /api/v1/workspace/sbom/{review_id}` with the session header exports the inventory. This is supplier/lockfile evidence, not a built-artifact attestation, vulnerability scan, complete cross-ecosystem inventory or license compliance verdict.
+
+Network TRS providers use a durable cache (`TRS_INCREMENTAL`, `TRS_CACHE_PATH`). Replay checks the exact saved event and base identity, dereferences changed resources, retains deletion tombstones, and replaces a complete checkpoint atomically. Missing continuity or a changed base triggers a full rebuild; bounded/incomplete rebuilds never replace the last complete checkpoint. CI follows same-endpoint Link pagination up to `CI_MAX_PAGES` / `CI_MAX_RUNS`; bounded windows are reported as partial.
+
+The review center provides contextual link proposals for centrally configured network providers with `allow_writes=true`. Approve the managed snapshot, choose existing source/target resources and a supported predicate, prepare a strong ETag, approve/reject the proposal, then apply the approved link. A stale ETag becomes a conflict. Timeouts become unknown outcomes and require read-only reconciliation before preparing any further write. This workflow is session-bound and records an audit history; it does not provide independent reviewer authentication or vendor certification. Only test against disposable ALM resources until your provider profile is verified.
+
+For existing PostgreSQL schemas, back up first, run `python backend/database/migrations.py` to list pending versions, then `python backend/database/migrations.py --apply` in your configured environment. The transactional migration widens resource IDs/predicates and adds graph-scoped hashed identity uniqueness and endpoint foreign keys. Existing duplicate/dangling graph data causes rollback and must be reconciled explicitly. Bootstrap creates missing tables; it does not migrate existing columns. No migration runs automatically during app startup.
 
 Requests fail fast when capacity is full. A browser timeout cancels waiting, not Python execution. The backend discards results past the configured deadline; an individual parser operation cannot be interrupted mid-file. Git has its own subprocess timeout but no clone disk quota. These bounds are suitable for a local tool, not a hostile multi-tenant service.
 
@@ -115,7 +135,7 @@ To uninstall development dependencies, stop the services and remove only this ch
 
 ## Optional PostgreSQL schema bootstrap
 
-The current local-first API uses in-memory review sessions and SQLite OSLC publication. PostgreSQL tools prepare the legacy ORM schema; they do not switch the active app to PostgreSQL.
+The active local-first API uses configurable memory/SQLite reviews, SQLite OSLC publication and a durable TRS cache. PostgreSQL tools prepare the legacy ORM schema; they do not switch the active app to PostgreSQL.
 
 Set `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` and optional `POSTGRES_CONNECT_TIMEOUT_SECONDS` in root `.env.local`. No password is supplied by default. The configured user must have permission to create the database, or an administrator must create it first.
 
@@ -125,10 +145,10 @@ Set `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_
 .\.venv\Scripts\python.exe backend/database/migrate_enhanced.py
 ```
 
-These scripts create missing tables/indexes without sample records. They do not upgrade existing columns. Review [GRAPH_POSTGRES_AUDIT.md](GRAPH_POSTGRES_AUDIT.md) before using legacy persistence in production.
+These scripts create missing tables/indexes without sample records. They do not upgrade existing columns. Use the explicit versioned runner in [Technical design](docs/TSD.md) to migrate existing columns; verify against a disposable PostgreSQL instance before deployment.
 
-Graph controls support child collapse/expand, context expansion, background-click highlight clearing and reset. Companion similarity uses label and directed-neighbor feature overlap; it does not assert semantic equivalence. Recommendations identify missing supported links and incomplete providers. See [SESSION_GRAPH_AI_AUDIT.md](SESSION_GRAPH_AI_AUDIT.md) for the final audit and validation boundaries.
+Graph controls support child collapse/expand, context expansion, background-click highlight clearing and reset. Companion similarity uses label and directed-neighbor feature overlap; it does not assert semantic equivalence. Recommendations identify missing supported links and incomplete providers. See [audit status](docs/audit-status.md) for validation boundaries.
 
 Graph resources use circular nodes with domain colors and an enlarged selection outline. Hierarchy is the initial layout; Circular, Organic, Concentric and Grid remain available. Select a resource to traverse upstream, downstream or both directions over 1–6 hops. Choose containment hierarchy or code/lifecycle evidence separately to avoid treating a shared container as impact evidence.
 
-The latest focused graph review and regression results are recorded in [TRAVERSAL_AUDIT.md](TRAVERSAL_AUDIT.md).
+Current graph review results and known limits are consolidated in [audit status](docs/audit-status.md).
