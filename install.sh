@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 python_bin="${PYTHON:-python3}"
 "$python_bin" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else "Python 3.10+ required")'
-node -e 'if (Number(process.versions.node.split(".")[0]) < 20) { throw Error("Node.js 20+ required") }'
+node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (!((major === 22 && minor >= 12) || major === 24 || major >= 26)) throw Error("Use Node.js 22.12+ (22.x), 24.x or 26+")'
 if [[ ! -f .env.local ]]; then cp .env.local.example .env.local; fi
 if [[ ! -x .venv/bin/python ]]; then "$python_bin" -m venv .venv; fi
 .venv/bin/python -m pip install -r backend/requirements-local.txt -e codegraph_core

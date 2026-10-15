@@ -1,3 +1,4 @@
+import { IxButton } from '@siemens/ix-react'
 import { useEffect, useState } from 'react'
 import { decideReview, exportReview, getReview, ReviewRecord, useReviewSession } from '../reviewSession'
 
@@ -27,11 +28,11 @@ export default function ReviewPanel({ review, onChange }: { review: ReviewRecord
     </label>}
     <div className="mt-3 flex flex-wrap gap-3">
       {review.status === 'pending' && <>
-        <button disabled={busy || expired} onClick={() => run(async () => onChange(await decideReview(review, 'approved', note)))} className="rounded bg-emerald-700 px-4 py-2 text-white disabled:opacity-50">Approve result</button>
-        <button disabled={busy || expired} onClick={() => run(async () => onChange(await decideReview(review, 'rejected', note)))} className="rounded bg-red-700 px-4 py-2 text-white disabled:opacity-50">Reject result</button>
+        <IxButton disabled={busy || expired} onClick={() => run(async () => onChange(await decideReview(review, 'approved', note)))} className="rounded bg-emerald-700 px-4 py-2 text-white disabled:opacity-50">Approve result</IxButton>
+        <IxButton disabled={busy || expired} onClick={() => run(async () => onChange(await decideReview(review, 'rejected', note)))} className="rounded bg-red-700 px-4 py-2 text-white disabled:opacity-50">Reject result</IxButton>
       </>}
-      <button disabled={busy || expired} onClick={() => run(async () => onChange(await getReview(review.id)))} className="rounded border px-4 py-2 disabled:opacity-50">Refresh review</button>
-      <button disabled={busy || expired || review.status !== 'approved'} onClick={() => run(() => exportReview(review.id))} className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-50">Download approved result</button>
+      <IxButton disabled={busy || expired} onClick={() => run(async () => onChange(await getReview(review.id)))} className="rounded border px-4 py-2 disabled:opacity-50">Refresh review</IxButton>
+      <IxButton disabled={busy || expired || review.status !== 'approved'} onClick={() => run(() => exportReview(review.id))} className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-50">Download approved result</IxButton>
     </div>
     {expired && <p className="mt-3 text-amber-800">Session expired or ended. This displayed result cannot be approved or exported; start a new analysis.</p>}
     {error && <p role="alert" className="mt-3 text-red-700">{error}</p>}

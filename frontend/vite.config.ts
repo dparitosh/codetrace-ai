@@ -29,6 +29,8 @@ export default defineConfig(({ mode }) => {
   const proxy = { '/api': { target: backendUrl, changeOrigin: true } }
   return {
     envDir: root,
+    // Node's built-in contract tests run separately; Vitest must not collect them.
+    test: { include: ['src/**/*.test.{ts,tsx}'] },
     plugins: [react()],
     resolve: { alias: { '@': path.resolve(root, 'frontend/src') } },
     server: { host, port: frontendPort, strictPort: true, proxy },

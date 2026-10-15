@@ -28,10 +28,13 @@ jobs:
         working-directory: frontend
         run: npm ci
       - name: Test graph and session contracts
-        run: node --test frontend/graph-audit.test.mjs frontend/session-audit.test.mjs
+        run: node --test frontend/graph-audit.test.mjs frontend/session-audit.test.mjs frontend/installation-audit.test.mjs
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
       - name: Test frontend
         working-directory: frontend
-        run: npm test -- --run --threads false
+        run: npm test -- --run
       - name: Build frontend
         working-directory: frontend
         run: npm run build

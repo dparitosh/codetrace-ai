@@ -161,11 +161,13 @@ async def put_resource(resource_id: str, request: Request):
     expected = request.headers.get('If-Match')
     if not expected or expected == '*' or expected.startswith('W/'):
         raise HTTPException(428, 'A strong, exact If-Match resource ETag is required')
-    content = await request.body()
-    if len(content) > settings.OSLC_MAX_RESPONSE_BYTES:
-        raise HTTPException(413, 'OSLC representation exceeds the configured size limit')
+    content = bytearray()
+    async for chunk in request.stream():
+        if len(content) + len(chunk) > settings.OSLC_MAX_RESPONSE_BYTES:
+            raise HTTPException(413, 'OSLC representation exceeds the configured size limit')
+        content.extend(chunk)
     try:
-        graph = parse_rdf(content, request.headers.get('Content-Type', '').split(';')[0])
+        graph = parse_rdf(bytes(content), request.headers.get('Content-Type', '').split(';')[0])
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     record = publication_store().update(resource_id, graph, expected, 'oslc-client')

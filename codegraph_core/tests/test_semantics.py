@@ -59,3 +59,16 @@ def test_package_cycles_respect_ownership_after_cached_projection():
     graph.add_relationship(first, second, 'calls')
     graph.add_relationship(second, first, 'calls')
     assert [set(cycle) for cycle in graph.package_cycles()] == [{'package:a', 'package:b'}]
+def test_similarity_ignores_containment_and_keeps_relation_semantics():
+    from codegraph_core.graph.networkx_backend import SoftwareArchitectureGraph
+    graph = SoftwareArchitectureGraph()
+    package = graph.add_package('service')
+    first = graph.add_function(package, 'first')
+    second = graph.add_function(package, 'second')
+    target = graph.add_function(package, 'target')
+    assert graph.similarity(first, second) == 0
+    graph.add_relationship(first, target, 'calls')
+    graph.add_relationship(second, target, 'imports')
+    assert graph.similarity(first, second) == 0
+    graph.add_relationship(second, target, 'calls')
+    assert graph.similarity(first, second) == 0.5

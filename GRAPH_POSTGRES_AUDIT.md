@@ -1,5 +1,7 @@
 # Graph and PostgreSQL audit — 2026-10-13
 
+Follow-up 2026-10-15: the persistence atomicity P1 below is now repaired and regression-tested; optional ORM/schema checks run against SQLite. Current validation and remaining gaps are in [AUDIT_2026-10-15.md](AUDIT_2026-10-15.md). The older validation limits below describe the October 13 run.
+
 Scope: active graph projection/traversal plus legacy PostgreSQL scripts, configuration, ORM models and persistence. No live database was contacted or changed. Findings are prioritized by impact, not a claim of exhaustive bug discovery.
 
 ## Repaired findings

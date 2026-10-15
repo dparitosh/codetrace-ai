@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, ArrowUpRight, Boxes, CheckCircle2, ChevronDown, CircleDot, Code2, Command, GitBranch, Layers, Network, RefreshCw, Search, Settings2, ShieldCheck, Sparkles, Workflow, FileCode2, AlertCircle, X, Link2 } from 'lucide-react'
+import { Activity, ArrowUpRight, Boxes, CheckCircle2, CircleDot, GitBranch, Network, Search, Settings2, ShieldCheck, Sparkles, Workflow, FileCode2, AlertCircle, X, Link2 } from 'lucide-react'
+import { IxApplication, IxApplicationHeader, IxMenu, IxMenuItem, IxMenuCategory, IxContent, IxButton, IxSelect, IxSelectItem, IxAvatar } from '@siemens/ix-react'
+import { iconGraph, iconTable, iconHistory, iconCheck, iconUserSettings, iconCode, iconRefresh, iconNetworkDevice } from '@siemens/ix-icons/icons'
 import { requestJson, ReviewRecord, workspaceRequest, useReviewSession } from '../reviewSession'
 import { Catalog, domainColors, domainOf, TraceGraph, TraceNode } from './types'
 import InteractiveGraph from './InteractiveGraph'
@@ -10,6 +12,7 @@ import AnalysisPage from '../components/AnalysisPage'
 import QualityPage from '../components/QualityPage'
 import SecurityPage from '../components/SecurityPage'
 import './workspace.css'
+import './siemens-ui.css'
 
 type View = 'graph' | 'resources' | 'activity' | 'review' | 'connections' | 'analysis' | 'quality' | 'security'
 export default function Workspace() {
@@ -23,7 +26,6 @@ export default function Workspace() {
   const [resourceQuery, setResourceQuery] = useState('')
   const [resourceDomain, setResourceDomain] = useState('ALL')
   const session = useReviewSession()
-  const [showTools, setShowTools] = useState(false)
   const graph = (review?.result || null) as TraceGraph | null
   useEffect(() => {
     const clearExpired = () => {
@@ -59,34 +61,36 @@ export default function Workspace() {
   const lifecycleLinks = graph?.edges.filter(edge => edge.properties.origin === 'lifecycle_assertion').length || 0
   const connectors = graph?.metadata.connectors || []
   const sourceLabel = catalog?.sources.find(item => item.id === source)?.label || 'Managed workspace'
-  const navigate = (target: View) => { setView(target); setShowTools(false); if (target === 'resources') setResourceDomain('ALL') }
+  const navigate = (target: View) => { setView(target); if (target === 'resources') setResourceDomain('ALL') }
   const nav = [
-    { id: 'graph', label: 'Graph explorer', icon: Network }, { id: 'resources', label: 'Resource index', icon: Boxes },
-    { id: 'activity', label: 'Change & delivery', icon: Activity }, { id: 'review', label: 'Review center', icon: ShieldCheck },
+    { id: 'graph', label: 'Graph explorer', icon: iconGraph }, { id: 'resources', label: 'Resource index', icon: iconTable },
+    { id: 'activity', label: 'Change & delivery', icon: iconHistory }, { id: 'review', label: 'Review center', icon: iconCheck },
   ] as const
-  return <div className="workspace-shell">
-    <aside className="workspace-sidebar">
-      <a className="brand" href="#" onClick={event => { event.preventDefault(); navigate('graph') }}><span className="brand-symbol"><Network size={23} /></span><span>codetrace<span className="brand-ai">AI</span></span></a>
-      <div className="workspace-switch"><div className="workspace-avatar">CT</div><div><strong>Intelligence workspace</strong><span>Local · administrator managed</span></div><ChevronDown size={13} /></div>
-      <div className="nav-section-label">WORKSPACE</div>
-      <nav>{nav.map(item => <button key={item.id} className={view === item.id ? 'nav-item active' : 'nav-item'} onClick={() => navigate(item.id)}><item.icon size={17} /><span>{item.label}</span>{item.id === 'review' && review && <i className={'review-state-dot ' + review.status} />}</button>)}</nav>
-      <div className="nav-section-label nav-second">LIFECYCLE DOMAINS</div>
-      <div className="domain-nav">{[['AM', 'Architecture'], ['RM', 'Requirements'], ['CM', 'Change management'], ['QM', 'Quality management'], ['TRS', 'Tracked resources']].map(([id, label]) => <button key={id} onClick={() => { navigate('resources'); setResourceDomain(id); setResourceQuery('') }}><i style={{ background: domainColors[id] }} /><span>{label}</span><b>{domainCounts[id] || 0}</b></button>)}</div>
-      <div className="sidebar-bottom"><div className="sidebar-note"><Sparkles size={17} /><strong>Context makes the difference.</strong><p>One connected view of code and the lifecycle around it.</p></div>
-        <button className={view === 'connections' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('connections')}><Settings2 size={17} />Central connections</button>
-        <button className="nav-item" onClick={() => setShowTools(value => !value)}><Code2 size={17} />Source analysis tools<ChevronDown size={13} /></button>
-        {showTools && <div className="tools-menu"><button onClick={() => navigate('analysis')}>Local folder analysis</button><button onClick={() => navigate('quality')}>Quality assessment</button><button onClick={() => navigate('security')}>Security patterns</button></div>}
-        <div className="sidebar-foot"><span className="live-dot" />Local-first workspace<span>v1.0</span></div>
-      </div>
-    </aside>
-    <div className="workspace-main">
-      <header className="workspace-topbar"><div className="breadcrumb"><Layers size={14} /><span>Workspace</span><span>/</span><strong>{view === 'graph' ? 'Graph explorer' : view.replace(/_/g, ' ')}</strong></div>
-        <div className="topbar-right"><span className="privacy-chip"><ShieldCheck size={12} />Local evidence</span><button className="topbar-icon" title="Open central connections" onClick={() => navigate('connections')}><Command size={17} /></button><div className="reviewer-avatar" title="Local reviewer">LR</div></div></header>
+  return <IxApplication className="ix-workspace">
+    <IxApplicationHeader name="CodeTrace Intelligence" nameSuffix="Lifecycle workspace">
+      <span slot="logo" className="ix-product-mark" aria-label="CodeTrace">CT</span>
+      <span slot="secondary" className="ix-local-badge">Local evidence · {sourceLabel}</span>
+      <IxButton variant="tertiary" icon={iconUserSettings} onClick={() => navigate('connections')}>Connections</IxButton>
+      <IxAvatar initials="LR" aria-label="Local reviewer" />
+    </IxApplicationHeader>
+    <IxMenu pinned startExpanded enableToggleTheme aria-label="Workspace navigation">
+      {nav.map(item => <IxMenuItem key={item.id} icon={item.icon} active={view === item.id} onClick={() => navigate(item.id)}>{item.label}</IxMenuItem>)}
+      <IxMenuCategory label="Lifecycle domains" icon={iconNetworkDevice}>
+        {[['AM', 'Architecture'], ['RM', 'Requirements'], ['CM', 'Change management'], ['QM', 'Quality management'], ['TRS', 'Tracked resources']].map(([id, label]) => <IxMenuItem key={id} active={view === 'resources' && resourceDomain === id} onClick={() => { navigate('resources'); setResourceDomain(id); setResourceQuery('') }}>{label} · {domainCounts[id] || 0}</IxMenuItem>)}
+      </IxMenuCategory>
+      <IxMenuCategory label="Source analysis" icon={iconCode}>
+        <IxMenuItem active={view === 'analysis'} onClick={() => navigate('analysis')}>Local folder analysis</IxMenuItem>
+        <IxMenuItem active={view === 'quality'} onClick={() => navigate('quality')}>Quality assessment</IxMenuItem>
+        <IxMenuItem active={view === 'security'} onClick={() => navigate('security')}>Security patterns</IxMenuItem>
+      </IxMenuCategory>
+      <IxMenuItem slot="bottom" icon={iconUserSettings} active={view === 'connections'} onClick={() => navigate('connections')}>Central connections</IxMenuItem>
+    </IxMenu>
+    <IxContent className="workspace-main" id="main-content">
       <div className="workspace-session"><SessionBar /></div>
       <main className="workspace-content">
         <div className="workspace-title-row"><div><span className="eyebrow">CODE + LIFECYCLE INTELLIGENCE</span><h1>{view === 'connections' ? 'Connected by design.' : view === 'review' ? 'Confidence, with evidence.' : 'The connected view.'}</h1><p>Understand the system. Follow the evidence. Know what changes.</p></div>
-          <div className="source-actions"><label><GitBranch size={14} /><select aria-label="Managed source" value={source} disabled={busy} onChange={event => { setSource(event.target.value); setReview(null); setSelected(null) }}>{catalog?.sources.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select><ChevronDown size={12} /></label>
-            <button className="primary-button" disabled={busy || !source} onClick={sync}><RefreshCw size={14} className={busy ? 'spin' : ''} />{busy ? 'Synchronizing' : 'Synchronize'}<ArrowUpRight size={14} /></button></div>
+          <div className="source-actions"><IxSelect aria-label="Managed source" value={source} disabled={busy} onValueChange={event => { setSource(String(event.detail)); setReview(null); setSelected(null) }}>{catalog?.sources.map(item => <IxSelectItem key={item.id} value={item.id} label={item.label} />)}</IxSelect>
+            <IxButton icon={iconRefresh} loading={busy} disabled={busy || !source} onClick={sync}>{busy ? 'Synchronizing' : 'Synchronize'}</IxButton></div>
         </div>
         {error && <div className="workspace-alert" role="alert"><AlertCircle size={16} /><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError('')}><X size={14} /></button></div>}
         {graph && connectors.some((item: any) => item.status !== 'ready') && <div className="workspace-alert caution"><AlertCircle size={16} /><span>Some lifecycle connections are partial or unavailable. Review connection evidence before making impact claims.</span><button onClick={() => navigate('connections')}>View status</button></div>}
@@ -113,8 +117,8 @@ export default function Workspace() {
         {view === 'security' && <SecurityPage />}
         <footer className="workspace-footer"><span>CODETRACE INTELLIGENCE WORKSPACE</span><span>OSLC contextual evidence · local reviewer decisions · session bounded</span><button onClick={() => navigate('connections')}><Settings2 size={12} />Central administration</button></footer>
       </main>
-    </div>
-  </div>
+    </IxContent>
+  </IxApplication>
 }
 
 function ArrowRightIcon() { return <ArrowUpRight size={13} /> }

@@ -129,7 +129,7 @@ class RepositoryService:
     async def save_analysis_result(self, repo_id: int, analysis_data: Dict[str, Any]) -> Dict[str, Any]:
         """Save comprehensive analysis results"""
         try:
-            with self.get_session() as session:
+            with self.get_session() as session, session.begin():
                 analysis = Analysis(
                     repository_id=repo_id,
                     analysis_type=analysis_data.get('type', 'comprehensive'),
@@ -139,7 +139,7 @@ class RepositoryService:
                     duration=analysis_data.get('duration', 0)
                 )
                 session.add(analysis)
-                session.commit()
+                session.flush()
                 session.refresh(analysis)
                 
                 # Save individual components
@@ -194,7 +194,7 @@ class RepositoryService:
                     details=metric_info
                 )
                 session.add(quality_metric)
-            session.commit()
+            session.flush()
             
         except Exception as e:
             logger.error(f"Error saving quality metrics: {e}")
@@ -217,7 +217,7 @@ class RepositoryService:
                     analysis_data=file_info
                 )
                 session.add(file_record)
-            session.commit()
+            session.flush()
             
         except Exception as e:
             logger.error(f"Error saving file analysis: {e}")
@@ -237,7 +237,7 @@ class RepositoryService:
                     license=dep_info.get('license', '')
                 )
                 session.add(dependency)
-            session.commit()
+            session.flush()
             
         except Exception as e:
             logger.error(f"Error saving dependencies: {e}")
@@ -258,7 +258,7 @@ class RepositoryService:
                 graph_metadata=graph_data.get('metadata', {})
             )
             session.add(graph_analysis)
-            session.commit()
+            session.flush()
             session.refresh(graph_analysis)
             
             # Save nodes
@@ -290,7 +290,7 @@ class RepositoryService:
                 )
                 session.add(edge)
             
-            session.commit()
+            session.flush()
             
         except Exception as e:
             logger.error(f"Error saving graph analysis: {e}")
@@ -314,7 +314,7 @@ class RepositoryService:
                 scan_results=security_data
             )
             session.add(assessment)
-            session.commit()
+            session.flush()
             
         except Exception as e:
             logger.error(f"Error saving security assessment: {e}")

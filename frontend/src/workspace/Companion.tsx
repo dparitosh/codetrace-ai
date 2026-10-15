@@ -11,8 +11,12 @@ export default function Companion({ graph, review, selected, catalog, onSelect }
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const requestGeneration = useRef(0)
-  useEffect(() => { requestGeneration.current++; setAnswer(null); setError(''); setBusy(false); return () => { requestGeneration.current++ } }, [review?.id])
-  useEffect(() => { if (selected) setTab('inspect') }, [selected?.id])
+  useEffect(() => {
+    const invalidate = () => { requestGeneration.current++ }
+    invalidate(); setAnswer(null); setError(''); setBusy(false)
+    return invalidate
+  }, [review?.id])
+  useEffect(() => { if (selected) setTab('inspect') }, [selected])
   const ask = async (value: string) => {
     if (!review || !value.trim() || !catalog || busy) return
     const generation = ++requestGeneration.current

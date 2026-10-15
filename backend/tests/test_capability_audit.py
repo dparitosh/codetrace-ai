@@ -10,6 +10,10 @@ from core.config import Settings, settings
 from core.connection_models import ManagedRepository, PipelineProvider
 from services.oslc_store import OSLCStore, graph_from_body, RM
 from services.workspace_service import read_repository, pipeline_context
+from services.oslc_service import allowed_url
+from core.connection_models import OSLCProvider
+from fastapi.testclient import TestClient
+from main import app
 
 
 def snapshot(identifier, deleted=False):
@@ -83,3 +87,28 @@ def test_invalid_pipeline_payload_is_atomic(monkeypatch):
         runs, statuses = pipeline_context('repo', 'urn:repo', 'abc')
     assert runs == []
     assert statuses[0]['status'] == 'unavailable'
+
+
+def test_oslc_write_body_is_bounded_before_parsing(monkeypatch):
+    monkeypatch.setattr(settings, 'OSLC_SERVER_ALLOW_WRITES', True)
+    monkeypatch.setenv(settings.OSLC_SERVER_WRITE_TOKEN_ENV, 'test-write-token')
+    monkeypatch.setattr(settings, 'OSLC_MAX_RESPONSE_BYTES', 8)
+    response = TestClient(app).put('/oslc/resources/example', content=b'not RDF at all',
+        headers={'Authorization': 'Bearer test-write-token', 'If-Match': '"etag"', 'Content-Type': 'text/turtle'})
+    assert response.status_code == 413
+
+
+def test_configured_origin_can_preflight_oslc_put():
+    response = TestClient(app).options('/oslc/resources/example', headers={
+        'Origin': settings.CORS_ORIGINS[0], 'Access-Control-Request-Method': 'PUT',
+        'Access-Control-Request-Headers': 'Authorization,If-Match,Content-Type'})
+    assert response.status_code == 200
+    assert 'PUT' in response.headers['access-control-allow-methods']
+
+
+@pytest.mark.parametrize('path', ['%252e%252e/private', '%2e%2e/private', './private', '%25252e%25252e/private'])
+def test_oslc_path_prefix_rejects_encoded_traversal(path):
+    provider = OSLCProvider(id='rm', label='RM', domain='RM', endpoint='https://alm.example/oslc/query',
+                            allowed_base_url='https://alm.example/oslc/')
+    with pytest.raises(ValueError):
+        allowed_url(provider, 'https://alm.example/oslc/' + path)

@@ -48,7 +48,14 @@ export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean,
 export function matchingNodes(graph: TraceGraph | null, query: string): TraceNode[] {
   if (!graph || !query.trim()) return []
   const value = query.toLowerCase().trim()
-  return graph.nodes.filter(node => `${node.label} ${node.type} ${node.properties.path || ''} ${node.properties.identifier || ''}`.toLowerCase().includes(value)).slice(0, 12)
+  return graph.nodes.map(node => {
+    const label = node.label.toLowerCase()
+    const score = label === value ? 1000 : label.startsWith(value) ? 500 : label.includes(value) ? 100
+      : String(node.properties.identifier || '').toLowerCase().includes(value) ? 60
+      : `${node.type} ${node.properties.path || ''}`.toLowerCase().includes(value) ? 10 : 0
+    return { node, score }
+  }).filter(item => item.score > 0).sort((a, b) => b.score - a.score || a.node.id.localeCompare(b.node.id))
+    .slice(0, 12).map(item => item.node)
 }
 
 export function localContext(graph: TraceGraph, nodeId: string, depth = 1) {

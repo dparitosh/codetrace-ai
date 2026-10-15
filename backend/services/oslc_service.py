@@ -78,10 +78,17 @@ def allowed_url(provider, url):
     base = urlsplit(provider.allowed_base_url or provider.endpoint)
     target = urlsplit(url)
     prefix = unquote(base.path).rstrip('/') + '/'
-    target_path = unquote(target.path)
+    target_path = target.path
+    for _ in range(4):
+        decoded = unquote(target_path)
+        if decoded == target_path:
+            break
+        target_path = decoded
     if (target.scheme, target.hostname, target.port) != (base.scheme, base.hostname, base.port):
         raise ValueError('Linked OSLC endpoint is outside the configured origin')
-    if target.username or target.password or target.fragment or '\\' in target_path or '..' in target_path.split('/'):
+    if (target.username or target.password or target.fragment or '\\' in target_path
+            or '%' in target_path or any(part in {'.', '..'} for part in target_path.split('/'))
+            or any(ord(char) < 32 for char in target_path)):
         raise ValueError('Invalid linked OSLC endpoint')
     if target_path != prefix.rstrip('/') and not target_path.startswith(prefix):
         raise ValueError('Linked OSLC endpoint is outside the configured path prefix')

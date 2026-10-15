@@ -36,6 +36,13 @@ describe('interactive graph projection', () => {
     expect(matchingNodes(graph, 'src/service')).toHaveLength(1)
     expect(matchingNodes(graph, 'Charge')).toHaveLength(2)
   })
+  it('ranks exact resource labels above matching source paths before limiting results', () => {
+    const noisy = { ...graph, nodes: [
+      ...Array.from({ length: 15 }, (_, index) => ({ id: 'noise-' + index, label: 'symbol-' + index, type: 'variable', properties: { path: 'backend/source.py' } })),
+      { id: 'package', label: 'backend', type: 'package', properties: { path: 'backend' } },
+    ] }
+    expect(matchingNodes(noisy, 'backend')[0].id).toBe('package')
+  })
   it('focuses connected context and omits unrelated files', () => {
     const ids = localContext(graph, 'rm', 2)
     expect(ids.has('function')).toBe(true)

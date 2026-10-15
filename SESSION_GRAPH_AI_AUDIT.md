@@ -1,5 +1,7 @@
 # Session, graph interaction and AI audit — 2026-10-13
 
+Follow-up 2026-10-15: full frontend/backend checks and browser interaction tests have now run, and the main shell uses Siemens iX React. Current evidence and remaining gaps are in [AUDIT_2026-10-15.md](AUDIT_2026-10-15.md).
+
 This branch includes the local-first refactor and preceding capability/PostgreSQL audit fixes, plus the following review.
 
 ## Fixed

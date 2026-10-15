@@ -1,10 +1,14 @@
 # CodeTrace AI
 
+The application shell uses [Siemens Industrial Experience React](https://ix.siemens.io/docs/home/installation/react), with light/dark themes, managed-source selection, graph exploration and an evidence-grounded companion. Current audit results and open capability gaps are in [AUDIT_2026-10-15.md](AUDIT_2026-10-15.md).
+
 Local-first source analysis, dependency graphs, quality checks, static security patterns, and explicit OSLC lifecycle links. The browser submits supported UTF-8 source files to a local FastAPI service. No database, cloud account, or access token is needed for local folders.
 
 ## Install on Windows
 
-Prerequisites: Python 3.10+ and Node.js 20+ with npm on PATH. Git is required only for GitLab ingestion. Use a real Python installation, not the Windows Store app-execution alias.
+Prerequisites: Python 3.10+ and Node.js 22.12+ (22.x), 24.x or 26+ with npm on PATH. Node 24 is used in CI. Git is required only for GitLab ingestion. Use a real Python installation, not the Windows Store app-execution alias.
+
+Frontend dependencies use npm and the committed `frontend/package-lock.json`. Run `npm ci` from the `frontend` directory. On Windows, use `npm.cmd ci` if PowerShell blocks `npm.ps1`. If npm reports `EUSAGE` with missing or invalid lock entries, update to this branch's repaired package manifest and lockfile together; avoid bypassing peer checks with `--force` or `--legacy-peer-deps`.
 
 ```powershell
 Set-Location D:\path\to\codetrace-ai
@@ -101,7 +105,7 @@ Python uses AST-based extraction with limited intra-module call resolution. Non-
 .\install.ps1 -Dev
 .\.venv\Scripts\python.exe -m pytest -q
 Set-Location frontend
-npm test -- --run --threads false
+npm test -- --run
 npm run build
 ```
 

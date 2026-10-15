@@ -6,7 +6,7 @@ import asyncio
 import logging
 import databases
 import sqlalchemy
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.exc import OperationalError
 from typing import Optional, Dict, Any, List
 from core.config import settings
