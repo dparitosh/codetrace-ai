@@ -1,6 +1,6 @@
 # Current audit status
 
-Updated 2026-10-15. Scope: the active local-first workspace, graph/search/inspection,
+Updated 2026-10-18. Scope: the active local-first workspace, graph/search/inspection,
 Git boundary, sessions/reviews, SBOM, TRS/CI, OSLC collaboration and optional ORM.
 This is bounded source/test/browser evidence, not a guarantee that all bugs have
 been found, a security certification or a claim of production readiness.
@@ -28,7 +28,20 @@ been found, a security certification or a claim of production readiness.
 Earlier installation/lockfile, dependency, CORS, RDF bounds, publication tombstone,
 session race and provenance fixes remain covered by the maintained regression suite.
 
-## Verification
+## D3 migration verification (2026-10-18)
+
+- Removed the old graph package from runtime dependencies, lockfile and build chunks.
+- Dynamic SVG rendering uses modular D3 force, drag and zoom with bounded projections.
+- Fixed stale position-force targets crashing collapsed-node restoration, overlapping
+  self-links, and mixed containment/lifecycle hierarchy layering.
+- 22 native frontend contracts and 20 Vitest tests pass; TypeScript, ESLint and build pass.
+- Graph engine chunk: 62.09 kB (21.11 kB gzip), previously 441.69 kB.
+- Browser checks used a disposable eight-resource AM/RM/CM/QM/CODE/SBOM fixture
+  with the actual React graph component: motion changes, pause stability, physical
+  drag/pin/release, collapse/restore, Shift+Enter expansion and snapshot clearing.
+  This pass did not revalidate live backend/vendor integration or large-graph frame rates.
+
+## Earlier full-workspace verification (2026-10-15)
 
 - Backend/core and optional ORM suite: 136 tests pass (SQLite ORM; no live PostgreSQL migration).
 - Native graph/session/install contracts: 21 tests pass.
@@ -38,7 +51,7 @@ session race and provenance fixes remain covered by the maintained regression su
   not a claim that the entire transferred application shrank by the same amount.
 - Model benchmark on this workstation: 50,000 nodes / 99,997 edges; overview 49 ms,
   six-hop context 37 ms, capped focus 26 ms, 40 collapsed roots 47 ms, ID search 16 ms.
-  Timings vary and exclude Cytoscape layout/rendering.
+  Timings vary and exclude browser layout/rendering.
 - Browser: latest workspace synchronized code plus SBOM; search expanded 12 to 24
   of 1,995 matches; inspector expanded 12 to all 14 relationships; containment
   collapsed 15 visible nodes to 2 and expanded again; selected SBOM filter was visible. The latest browser pass also verified downstream containment, wrapped hierarchy labels, light/dark themes, approval-gated SBOM controls and clearing all graph/inspector evidence on session end.

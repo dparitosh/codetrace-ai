@@ -16,3 +16,12 @@ test('web frontend does not install unused native and 3D animation renderers', (
     assert.ok(!lock.packages['node_modules/' + name], name)
   }
 })
+
+test('graph renderer installs D3 modules without Cytoscape', () => {
+  assert.ok(!manifest.dependencies.cytoscape)
+  assert.ok(!lock.packages['node_modules/cytoscape'])
+  for (const name of ['d3-force', 'd3-selection', 'd3-drag', 'd3-zoom']) {
+    assert.ok(manifest.dependencies[name], name)
+    assert.ok(lock.packages['node_modules/' + name], name)
+  }
+})

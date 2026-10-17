@@ -1,20 +1,22 @@
 import { IxButton } from '@siemens/ix-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import cytoscape, { Core } from 'cytoscape'
-import { Crosshair, Minus, Plus, Maximize2, RotateCcw, Layers, Search } from 'lucide-react'
-import { domainColors, domainOf, relationLabel, TraceGraph, TraceNode } from './types'
+import ForceGraphCanvas from './ForceGraphCanvas'
+import type { ForceGraphActions } from './D3ForceGraph'
+import type { ForceLayout } from './forceGraphModel'
+import { Crosshair, Minus, Plus, Maximize2, RotateCcw, Layers, Search, Pause, Play, Pin } from 'lucide-react'
+import { domainColors, domainOf, TraceGraph, TraceNode } from './types'
 import { containmentDescendants, localContext, matchingNodes, revealContextRoot, visibleGraph } from './graphModel'
 import type { TraversalDirection, RelationScope } from './graphModel'
 
 interface Props { graph: TraceGraph | null; selected: string | null; onSelect: (node: TraceNode | null) => void; busy: boolean }
 export default function InteractiveGraph({ graph, selected, onSelect, busy }: Props) {
-  const container = useRef<HTMLDivElement>(null)
-  const cy = useRef<Core | null>(null)
-  const onSelectRef = useRef(onSelect)
-  onSelectRef.current = onSelect
+  const engine = useRef<ForceGraphActions>(null)
   const [domain, setDomain] = useState('ALL')
   const [detail, setDetail] = useState(false)
-  const [layout, setLayout] = useState('breadthfirst')
+  const [layout, setLayout] = useState<ForceLayout>('hierarchy')
+  const [paused, setPaused] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false)
+  const [pinOnDrag, setPinOnDrag] = useState(false)
+  const [allLabels, setAllLabels] = useState(false)
   const [direction, setDirection] = useState<TraversalDirection>('both')
   const [relationScope, setRelationScope] = useState<RelationScope>('all')
   const [query, setQuery] = useState('')
@@ -23,22 +25,6 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   const [focus, setFocus] = useState<string | null>(null)
   const [focusDepth, setFocusDepth] = useState(1)
   const [collapsed, setCollapsed] = useState(new Set<string>())
-  const layoutKey = layout === 'breadthfirst' ? `${layout}:${focus || ''}:${direction}:${relationScope}` : layout
-  const [palette, setPalette] = useState({ text: '#526175', surface: '#ffffff', edge: '#b7c4d2', primary: '#3fb8aa' })
-  useEffect(() => {
-    const updatePalette = () => {
-      const theme = getComputedStyle(document.documentElement)
-      setPalette({ text: theme.getPropertyValue('--theme-color-std-text').trim() || '#526175',
-        surface: theme.getPropertyValue('--theme-color-1').trim() || '#ffffff',
-        edge: theme.getPropertyValue('--theme-color-soft-text').trim() || '#b7c4d2',
-        primary: theme.getPropertyValue('--theme-color-primary').trim() || '#3fb8aa' })
-    }
-    updatePalette()
-    const observer = new MutationObserver(updatePalette)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-ix-theme', 'data-ix-color-schema'] })
-    return () => observer.disconnect()
-  }, [])
-  const viewport = useRef<{ graph: TraceGraph; layout: string; zoom: number; pan: { x: number; y: number }; positions: Map<string, { x: number; y: number }> } | null>(null)
   const limits = graph?.metadata.limits || { render_nodes: 400, render_edges: 1000 }
   const view = useMemo(() => graph ? visibleGraph(graph, domain, detail, limits.render_nodes, limits.render_edges,
     focus ? localContext(graph, focus, focusDepth, direction, relationScope) : undefined, collapsed, selected, relationScope) : null,
@@ -46,75 +32,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   const matches = useMemo(() => matchingNodes(graph, query, Infinity), [graph, query])
   const domains = useMemo(() => graph ? [...new Set(graph.nodes.map(domainOf))].filter(value => value !== 'EXTERNAL').sort() : [], [graph])
   useEffect(() => { setFocus(null); setQuery(''); setDomain('ALL'); setCollapsed(new Set()); setFocusDepth(1) }, [graph])
-  useEffect(() => {
-    if (!container.current || !view || !graph) return
-    const nodeMap = new Map(graph.nodes.map(node => [node.id, node]))
-    const previous = viewport.current
-    const reuseLayout = previous?.graph === graph && previous.layout === layoutKey
-      && view.nodes.every(node => previous.positions.has(node.id))
-    const engine = cytoscape({
-      container: container.current, pixelRatio: Math.min(window.devicePixelRatio, 2), wheelSensitivity: 0.2,
-      minZoom: 0.08, maxZoom: 4, selectionType: 'single',
-      elements: [
-        ...view.nodes.map(node => ({ data: { id: node.id, label: node.label.length > 26 ? node.label.slice(0, 24) + '…' : node.label,
-          color: domainColors[domainOf(node)] || '#93a1b3',
-          weight: ['repository', 'package'].includes(node.type) ? 48 : 36 } })),
-        ...view.edges.map((edge, index) => ({ data: { id: 'edge-' + index, source: edge.source, target: edge.target,
-          label: relationLabel(edge.type), lifecycle: edge.properties.origin === 'lifecycle_assertion' ? 1 : 0 } })),
-      ],
-      style: [
-        { selector: 'node', style: { 'background-color': 'data(color)', 'shape': 'ellipse', width: 'data(weight)', height: 'data(weight)',
-          'border-width': 2, 'border-color': palette.surface, 'label': 'data(label)', 'font-size': 10,
-          'font-family': 'Siemens Sans, system-ui, sans-serif', 'color': palette.text, 'text-valign': 'bottom', 'text-margin-y': 9,
-          'text-wrap': 'wrap', 'text-max-width': '72px', 'text-overflow-wrap': 'anywhere',
-          'text-background-color': palette.surface, 'text-background-opacity': 0.9, 'text-background-padding': '3px' } },
-        { selector: 'edge', style: { width: 1.2, 'line-color': palette.edge, 'target-arrow-color': palette.edge,
-          'target-arrow-shape': 'triangle', 'arrow-scale': 0.65, 'curve-style': 'bezier', opacity: 0.65 } },
-        { selector: 'edge[lifecycle = 1]', style: { 'line-color': palette.primary, 'target-arrow-color': palette.primary, width: 2, opacity: 0.85 } },
-        { selector: 'node.focused-resource', style: { 'border-color': palette.primary, 'border-width': 4,
-          width: (node: cytoscape.NodeSingular) => Number(node.data('weight')) * 1.2,
-          height: (node: cytoscape.NodeSingular) => Number(node.data('weight')) * 1.2 } },
-        { selector: '.faded', style: { opacity: 0.12 } },
-        { selector: '.context-edge', style: { label: 'data(label)', 'font-size': 9, 'color': palette.text, 'text-rotation': 'autorotate',
-          'text-background-color': palette.surface, 'text-background-opacity': 1, 'text-background-padding': '3px', width: 2, opacity: 1 } },
-      ],
-      layout: reuseLayout ? { name: 'preset', positions: Object.fromEntries(previous.positions), fit: false }
-        : { name: layout, directed: true, roots: focus && direction === 'outgoing' ? [focus] : undefined,
-          spacingFactor: 1.25, avoidOverlap: true, nodeDimensionsIncludeLabels: true, animate: false, padding: 55, randomize: true, nodeRepulsion: 13000,
-          idealEdgeLength: 100, gravity: 0.35, numIter: 600 } as cytoscape.LayoutOptions,
-    })
-    cy.current = engine
-    if (reuseLayout) {
-      engine.zoom(previous.zoom); engine.pan(previous.pan)
-    }
-    engine.on('tap', 'node', event => {
-      const node = nodeMap.get(event.target.id())
-      if (node) onSelectRef.current(node)
-    })
-    engine.on('tap', event => { if (event.target === engine) onSelectRef.current(null) })
-    const resize = new ResizeObserver(() => engine.resize())
-    resize.observe(container.current)
-    return () => {
-      const positions = viewport.current?.graph === graph && viewport.current.layout === layoutKey
-        ? new Map(viewport.current.positions) : new Map<string, { x: number; y: number }>()
-      engine.nodes().forEach(node => { positions.set(node.id(), { ...node.position() }) })
-      viewport.current = { graph, layout: layoutKey, zoom: engine.zoom(), pan: engine.pan(), positions }
-      resize.disconnect(); engine.destroy(); cy.current = null
-    }
-  }, [view, graph, layout, layoutKey, focus, direction, palette])
-  useEffect(() => {
-    const engine = cy.current
-    if (!engine) return
-    engine.batch(() => {
-      engine.elements().removeClass('faded context-edge focused-resource').unselect()
-      if (!selected) return
-      const node = engine.getElementById(selected)
-      if (node.empty()) return
-      const context = node.closedNeighborhood()
-      engine.elements().not(context).addClass('faded')
-      context.edges().addClass('context-edge'); node.addClass('focused-resource')
-    })
-  }, [selected, view, layout, palette])
+  const options = useMemo(() => ({ layout, focus, direction, selected, paused, pinOnDrag, allLabels }), [layout, focus, direction, selected, paused, pinOnDrag, allLabels])
   const focusSelection = () => {
     if (!graph || !selected) return
     setDomain('ALL'); setCollapsed(current => revealContextRoot(graph, current, selected)); setFocus(selected)
@@ -125,13 +43,20 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
     if (!selected) return
     setCollapsed(current => { const next = new Set(current); if (next.has(selected)) next.delete(selected); else next.add(selected); return next })
   }
+  const expandResource = (node: TraceNode) => {
+    if (!graph) return
+    onSelect(node); setDomain('ALL')
+    setCollapsed(current => { const next = revealContextRoot(graph, current, node.id); next.delete(node.id); return next })
+    setFocusDepth(current => focus === node.id ? Math.min(6, current + 1) : 1)
+    setFocus(node.id)
+  }
   return <section className="graph-panel">
     <div className="graph-panel-header"><div><span className="eyebrow">CONNECTED EVIDENCE</span><h2>Lifecycle graph <span className="count-badge">{graph?.nodes.length || 0}</span></h2></div>
       <div className="graph-toolbar"><IxButton variant="secondary" onClick={() => setDetail(value => !value)}><span className="ix-button-label"><Layers size={14} />{detail ? 'Symbol view' : 'Architecture view'}</span></IxButton>
         <IxButton variant="secondary" disabled={!canCollapse} onClick={toggleCollapse}>{selected && collapsed.has(selected) ? 'Expand children' : 'Collapse children'}</IxButton>
         <IxButton variant="secondary" disabled={!graph || !selected || (focus === selected && focusDepth >= 6)} onClick={() => { focusSelection(); setCollapsed(current => { const next = new Set(current); if (selected) next.delete(selected); return next }); setFocusDepth(current => focus === selected ? Math.min(6, current + 1) : 1) }}>Expand context</IxButton>
-        <IxButton variant="tertiary" disabled={!graph} onClick={() => { setCollapsed(new Set()); setFocus(null); setFocusDepth(1); setDirection('both'); setRelationScope('all'); setLayout('breadthfirst'); setDomain('ALL'); onSelect(null) }}>Reset view</IxButton>
-        <select aria-label="Graph layout" value={layout} onChange={event => setLayout(event.target.value)}><option value="circle">Circular</option><option value="cose">Organic layout</option><option value="breadthfirst">Hierarchy</option><option value="concentric">Concentric</option><option value="grid">Grid</option></select>
+        <IxButton variant="tertiary" disabled={!graph} onClick={() => { setCollapsed(new Set()); setFocus(null); setFocusDepth(1); setDirection('both'); setRelationScope('all'); setLayout('hierarchy'); setDomain('ALL'); engine.current?.releasePins(); onSelect(null) }}>Reset view</IxButton>
+        <select aria-label="Graph layout" value={layout} onChange={event => setLayout(event.target.value as ForceLayout)}><option value="force">Force network</option><option value="hierarchy">Hierarchical force</option><option value="circle">Circular force</option><option value="concentric">Concentric</option><option value="grid">Grid</option></select>
       </div>
     </div>
     <div className="graph-traversal-bar">
@@ -152,17 +77,25 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
         {query && <div className="search-results">{matches.length ? matches.slice(0, searchLimit).map(node => <IxButton key={node.id} onClick={() => selectMatch(node)}><span>{node.label}</span><small>{node.type} · {node.properties.path || node.id}</small></IxButton>) : <p>No matching resource</p>}<p>Showing {Math.min(searchLimit, matches.length)} of {matches.length} matches</p>{matches.length > searchLimit && <IxButton onClick={() => setSearchLimit(current => current + 12)}>Show more matches</IxButton>}</div>}
       </div>
     </div>
+    <div className="force-motion-controls">
+      <small>D3 force simulation {paused ? '· motion paused' : '· interactive physics'}</small>
+      <IxButton variant="secondary" disabled={!graph} onClick={() => setPaused(value => !value)}><span className="ix-button-label">{paused ? <Play size={13} /> : <Pause size={13} />}{paused ? 'Resume motion' : 'Pause motion'}</span></IxButton>
+      <IxButton variant="tertiary" disabled={!graph} onClick={() => { setPaused(false); engine.current?.reheat() }}>Reheat layout</IxButton>
+      <IxButton variant={pinOnDrag ? 'primary' : 'secondary'} aria-pressed={pinOnDrag} onClick={() => setPinOnDrag(value => !value)}><span className="ix-button-label"><Pin size={13} />Pin after drag</span></IxButton>
+      <IxButton variant="tertiary" disabled={!graph} onClick={() => engine.current?.releasePins()}>Release pins</IxButton>
+      <IxButton variant={allLabels ? 'primary' : 'secondary'} aria-pressed={allLabels} onClick={() => setAllLabels(value => !value)}>{allLabels ? 'All labels' : 'Contextual labels'}</IxButton>
+    </div>
     <div className="graph-canvas-wrap">
-      <div className="graph-canvas" ref={container} aria-label="Interactive lifecycle graph canvas" />
+      <ForceGraphCanvas ref={engine} graph={graph} nodes={view?.nodes || []} edges={view?.edges || []} options={options} onSelect={onSelect} onExpand={expandResource} />
       {!graph && <div className="graph-empty"><div className="empty-graph-orbit"><Layers size={32} /></div><h3>Your connected view starts here.</h3><p>Select a managed source and synchronize its code and lifecycle evidence.</p><span>OSLC AM · RM · CM · QM · TRS</span></div>}
       {busy && <div className="graph-loading"><span className="pulse-dot" />Synchronizing source and lifecycle evidence…</div>}
       {focus && <IxButton className="focus-chip" onClick={() => setFocus(null)}><Crosshair size={13} />Focused context <RotateCcw size={12} /></IxButton>}
-      <div className="canvas-controls"><IxButton variant="tertiary" aria-label="Zoom in" onClick={() => cy.current?.zoom((cy.current?.zoom() || 1) * 1.25)}><Plus size={16} /></IxButton>
-        <IxButton variant="tertiary" aria-label="Zoom out" onClick={() => cy.current?.zoom((cy.current?.zoom() || 1) / 1.25)}><Minus size={16} /></IxButton>
-        <IxButton variant="tertiary" aria-label="Fit graph" onClick={() => cy.current?.fit(undefined, 45)}><Maximize2 size={16} /></IxButton>
+      <div className="canvas-controls"><IxButton variant="tertiary" aria-label="Zoom in" onClick={() => engine.current?.zoomBy(1.25)}><Plus size={16} /></IxButton>
+        <IxButton variant="tertiary" aria-label="Zoom out" onClick={() => engine.current?.zoomBy(1 / 1.25)}><Minus size={16} /></IxButton>
+        <IxButton variant="tertiary" aria-label="Fit graph" onClick={() => engine.current?.fit()}><Maximize2 size={16} /></IxButton>
         <IxButton variant="tertiary" aria-label="Focus selected context" disabled={!selected} onClick={focusSelection}><Crosshair size={16} /></IxButton></div>
       <div className="canvas-watermark"><span className="live-dot" />{view ? `${view.nodes.length} visible · ${view.edges.length} relationships` : 'Awaiting source'}{view?.omitted ? ` · ${view.omitted} nodes omitted` : ''}{view?.omittedEdges ? ` · ${view.omittedEdges} relationships omitted` : ''}</div>
     </div>
-    <div className="graph-panel-footer"><span>Drag to explore. Scroll to zoom. Select a node to inspect its evidence.</span><span>{graph ? 'Snapshot ' + String(graph.metadata.snapshot_id || '').slice(0, 8) : 'No snapshot'}</span></div>
+    <div className="graph-panel-footer"><span>Drag nodes to reshape. Drag background to pan. Scroll to zoom. Double-click or Shift+Enter to expand context.</span><span>{graph ? 'Snapshot ' + String(graph.metadata.snapshot_id || '').slice(0, 8) : 'No snapshot'}</span></div>
   </section>
 }

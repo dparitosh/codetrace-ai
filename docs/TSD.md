@@ -4,7 +4,7 @@
 
 | Component | Responsibility |
 | --- | --- |
-| `frontend/src/workspace` | Siemens iX shell, Cytoscape graph, index, inspector, companion and ALM proposal UI |
+| `frontend/src/workspace` | Siemens iX shell, D3 force graph, index, inspector, companion and ALM proposal UI |
 | `backend/api` | Bounded FastAPI contracts, sessions/reviews, managed sync, OSLC publication/collaboration |
 | `codegraph_core` | Python AST and configurable structural scanners; reusable graph/context core |
 | `services/workspace_service.py` | Assemble code, lifecycle, CI and SBOM into one fingerprinted snapshot |
@@ -51,9 +51,13 @@ Database query failures raise storage errors instead of returning empty success.
 Projection enforces node/edge caps and preserves breadth-first order in focus.
 Collapse builds one shared containment index per projection. Foreign predicate
 local names do not become containment. Compatible views preserve positions and
-viewport state; selection styling is independent of native Cytoscape selection.
+viewport state; React controls selection while D3 owns mutable simulation copies.
+The SVG renderer provides force, hierarchical force, circular, concentric and grid
+layouts, drag/pin/release, pause/resume/reheat, zoom/pan and keyboard expansion.
+It stops simulations and disconnects observers on unmount. Layout forces are
+rebound before restoring collapsed nodes. Reduced-motion preference starts paused.
 
-React, icons and Cytoscape have separate production chunks. Graph, companion,
+React, icons and modular D3 have separate production chunks. Graph, companion,
 review, collaboration and optional analysis views load on demand. Run
 `node frontend/graph-performance.mjs` for model benchmarks; these do not measure
 browser layout or frame performance. See [testing.md](testing.md).

@@ -38,11 +38,14 @@ Use a disposable source/session.
 2. Search a shared label, load more matches, select one and search its full ID.
 3. Inspect properties and expand relationships beyond twelve edges.
 4. Exercise hierarchy, direction, scope, depth, collapse/expand, fit and highlighting.
-5. Filter domains and verify selected-filter feedback.
-6. Check light/dark themes and graph/index/review/analysis navigation.
-7. Verify pending exports are disabled. Approve a disposable result and inspect
+5. Switch force/hierarchy layouts; pause/resume/reheat, drag with and without pinning,
+   release pins, and double-click or Shift+Enter to expand. Collapse then restore
+   descendants and verify there are no stale-force crashes.
+6. Filter domains and verify selected-filter feedback.
+7. Check light/dark themes and graph/index/review/analysis navigation.
+8. Verify pending exports are disabled. Approve a disposable result and inspect
    its exported result/SBOM. Confirm the review center shows link collaboration.
-8. End the session; graph/inspector/review evidence and controls must clear/disable.
+9. End the session; graph/inspector/review evidence and controls must clear/disable.
 
 Stop services afterward. If cleanup is requested, remove only the dependency,
 build and cache directories created for testing. Preserve `.env.local`, source,
