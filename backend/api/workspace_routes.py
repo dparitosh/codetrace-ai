@@ -15,6 +15,7 @@ from services.oslc_service import server_secret
 from services.oslc_store import LINK_PREDICATES
 from services.ai_connection import AIConnection, OllamaREST, connection_for, allowed_bases
 from services.agent_workspace import AGENTS, GraphAgent, GraphSearch
+from services.agent_configuration import TOOL_DESCRIPTIONS, configured_agent
 import httpx
 
 workspace_router = APIRouter(tags=['Managed Intelligence Workspace'])
@@ -62,7 +63,10 @@ def ai_guard(token):
 @workspace_router.get('/ai/config')
 def ai_configuration(x_codetrace_session: Optional[str] = Header(default=None)):
     connection = connection_for(review_routes.store, x_codetrace_session)
-    return {**connection.public(), 'allowed_base_urls': allowed_bases(), 'agents': AGENTS,
+    return {**connection.public(), 'allowed_base_urls': allowed_bases(),
+            'agents': [configured_agent(agent, connection) for agent in AGENTS],
+            'registered_tools': [{'id': name, 'description': connection.tool_configuration[name].description if name in connection.tool_configuration else description}
+                                 for name, description in TOOL_DESCRIPTIONS.items()],
             'request_timeout_seconds': settings.AI_AGENT_DEADLINE_SECONDS + 5,
             'retention': 'Session-owned; keys are never returned. SQLite profiles are encrypted and removed with their session.'}
 
@@ -225,7 +229,9 @@ def workspace_companion(request: CompanionQuery, x_codetrace_session: Optional[s
         graph = record['result']
         if request.selected_id and not any(node['id'] == request.selected_id for node in graph['nodes']):
             raise HTTPException(404, 'Selected resource is not present in this graph')
-        answer = answer_question(graph, request.question, request.selected_id)
+        profile = store.ai_profile(x_codetrace_session)
+        answer = answer_question(graph, request.question, request.selected_id,
+                                 system_prompt=(profile or {}).get('companion_system_prompt'))
         store.info(x_codetrace_session, touch=False)  # Do not disclose a late answer after expiry.
         return answer
     finally:

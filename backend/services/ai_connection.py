@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from typing import Literal
 from core.config import settings
 from services.oslc_service import server_secret
+from services.agent_configuration import AgentConfiguration, AgentId, ToolConfiguration, ToolId
 
 
 def normalize_base(value):
@@ -45,6 +46,16 @@ class AIConnection(BaseModel):
     key_header: Literal['Authorization', 'api-key', 'Ocp-Apim-Subscription-Key'] = 'Authorization'
     embeddings_enabled: bool = True
     keep_key: bool = True
+    companion_system_prompt: str = Field(default='Answer lifecycle questions from the supplied graph evidence. Explain uncertainty and provider limitations.', min_length=1, max_length=12000)
+    agent_configuration: dict[AgentId, AgentConfiguration] = Field(default_factory=dict)
+    tool_configuration: dict[ToolId, ToolConfiguration] = Field(default_factory=dict)
+
+    @field_validator('companion_system_prompt')
+    @classmethod
+    def valid_companion_prompt(cls, value):
+        if not value.strip():
+            raise ValueError('Companion prompt must not be blank')
+        return value
 
     @field_validator('base_url')
     @classmethod

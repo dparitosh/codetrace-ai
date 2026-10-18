@@ -3,12 +3,13 @@ import { Activity, ArrowUpRight, Boxes, CheckCircle2, CircleDot, GitBranch, Netw
 import { IxApplication, IxApplicationHeader, IxMenu, IxMenuItem, IxMenuCategory, IxContent, IxButton, IxSelect, IxSelectItem, IxAvatar } from '@siemens/ix-react'
 import { iconGraph, iconTable, iconHistory, iconCheck, iconUserSettings, iconCode, iconRefresh, iconNetworkDevice } from '@siemens/ix-icons/icons'
 import { requestJson, ReviewRecord, workspaceRequest, useReviewSession } from '../reviewSession'
-import { Catalog, domainColors, domainOf, TraceGraph, TraceNode } from './types'
+import { Catalog, domainOf, TraceGraph, TraceNode } from './types'
 const InteractiveGraph = lazy(() => import('./InteractiveGraph'))
 import { matchingNodes } from './graphModel'
 const Companion = lazy(() => import('./Companion'))
 const CollaborationPanel = lazy(() => import('./CollaborationPanel'))
-const AISettings = lazy(() => import('./AISettings'))
+const AdminModule = lazy(() => import('./AdminModule'))
+const GraphDataTable = lazy(() => import('./GraphDataTable'))
 const ContextualSearch = lazy(() => import('./ContextualSearch'))
 import SessionBar from '../components/SessionBar'
 const ReviewPanel = lazy(() => import('../components/ReviewPanel'))
@@ -18,7 +19,7 @@ const SecurityPage = lazy(() => import('../components/SecurityPage'))
 import './workspace.css'
 import './siemens-ui.css'
 
-type View = 'graph' | 'resources' | 'activity' | 'review' | 'connections' | 'analysis' | 'quality' | 'security'
+type View = 'graph' | 'resources' | 'activity' | 'review' | 'connections' | 'admin' | 'analysis' | 'quality' | 'security'
 export default function Workspace() {
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [source, setSource] = useState('')
@@ -30,10 +31,8 @@ export default function Workspace() {
   const [error, setError] = useState('')
   const [resourceQuery, setResourceQuery] = useState('')
   const [resourceDomain, setResourceDomain] = useState('ALL')
-  const [resourceLimit, setResourceLimit] = useState(150)
   const session = useReviewSession()
   const graph = (review?.result || null) as TraceGraph | null
-  useEffect(() => setResourceLimit(150), [resourceQuery, resourceDomain, graph])
   useEffect(() => setHighlighted([]), [graph])
   useEffect(() => {
     const clearExpired = () => {
@@ -65,7 +64,6 @@ export default function Workspace() {
     return counts
   }, [graph])
   const filteredResources = useMemo(() => (resourceQuery.trim() ? matchingNodes(graph, resourceQuery, Infinity) : graph?.nodes || []).filter(node => resourceDomain === 'ALL' || domainOf(node) === resourceDomain), [graph, resourceQuery, resourceDomain])
-  const resources = filteredResources.slice(0, resourceLimit)
   const lifecycleCount = graph?.nodes.filter(node => ['AM', 'RM', 'CM', 'QM', 'TRS', 'CONFIG', 'SCHEMA'].includes(domainOf(node))).length || 0
   const lifecycleLinks = graph?.edges.filter(edge => edge.properties.origin === 'lifecycle_assertion').length || 0
   const connectors = graph?.metadata.connectors || []
@@ -93,6 +91,7 @@ export default function Workspace() {
         <IxMenuItem active={view === 'security'} onClick={() => navigate('security')}>Security patterns</IxMenuItem>
       </IxMenuCategory>
       <IxMenuItem slot="bottom" icon={iconUserSettings} active={view === 'connections'} onClick={() => navigate('connections')}>Central connections</IxMenuItem>
+      <IxMenuItem slot="bottom" icon={iconUserSettings} active={view === 'admin'} onClick={() => navigate('admin')}>Administration</IxMenuItem>
     </IxMenu>
     <IxContent className="workspace-main" id="main-content">
       <div className="workspace-session"><SessionBar /></div>
@@ -114,19 +113,19 @@ export default function Workspace() {
           <div className="evidence-strip"><div><span className="live-dot" /><strong>{graph ? 'Evidence synchronized' : 'Source catalog ready'}</strong><span>{graph ? new Date(graph.metadata.indexed_at).toLocaleString() : 'Managed connections are configured centrally'}</span></div><button onClick={() => navigate('activity')}>Track changes<ArrowRightIcon /></button></div>
         </div><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={setSelected} onHighlight={setHighlighted} /></div>}
         {view === 'resources' && <div className="explorer-grid"><section className="resource-panel"><div className="section-title"><div><span className="eyebrow">EVERY RESOURCE, IN CONTEXT</span><h2>Resource index</h2></div><div className="index-search"><Search size={14} /><input aria-label="Filter resource index" placeholder="Search type, domain, or source…" value={resourceQuery} onChange={event => setResourceQuery(event.target.value)} /></div></div>
-          <div className="resource-table-wrap"><table className="resource-table"><thead><tr><th>Resource</th><th>Domain</th><th>Evidence</th><th /></tr></thead><tbody>{resources.map(node => <tr key={node.id} className={selected?.id === node.id ? 'selected' : ''} onClick={() => setSelected(node)}><td><button onClick={() => setSelected(node)}><i style={{ background: domainColors[domainOf(node)] || '#aaa' }} /><strong>{node.label}</strong><small>{node.type.replace(/_/g, ' ')}</small></button></td><td><span className="domain-tag">{domainOf(node)}</span></td><td className="resource-path">{node.properties.path || node.properties.provider_id || 'Graph provenance'}</td><td><ArrowUpRight size={13} /></td></tr>)}</tbody></table>
-            {!resources.length && <div className="empty-section">{graph ? 'No resources match this filter.' : 'Synchronize a managed source to inspect its resource index.'}</div>}</div><div className="table-footer">Showing {resources.length} of {filteredResources.length} matching resources. {resources.length < filteredResources.length && <button onClick={() => setResourceLimit(current => current + 150)}>Show more resources</button>}</div></section><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={setSelected} onHighlight={setHighlighted} /></div>}
+          <GraphDataTable graph={graph} resources={filteredResources} onSelect={setSelected} /></section><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={setSelected} onHighlight={setHighlighted} /></div>}
         {view === 'activity' && <div className="activity-grid"><section className="plain-panel"><div className="section-title"><div><span className="eyebrow">TRACKED RESOURCE SET</span><h2>Lifecycle change feed</h2></div><Activity size={20} /></div>
           {graph?.trs_events?.length ? [...graph.trs_events].reverse().map(event => <div className="timeline-event" key={event.id}><div className={'event-dot ' + event.action.toLowerCase()} /><div><span className="event-label">{event.action} <small>#{event.order}</small></span><button onClick={() => { const node = graph.nodes.find(item => item.id === event.resource_uri); if (node) { setSelected(node); setView('resources') } }}>{graph.nodes.find(item => item.id === event.resource_uri)?.label || event.resource_uri}</button><p>{event.provider_id} · {event.at ? new Date(event.at).toLocaleString() : 'Time not supplied by provider'}</p></div></div>) : <div className="empty-section"><Activity size={25} /><h3>No imported TRS events yet.</h3><p>Configure a TRS endpoint or RDF export centrally. Change order, checkpoints, and deletion tombstones appear here after sync.</p></div>}
           <div className="checkpoint-list">{connectors.filter((item: any) => item.domain === 'TRS').map((item: any) => <div key={item.id}><strong>{item.label}</strong><span>Checkpoint {item.checkpoint?.latest_order ?? 'unavailable'} · {item.status}</span></div>)}</div></section>
           <section className="plain-panel"><div className="section-title"><div><span className="eyebrow">CONTINUOUS DELIVERY</span><h2>Build evidence</h2></div><Workflow size={20} /></div>{graph?.pipeline_runs?.length ? graph.pipeline_runs.map(run => <div className="pipeline-run" key={run.id}><CheckCircle2 size={18} /><div><strong>{run.label}</strong><p>{run.branch} · {run.revision?.slice(0, 8)}</p></div><span className={'pipeline-status ' + (run.matches_revision ? 'matched' : '')}>{run.status}</span><small>{run.matches_revision ? 'Matches indexed revision' : 'Different revision'}</small></div>) : <div className="empty-section"><Workflow size={25} /><h3>Bring delivery into the picture.</h3><p>Add GitHub Actions or GitLab CI connections to the central catalog. Build status is linked only when its revision matches the source.</p></div>}</section></div>}
         {view === 'review' && <section className="review-center"><div className="section-title"><div><span className="eyebrow">REVIEW WITH PROVENANCE</span><h2>Snapshot decision</h2></div><ShieldCheck size={22} /></div>{review ? <><div className="review-summary"><CircleDot size={18} /><div><strong>{graph?.metadata.source_label}</strong><p>{graph?.nodes.length} resources · {graph?.edges.length} relationships · revision {String(graph?.metadata.revision || 'unversioned').slice(0, 12)}</p></div><span className={'status-pill ' + review.status}>{review.status}</span></div><ReviewPanel key={review.id} review={review} onChange={setReview} />{graph && <Suspense fallback={<p>Loading link collaboration...</p>}><CollaborationPanel key={review.id} review={review} graph={graph} catalog={catalog} selected={selected} /></Suspense>}<div className="review-caveat">Review covers this snapshot. Provider gaps and static-analysis limitations remain visible in its evidence.</div></> : <div className="empty-section">Synchronize a managed source to create a reviewable graph snapshot.</div>}</section>}
-        {view === 'connections' && <><Connections catalog={catalog} connectors={connectors} /><AISettings /></>}
+        {view === 'admin' && <AdminModule />}
+        {view === 'connections' && <><Connections catalog={catalog} connectors={connectors} /></>}
         {view === 'analysis' && <AnalysisPage onBack={() => navigate('graph')} onNavigateToGraph={() => navigate('graph')} onNavigateToQuality={() => navigate('quality')} />}
         {view === 'quality' && <QualityPage onBack={() => navigate('graph')} />}
         {view === 'security' && <Suspense fallback={<p>Loading analysis tools...</p>}><SecurityPage /></Suspense>}
         </Suspense>
-        <footer className="workspace-footer"><span>CODETRACE INTELLIGENCE WORKSPACE</span><span>OSLC contextual evidence · local reviewer decisions · session bounded</span><button onClick={() => navigate('connections')}><Settings2 size={12} />Central administration</button></footer>
+        <footer className="workspace-footer"><span>CODETRACE INTELLIGENCE WORKSPACE</span><span>OSLC contextual evidence · local reviewer decisions · session bounded</span><button onClick={() => navigate('admin')}><Settings2 size={12} />Central administration</button></footer>
       </main>
     </IxContent>
   </IxApplication>
@@ -137,7 +136,7 @@ function Metric({ label, value, note, icon }: { label: string; value: number | s
   return <div className="metric-card"><div><span>{label}</span>{icon}</div><strong>{typeof value === 'number' ? value.toLocaleString() : value}</strong><small>{note}</small></div>
 }
 function Connections({ catalog, connectors }: { catalog: Catalog | null; connectors: any[] }) {
-  return <section className="connections-panel"><div className="connection-intro"><div><span className="eyebrow">ONE CENTRAL CATALOG</span><h2>Administration belongs in configuration.</h2><p>Repository locations, lifecycle providers, pipelines and central AI defaults are managed through the root <code>.env.local</code>. Users choose sources and can register a session AI connection below; secrets stay on the server.</p></div><Settings2 size={38} /></div>
+  return <section className="connections-panel"><div className="connection-intro"><div><span className="eyebrow">ONE CENTRAL CATALOG</span><h2>Administration belongs in configuration.</h2><p>Repository locations, lifecycle providers, pipelines and central AI defaults are managed through the root <code>.env.local</code>. Users choose sources and configure AI in Administration; secrets stay on the server.</p></div><Settings2 size={38} /></div>
     <div className="connection-grid"><ConnectionCard title="Managed repositories" subtitle="MANAGED_REPOSITORIES" icon={<GitBranch size={19} />}>
       {catalog?.sources.map(source => <div className="connection-row" key={source.id}><span><strong>{source.label}</strong><small>{source.kind} · {source.ref || 'Working revision'}</small></span><b>Configured</b></div>)}
     </ConnectionCard><ConnectionCard title="OSLC lifecycle providers" subtitle="OSLC_PROVIDERS" icon={<Network size={19} />}>

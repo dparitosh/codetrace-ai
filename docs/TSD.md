@@ -123,3 +123,9 @@ Reference patterns were reviewed in PMem's frontend CredentialSettings and backe
 ollama_auth/graph_embeddings modules; its service mesh and browser token persistence
 were not copied. Native REST contracts follow [Ollama chat](https://docs.ollama.com/api/chat),
 [embeddings](https://docs.ollama.com/api/embed), and [model discovery](https://docs.ollama.com/api/tags).
+
+### Editable agent configuration
+
+The session AI profile includes agent_configuration (registered agent IDs to system_prompt/tools), tool_configuration (registered tool IDs to descriptions), and companion_system_prompt. GET /ai/config exposes resolved defaults and registered tools; PUT validates nonblank bounded prompts and unique nonempty registered tool lists. Overrides share the existing encrypted session profile lifecycle. GraphAgent uses the resolved tool list both for model schemas and execution authorization, including automatic evidence collection. A separate runtime system message specifies the response contract; server citation/schema/budget checks remain authoritative. The legacy companion accepts its configured prompt without adding tools.
+
+Administration contains the editor. AG Grid Community provides virtualized resource and relationship tables, loaded lazily with client-side row-model, pagination and text-filter modules. All filtered resources are available; pagination replaces the former 150-row preview. Relationship eligibility uses a set lookup over resource IDs. This is a local session administration surface, not an RBAC or organization-wide policy store.

@@ -94,7 +94,7 @@ def evidence_answer(graph, citations, edges, selected_id, question=''):
     return answer
 
 
-def answer_question(graph, question, selected_id=None):
+def answer_question(graph, question, selected_id=None, system_prompt=None):
     citations, edges = context_evidence(graph, question, selected_id)
     fallback = evidence_answer(graph, citations, edges, selected_id, question)
     result = {'answer': fallback, 'mode': 'evidence', 'citations': citations, 'relations': edges,
@@ -115,7 +115,7 @@ def answer_question(graph, question, selected_id=None):
                'coverage': graph['metadata'].get('coverage'),
                'connectors': graph['metadata'].get('connectors'),
                'limitations': graph['metadata'].get('limitations')}
-    messages = [{'role': 'system', 'content': system}, {'role': 'user', 'content': json.dumps(context, ensure_ascii=False)}]
+    messages = ([{'role': 'system', 'content': system_prompt}] if system_prompt else []) + [{'role': 'system', 'content': system}, {'role': 'user', 'content': json.dumps(context, ensure_ascii=False)}]
     base = settings.AI_BASE_URL.rstrip('/')
     headers = {}
     token = server_secret(settings.AI_TOKEN_ENV)

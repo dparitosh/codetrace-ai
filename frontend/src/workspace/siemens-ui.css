@@ -127,3 +127,14 @@ html[data-ix-color-schema='dark'] { color-scheme: dark; }
 .agent-execution pre { max-height: 110px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ct-text); }
 .agent-execution button { border: 1px solid var(--ct-border); background: var(--ct-background); color: var(--ct-text); padding: 5px; border-radius: 4px; }
 .ix-workspace .answer-label, .ix-workspace .evidence-heading { color: var(--theme-color-primary); }
+
+.ai-settings details { margin: 14px 0; padding: 12px; border: 1px solid var(--ct-border); border-radius: 4px; }
+.ai-settings details > label { flex-direction: column; align-items: stretch; margin-top: 12px; }
+.ai-settings textarea { width: 100%; padding: 10px; resize: vertical; color: var(--ct-text); background: var(--ct-background); border: 1px solid var(--ct-border); border-radius: 4px; }
+.ai-settings fieldset { margin-top: 12px; border: 1px solid var(--ct-border); }
+.ai-settings summary { cursor: pointer; font-weight: 600; }
+.graph-data-table { padding: 16px; min-width: 0; }
+.graph-data-table > p { font-size: 12px; line-height: 1.6; margin: 12px 0; }
+.graph-data-table .ai-action-row { margin-top: 0; }
+.graph-data-table .ai-action-row button { padding: 8px 14px; border: 1px solid var(--ct-border); background: var(--ct-background); color: var(--ct-text); cursor: pointer; }
+.graph-data-table .ai-action-row button[aria-pressed=true] { background: var(--theme-color-primary); color: var(--theme-color-primary--contrast); }

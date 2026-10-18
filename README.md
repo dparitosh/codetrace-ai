@@ -41,7 +41,7 @@ Set `PYTHON=/path/to/python3` to select an interpreter. Scripts anchor paths to 
 
 ## Configure Ollama and graph agents
 
-Open **Connections → Connect Ollama REST** and start a review session. Enable
+Open **Administration → Connect Ollama REST** and start a review session. Enable
 Ollama, enter its REST URL, optional API key, key header, installed chat model and
 embedding model (default `nomic-embed-text`). Use **Save and discover models**,
 select models, then **Save and test chat + embeddings**. Models are not downloaded
@@ -185,3 +185,9 @@ Graph controls support child collapse/expand, context expansion, background-clic
 Graph resources use circular nodes with domain colors and an enlarged selection outline. Hierarchy is the initial layout; Circular, Organic, Concentric and Grid remain available. Select a resource to traverse upstream, downstream or both directions over 1–6 hops. Choose containment hierarchy or code/lifecycle evidence separately to avoid treating a shared container as impact evidence.
 
 Current graph review results and known limits are consolidated in [audit status](docs/audit-status.md).
+
+### Agent administration and graph tables
+
+Open **Administration** to edit the system prompt and registered tool selection for each graph agent, tool descriptions, and legacy companion instructions. Save AI connection applies these changes to subsequent runs in your review session; restore agent and tool defaults preserves the connection and saved key. Configuration is session-owned and removed with the session. This local admin module does not add account-based administrator authorization. Runtime citation validation, registered tool implementations/parameter schemas, read-only restrictions and execution budgets remain enforced. Custom shell/HTTP tools cannot be registered from the form.
+
+The Resource index and lifecycle-domain pages use AG Grid Community. Resources and Relationships tabs provide sortable/filterable columns, resizable headers, pagination, resource identifiers and JSON properties. Relationship rows include links incident to the filtered resource set; selecting one inspects its source resource. Filtering uses the immutable review snapshot and does not change graph data. AG Grid loads only when a table page is opened.

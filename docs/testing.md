@@ -95,3 +95,9 @@ reasoning. The user will configure the real endpoint, key and installed models.
 No browser console errors were recorded in the final flow. Temporary fixture URLs,
 keys, test services, virtual environment, frontend packages and build output are
 removed after testing. Root .env.local is preserved.
+
+### Administration and AG Grid follow-up (2026-10-18)
+
+Backend tests: 141 passed, two optional tests skipped (optional ORM packages not installed). The 19 agent tests include session isolation/reset, custom prompt forwarding, tool descriptions, disabled automatic tools and rejection of unknown/duplicate/empty tool lists. Frontend: 20 Vitest and 23 native contracts passed; TypeScript, ESLint and production build passed. AG Grid is lazy-loaded; its vendor chunk still exceeds the 500 kB build advisory. This run does not supersede the earlier optional ORM validation.
+
+Browser verification: Administration prompt/tool edits saved and survived navigation; restoring defaults reset the prompt/tool list. A local scan populated 3,529 resources; filtering GraphDataTable produced three resources and eight incident relationships. Row selection populated contextual inspection. Session end emptied graph tables and inspection. No browser warning/error logs were recorded. No real model inference was invoked in this follow-up.

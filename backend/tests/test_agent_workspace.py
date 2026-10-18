@@ -221,3 +221,42 @@ def test_raw_git_checks_do_not_execute_filters(tmp_path):
     (root/'a.py').write_text('x=2\n'); os.utime(root/'a.py', (time.time()+3,time.time()+3))
     assert raw_revision(root, env) is None
     assert not marker.exists()
+
+
+def test_session_agent_configuration_isolated_and_resettable(session_store):
+    store, token, client = session_store
+    headers = {'X-CodeTrace-Session': token}
+    body = profile().private()
+    body['agent_configuration'] = {'trace-explorer': {'system_prompt': 'Review braking evidence precisely.', 'tools': ['coverage_gaps']}}
+    body['tool_configuration'] = {'coverage_gaps': {'description': 'Check explicit RM implementation and QM validation.'}}
+    assert client.put('/api/v1/workspace/ai/config', headers=headers, json=body).status_code == 200
+    result = client.get('/api/v1/workspace/ai/config', headers=headers).json()
+    assert result['agents'][0]['system_prompt'] == 'Review braking evidence precisely.'
+    assert result['agents'][0]['tools'] == ['coverage_gaps']
+    other = store.create()['token']
+    other_profile = client.get('/api/v1/workspace/ai/config', headers={'X-CodeTrace-Session': other}).json()
+    assert other_profile['agents'][0]['system_prompt'] != result['agents'][0]['system_prompt']
+    assert client.delete('/api/v1/workspace/ai/config', headers=headers).status_code == 200
+    assert client.get('/api/v1/workspace/ai/config', headers=headers).json()['agent_configuration'] == {}
+
+
+def test_configured_tools_enforced_and_prompts_forwarded():
+    from services.agent_workspace import tool_schema
+    connection = profile(agent_configuration={'trace-explorer': {'system_prompt': 'Custom reviewer instructions.', 'tools': ['coverage_gaps']}},
+                         tool_configuration={'coverage_gaps': {'description': 'Custom coverage description.'}})
+    rest = OllamaREST(connection)
+    agent = GraphAgent(snapshot(), rest)
+    with pytest.raises(ValueError, match='not permitted'):
+        agent.tool('inspect_resource', {'node_id': 'urn:test:rm'})
+    assert tool_schema('coverage_gaps', connection)['function']['description'] == 'Custom coverage description.'
+    with patch.object(rest, 'chat', return_value={'content': '{}'}) as chat:
+        result = agent.run('Review coverage', 'urn:test:rm')
+    assert chat.call_args.args[0][0]['content'] == 'Custom reviewer instructions.'
+    assert 'Runtime evidence contract' in chat.call_args.args[0][1]['content']
+    assert not result['trace']  # Disabled automatic inspect/search must never run.
+    for override in [{'system_prompt': ' ', 'tools': ['search_graph']},
+                     {'system_prompt': 'Review', 'tools': []},
+                     {'system_prompt': 'Review', 'tools': ['execute_shell']},
+                     {'system_prompt': 'Review', 'tools': ['search_graph', 'search_graph']}]:
+        with pytest.raises(ValueError):
+            profile(agent_configuration={'trace-explorer': override})
