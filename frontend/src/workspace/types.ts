@@ -18,6 +18,9 @@ export interface Catalog {
   configuration: string
 }
 export interface CompanionAnswer {
+  agent_id?: string
+  highlight_ids?: string[]
+  trace?: { step: number; tool: string; status: string; resource_ids: string[]; elapsed_ms: number; arguments: Record<string, unknown> }[]
   similar_resources?: { node_id: string; label: string; score: number; lexical_overlap: number; structural_overlap: number; method: string }[]
   recommendations?: { kind: string; node_id?: string; provider_id?: string; message: string; basis: string }[]
   answer: string; mode: string; model: string | null; warning: string | null; snapshot_id: string

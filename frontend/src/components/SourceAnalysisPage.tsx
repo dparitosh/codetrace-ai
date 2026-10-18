@@ -1,7 +1,7 @@
-import { ReactNode, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { ArrowLeft, FolderOpen } from 'lucide-react'
 import { loadSourceConfiguration, readSourceFiles } from '../sourceFiles'
-import { ReviewRecord, submitForReview } from '../reviewSession'
+import { ReviewRecord, submitForReview, useReviewSession } from '../reviewSession'
 import ReviewPanel from './ReviewPanel'
 
 interface Props {
@@ -18,6 +18,11 @@ export default function SourceAnalysisPage({ title, description, kind, onBack, c
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(false)
+  const session = useReviewSession()
+  useEffect(() => {
+    const clear = () => { if (review && (!session || session.token !== review.sessionToken || session.deadline <= Date.now())) { setReview(null); setFiles([]) } }
+    clear(); const timer = setInterval(clear, 1000); return () => clearInterval(timer)
+  }, [session, review])
   const analyze = async () => {
     if (!files.length) { setError('Select a local source folder.'); return }
     setLoading(true); setError(''); setNotice(''); setReview(null)

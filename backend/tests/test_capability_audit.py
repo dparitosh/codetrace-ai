@@ -72,9 +72,7 @@ def test_capacity_failure_rolls_back_publication(tmp_path, monkeypatch):
 
 def test_dirty_checkout_does_not_claim_commit_build(tmp_path):
     (tmp_path / 'a.py').write_text('x = 1\n')
-    outputs = [subprocess.CompletedProcess([], 0, stdout='a' * 40),
-               subprocess.CompletedProcess([], 0, stdout=' M a.py')]
-    with patch('services.workspace_service.subprocess.run', side_effect=outputs):
+    with patch('services.workspace_service.raw_revision', return_value=None):
         _, revision = read_repository(ManagedRepository(id='local', label='Local', path=str(tmp_path)))
     assert revision is None
 

@@ -61,3 +61,65 @@ React, icons and modular D3 have separate production chunks. Graph, companion,
 review, collaboration and optional analysis views load on demand. Run
 `node frontend/graph-performance.mjs` for model benchmarks; these do not measure
 browser layout or frame performance. See [testing.md](testing.md).
+
+## Session AI and graph agents
+
+`services/ai_connection.py` normalizes native Ollama REST operation URLs, enforces
+registered exact bases, supports the three configured proxy key headers and bounds
+request/response bytes and network timeouts. `/api/tags`, `/api/chat` and `/api/embed`
+are called server-side without redirects or inherited HTTP proxies. Users configure
+URL/key/chat/embedding models in Connections; no secret is sent to browser storage
+or returned by settings APIs. Additional bases require central configuration.
+
+`ReviewStore.ai_profile` stores memory-mode session overrides. SQLite mode uses a
+session-owned `session_ai` table with Fernet-encrypted JSON and cascading expiry/end
+removal; the encryption key derives from the caller's unpersisted session token.
+This supports same-host workers, not distributed identity or an enterprise secret
+vault. Anyone holding a session token already controls that session's evidence and
+AI settings. Deploy behind an appropriate authenticated boundary.
+
+`services/agent_workspace.py` provides three role profiles and a bounded native
+Ollama tool-call loop: search_graph, inspect_resource, traverse_graph, coverage_gaps
+and similar_resources. Tool arguments are validated and tools are read-only; there
+is no arbitrary HTTP, filesystem, code execution or autonomous publication tool.
+Only observed citation IDs are accepted. This checks citation identifiers, not
+semantic truth of every model sentence. Session ownership is checked during tools,
+REST reads and final response. Budgets cap model steps, batches, context and response
+size; network reads retain the configured per-read timeout, so the elapsed deadline
+is cooperative rather than a preemptive process-kill guarantee.
+
+Graph search weights resource identity/labels above contextual neighbor matches.
+Hybrid retrieval embeds allowlisted properties and up to six directed neighbors,
+uses Nomic task prefixes when appropriate, and combines bounded cosine similarity
+with lexical scores. Each request builds an ephemeral index of at most
+AI_EMBEDDING_MAX_NODES candidates, reused within its agent run; there is no persistent
+vector database or background full-corpus index yet. Results disclose candidate
+coverage and embedding failures. Model/tool traces and agent answers are response
+artifacts, not a durable workflow/job history; long-running durable workers,
+streaming execution events and resumable agent memory remain future work.
+
+Endpoints under `/api/v1/workspace`:
+
+- `GET/PUT/DELETE /ai/config`: masked session settings, registration, reset.
+- `POST /ai/models`, `POST /ai/test`: discovery and chat/embedding connectivity.
+- `POST /search`: review_id, query, domain, limit, semantic; scored resource results.
+- `POST /agent/run`: review_id, question, selected_id, agent_id; verified answer,
+  citations, ordered tool trace and highlight IDs.
+
+Frontend settings, contextual search, agent selector/trace and graph evidence focus
+use the existing review session. Hidden graph views retain exploration state and
+pause physics. Parallel-edge labels follow their individual curved paths. The
+post-timing-refresh session check prevents late request results from resurrecting
+ended evidence. Local source-analysis results are cleared on session expiry/end.
+
+Managed Git inspection no longer calls worktree status. `git_revision.py` compares
+raw file blob hashes with HEAD and lists paths without invoking clean/process
+filters. It returns no revision for dirty/untracked, symlink/submodule, oversized or
+unknown state. Raw-byte line-ending conversions may conservatively suppress revision
+matching. Before/after revision checks reduce concurrent-change misattribution;
+an immutable commit snapshot is still preferable for fully isolated ingestion.
+
+Reference patterns were reviewed in PMem's frontend CredentialSettings and backend
+ollama_auth/graph_embeddings modules; its service mesh and browser token persistence
+were not copied. Native REST contracts follow [Ollama chat](https://docs.ollama.com/api/chat),
+[embeddings](https://docs.ollama.com/api/embed), and [model discovery](https://docs.ollama.com/api/tags).

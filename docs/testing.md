@@ -67,3 +67,31 @@ lockfiles, user logs and existing runtime data.
 
 Do not describe mock transports, SQLite checks or an unavailable model as a
 successful live integration. Record actual environments and outcomes in the audit.
+
+## Ollama agent verification (2026-10-18)
+
+The final backend/core/optional ORM run passed **152 tests** (SQLite ORM, no live
+PostgreSQL). Frontend Vitest passed **20 tests**, dependency-free frontend
+contracts passed **23 tests**, and TypeScript/ESLint/production build passed.
+The graph vendor chunk remains 62.09 kB; entry JavaScript is 495.19 kB after
+splitting the shared session client.
+
+New fixtures cover masked session AI registration/reset, encrypted SQLite profiles
+shared across store instances and cascading session cleanup, API key preservation
+and removal, three native/proxy authentication headers, base allowlisting, malformed
+embeddings, keyword fallback, model-directed tool calls, invented citations,
+forbidden tools and session guards. A harmless Git filter marker fixture verifies
+that raw metadata/blob inspection executes no worktree clean filter.
+
+The real browser flow used a disposable local Ollama-compatible HTTP fixture with
+a dummy key: URL normalization, discovery of two test models, chat/embedding tests,
+key retention after blank save, key removal followed by authentication failure,
+hybrid search with disclosed 300-node semantic scope, a model-requested inspect tool,
+verified E1 citation, graph highlights, evidence focus from two hops to one hop,
+viewport preservation through index navigation, and graph/answer clearing on end.
+The fixture uses deterministic two-dimensional vectors and scripted chat responses;
+this proves integration and controls, not real Nomic retrieval quality or real-model
+reasoning. The user will configure the real endpoint, key and installed models.
+No browser console errors were recorded in the final flow. Temporary fixture URLs,
+keys, test services, virtual environment, frontend packages and build output are
+removed after testing. Root .env.local is preserved.

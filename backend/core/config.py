@@ -86,6 +86,14 @@ class Settings(BaseSettings):
     AI_MAX_OUTPUT_TOKENS: int = Field(default=700, ge=1, le=8192)
     AI_MAX_RESPONSE_BYTES: int = Field(default=2000000, ge=1)
     AI_MAX_ANSWER_CHARACTERS: int = Field(default=10000, ge=1)
+    AI_EMBEDDING_MODEL: str = 'nomic-embed-text'
+    AI_ALLOWED_BASE_URLS: List[str] = Field(default_factory=list)
+    AI_KEY_HEADER: Literal['Authorization', 'api-key', 'Ocp-Apim-Subscription-Key'] = 'Authorization'
+    AI_AGENT_MAX_STEPS: int = Field(default=5, ge=1, le=12)
+    AI_AGENT_DEADLINE_SECONDS: int = Field(default=120, ge=5, le=600)
+    AI_CONTEXT_MAX_BYTES: int = Field(default=120000, ge=4096, le=1000000)
+    AI_EMBEDDING_MAX_NODES: int = Field(default=300, ge=1, le=2000)
+    AI_EMBEDDING_BATCH_SIZE: int = Field(default=24, ge=1, le=64)
     WORKSPACE_RENDER_NODES: int = Field(default=400, ge=10, le=2000)
     WORKSPACE_RENDER_EDGES: int = Field(default=1000, ge=10, le=5000)
     OSLC_PUBLIC_BASE_URL: Optional[str] = None
@@ -114,6 +122,8 @@ class Settings(BaseSettings):
     @model_validator(mode='after')
     def resolve_local_settings(self):
         connection_url(self.AI_BASE_URL)
+        for url in self.AI_ALLOWED_BASE_URLS:
+            connection_url(url)
         self.OSLC_PUBLIC_BASE_URL = self.OSLC_PUBLIC_BASE_URL or f'http://{self.browser_host}:{self.PORT}/oslc'
         connection_url(self.OSLC_PUBLIC_BASE_URL)
         if self.AI_PROVIDER == 'ollama' and urlsplit(self.AI_BASE_URL).hostname not in {'localhost', '127.0.0.1', '::1'}:

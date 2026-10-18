@@ -43,3 +43,21 @@ test('concurrent starts share one server session', async () => {
   assert.equal(calls, 1)
   assert.equal(results[0].token, results[1].token)
 })
+
+test('ending during timing refresh rejects a completed workspace result', async () => {
+  let releaseTiming, enteredTiming
+  const timingStarted = new Promise(resolve => { enteredTiming = resolve })
+  globalThis.fetch = async (url, options) => {
+    if (url.endsWith('/sync')) return json({ id: 'graph', result: {} })
+    if (options?.method === 'DELETE') return json({ ended: true })
+    if (options?.method === 'POST') return json({ token: 'one', ...timing })
+    enteredTiming()
+    return new Promise(resolve => { releaseTiming = resolve })
+  }
+  const api = await client()
+  const pending = api.workspaceRequest('sync', {}, 5)
+  await timingStarted
+  await api.endSession()
+  releaseTiming(json(timing))
+  await assert.rejects(pending, /session ended|session changed/i)
+})

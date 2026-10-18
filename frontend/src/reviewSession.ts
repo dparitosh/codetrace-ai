@@ -93,6 +93,7 @@ export async function submitForReview(kind: string, source: unknown, timeout: nu
   if (session?.token !== current.token) throw new Error('The analysis belongs to an ended session. Run it again in the current session.')
   // A lost timing refresh should not hide a successfully computed result.
   await refreshSession().catch(() => undefined)
+  if (session?.token !== current.token || (session?.deadline || 0) <= Date.now()) throw new Error('Session ended or expired while refreshing the result.')
   return { ...result, sessionToken: current.token }
 }
 
@@ -108,6 +109,7 @@ export async function getReview(id: string): Promise<ReviewRecord> {
   const result = await requestJson(`${base}/reviews/${encodeURIComponent(id)}`, { headers: headers(current.token) })
   if (session?.token !== current.token) throw new Error('Session changed while loading the review.')
   await refreshSession().catch(() => undefined)
+  if (session?.token !== current.token || (session?.deadline || 0) <= Date.now()) throw new Error('Session ended or expired while refreshing the result.')
   return { ...result, sessionToken: current.token }
 }
 
@@ -120,6 +122,7 @@ export async function decideReview(record: ReviewRecord, action: 'approved' | 'r
   })
   if (session?.token !== current.token) throw new Error('Session changed while deciding the review.')
   await refreshSession().catch(() => undefined)
+  if (session?.token !== current.token || (session?.deadline || 0) <= Date.now()) throw new Error('Session ended or expired while refreshing the result.')
   return { ...result, sessionToken: current.token }
 }
 
@@ -152,7 +155,18 @@ export async function workspaceRequest<T>(path: string, body: unknown, timeout: 
   const result = await requestJson('/api/v1/workspace/' + path, { method: 'POST', headers: headers(current.token), body: JSON.stringify(body) }, timeout)
   if (session?.token !== current.token) throw new Error('The session changed during this request.')
   await refreshSession().catch(() => undefined)
+  if (session?.token !== current.token || (session?.deadline || 0) <= Date.now()) throw new Error('The session ended or expired during this request.')
   return { ...result, sessionToken: current.token }
+}
+
+export async function aiRequest<T>(path: string, method = 'GET', body?: unknown, timeout = __APP_CONFIG__.controlTimeout): Promise<T> {
+  const current = await startSession()
+  const result = await requestJson('/api/v1/workspace/ai/' + path, { method, headers: headers(current.token),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }) }, timeout)
+  if (session?.token !== current.token) throw new Error('AI settings belong to an ended session.')
+  await refreshSession().catch(() => undefined)
+  if (session?.token !== current.token || (session?.deadline || 0) <= Date.now()) throw new Error('The session changed during this request.')
+  return result
 }
 
 export async function collaborationRequest<T>(path: string, expectedSession: string | undefined, body?: unknown, timeout = __APP_CONFIG__.controlTimeout): Promise<T> {

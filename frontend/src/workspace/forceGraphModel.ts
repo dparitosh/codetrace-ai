@@ -133,3 +133,16 @@ export function forceEdgePath(edge: ForceEdge) {
   const cx = (x1 + x2) / 2 - uy * edge.lane * 42, cy = (y1 + y2) / 2 + ux * edge.lane * 42
   return `M${x1 + ux * start},${y1 + uy * start}Q${cx},${cy} ${x2 - ux * end},${y2 - uy * end}`
 }
+
+export function forceEdgeLabelPoint(edge: ForceEdge): Point {
+  const x1 = edge.source.x || 0, y1 = edge.source.y || 0, x2 = edge.target.x || 0, y2 = edge.target.y || 0
+  if (edge.source === edge.target) {
+    const radius = edge.source.radius, loop = radius + 30 + Math.abs(edge.lane) * 18
+    return { x: x1, y: y1 - radius * .175 - loop * 1.5 - 6 }
+  }
+  const dx = x2 - x1, dy = y2 - y1, length = Math.max(.001, Math.hypot(dx, dy))
+  const ux = dx / length, uy = dy / length
+  const start = Math.min(edge.source.radius + 2, length / 3), end = Math.min(edge.target.radius + 8, length / 3)
+  return { x: (x1 + x2) / 2 + ux * (start - end) / 4 - uy * edge.lane * 21,
+    y: (y1 + y2) / 2 + uy * (start - end) / 4 + ux * edge.lane * 21 - 6 }
+}

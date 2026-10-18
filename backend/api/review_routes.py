@@ -104,6 +104,15 @@ class ReviewStore:
             key, _ = self._session(token, False)
             self._drop(key)
 
+    def ai_profile(self, token, value=None, clear=False):
+        with self.lock:
+            _, session = self._session(token)
+            if clear:
+                session.pop('ai_profile', None)
+            elif value is not None:
+                session['ai_profile'] = dict(value)
+            return dict(session['ai_profile']) if 'ai_profile' in session else None
+
     def _view(self, record, include_result=True):
         public = {key: value for key, value in record.items() if key not in {'payload', 'request_digest'}}
         if include_result and 'payload' in record:

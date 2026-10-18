@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { forceLink, forceSimulation, forceX, forceY } from 'd3-force'
-import { forceEdgePath, hierarchyLevels, layoutTargets, reconcileForceEdges, reconcileForceNodes, rebindForceNodes, type ForceNode, type ForceEdge, type ForceLayout } from './forceGraphModel'
+import { forceEdgePath, forceEdgeLabelPoint, hierarchyLevels, layoutTargets, reconcileForceEdges, reconcileForceNodes, rebindForceNodes, type ForceNode, type ForceEdge, type ForceLayout } from './forceGraphModel'
 import type { TraceEdge, TraceNode } from './types'
 
 const resources: TraceNode[] = ['file', 'function', 'rm'].map(id => ({ id, label: id, type: id === 'file' ? 'file' : 'resource', properties: {} }))
@@ -47,6 +47,7 @@ describe('D3 simulation boundaries', () => {
     expect(edges).toHaveLength(5)
     expect(new Set(edges.map(edge => edge.id)).size).toBe(5)
     expect(new Set(edges.map(forceEdgePath)).size).toBe(5)
+    expect(new Set(edges.map(edge => JSON.stringify(forceEdgeLabelPoint(edge)))).size).toBe(5)
     expect(edges.map(forceEdgePath).join('')).not.toMatch(/NaN|Infinity/)
   })
 

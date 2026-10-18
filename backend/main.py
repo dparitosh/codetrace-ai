@@ -10,6 +10,8 @@ from pathlib import Path
 import sys
 
 from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
@@ -85,6 +87,16 @@ async def private_review_responses(request, call_next):
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     return JSONResponse(status_code=exc.status_code, headers=exc.headers, content={"error": exc.detail, "status_code": exc.status_code, "timestamp": datetime.now(timezone.utc).isoformat(), "path": str(request.url)})
+
+
+@app.exception_handler(RequestValidationError)
+async def private_ai_validation(request, exc):
+    if request.url.path == '/api/v1/workspace/ai/config':
+        # Default validation responses echo rejected input, including malformed
+        # credentials or credential-bearing URLs. Return field names only here.
+        fields = sorted({'.'.join(map(str, error['loc'][1:])) for error in exc.errors()})
+        return JSONResponse(status_code=422, content={'error': 'Invalid AI connection settings: ' + ', '.join(fields), 'fields': fields})
+    return await request_validation_exception_handler(request, exc)
 
 
 @app.get("/health")

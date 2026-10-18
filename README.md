@@ -39,6 +39,39 @@ bash start.sh                # Ctrl+C stops both services
 
 Set `PYTHON=/path/to/python3` to select an interpreter. Scripts anchor paths to their own checkout. Docker deployment is not provided; use the maintained native installers.
 
+## Configure Ollama and graph agents
+
+Open **Connections → Connect Ollama REST** and start a review session. Enable
+Ollama, enter its REST URL, optional API key, key header, installed chat model and
+embedding model (default `nomic-embed-text`). Use **Save and discover models**,
+select models, then **Save and test chat + embeddings**. Models are not downloaded
+by this app. Blank key input preserves an existing key; use the explicit removal
+checkbox to remove it.
+
+The configured central `AI_BASE_URL` is allowed automatically. For another endpoint,
+register its exact base in root `.env.local`, for example
+`AI_ALLOWED_BASE_URLS=["https://models.example/ollama"]`, then restart. Native operation
+URLs such as `/api/chat` are normalized to their base; proxy prefixes are preserved.
+Keys support Bearer `Authorization`, `api-key`, or `Ocp-Apim-Subscription-Key`.
+
+Profiles belong to the current review session. Keys are never returned or stored
+in browser storage. Memory profiles disappear with the session/process. SQLite
+profiles are encrypted using a key derived from the client's unpersisted session
+token, shared across workers on one host, and removed with session end/expiry.
+This session mechanism is not enterprise account authentication or RBAC.
+
+Synchronize a source, then use **Contextual graph search** for lexical/hybrid
+retrieval. Semantic search reports its bounded candidate index; it is not a full
+vector-database search. Select results or use **Explore highlighted context** to
+traverse evidence. Choose Trace explorer, Coverage reviewer or Change analyst in
+the companion. The model can execute allowlisted search, inspect, directed-traverse,
+coverage and similarity tools. Expand **Agent execution** to inspect steps and
+highlight their evidence. Unsupported model calls/invalid citations/budget exhaustion
+fall back to explicit evidence. Agents cannot execute shell commands or modify ALM
+links; the existing reviewed approval flow remains responsible for writes.
+
+For architecture, limits and API contracts see [technical design](docs/TSD.md).
+
 ## Configuration
 
 One root `.env.local` configures the backend, frontend dev/preview server, launch URLs, review sessions, and source limits. It is ignored by Git. `.env.local.example` documents supported keys; `config/defaults.json` centralizes shared defaults.

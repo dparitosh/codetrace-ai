@@ -17,3 +17,5 @@
 .d3-arrow-context, .d3-arrow-lifecycle { fill: var(--theme-color-primary, #008f9b); }
 .force-motion-controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 8px 18px; border-bottom: 1px solid var(--ct-border, #dbe2e8); }
 .force-motion-controls small { color: var(--ct-muted, #637984); margin-right: auto; }
+
+.d3-node.is-evidence .d3-node-disc { stroke: var(--theme-color-primary, #008f9b); stroke-width: 5; stroke-dasharray: 4 2; }

@@ -17,9 +17,10 @@ from api.agent_routes import _build_architecture_audit
 from core.config import PROJECT_ROOT, settings
 from graph.traceability import materialize, CT
 from services.oslc_service import collect_oslc, local_path, read_response, server_secret, allowed_url
-from services.oslc_store import LINK_PREDICATES
 from services.git_isolation import git_command, git_environment
 from services.sbom_service import inventory, attach as attach_sbom
+from services.git_revision import raw_revision
+from services.agent_workspace import coverage_gaps
 
 
 def repository_config(source_id):
@@ -31,22 +32,14 @@ def repository_config(source_id):
 
 def read_repository(repository):
     def scan(path, env):
+        before = raw_revision(path, env)
         graph = build_graph_from_directory(path, 'managed_repository')
         try:
             graph['sbom_inventory'] = inventory(path, repository)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             raise HTTPException(422, 'Managed SBOM is invalid or exceeds configured limits') from exc
-        try:
-            revision = subprocess.run(git_command() + ['-C', str(path), 'rev-parse', 'HEAD'],
-                capture_output=True, text=True, timeout=5, check=False, env=env).stdout.strip() or None
-            state = subprocess.run(git_command() + ['-C', str(path), 'status', '--porcelain', '--untracked-files=normal'],
-                capture_output=True, text=True, timeout=5, check=False, env=env)
-            # A commit identifies committed bytes only. Never attach commit build
-            # evidence to modified/untracked local source or an unknown Git state.
-            if state.returncode or state.stdout.strip():
-                revision = None
-        except (OSError, subprocess.TimeoutExpired):
-            revision = None
+        after = raw_revision(path, env)
+        revision = before if before and before == after else None
         return graph, revision
     if repository.kind == 'local':
         path = local_path(repository.path)
@@ -182,17 +175,15 @@ def build_managed_snapshot(source_id, include_lifecycle=True):
     audit = _build_architecture_audit(code_graph)
     audit = {key: value[:100] if isinstance(value, list) else value for key, value in audit.items()}
     requirement_ids = {node['id'] for node in graph['nodes'] if node['type'] == 'requirement' and not node['properties'].get('deleted')}
-    traced = set()
-    nodes_by_id = {node['id']: node for node in graph['nodes']}
-    for edge in graph['edges']:
-        endpoints = [nodes_by_id.get(edge[key], {}) for key in ('source', 'target')]
-        evidence_valid = all(node and node['type'] != 'external_resource' and not node.get('properties', {}).get('deleted') for node in endpoints)
-        if edge['properties'].get('origin') == 'lifecycle_assertion' and edge['type'] in LINK_PREDICATES and evidence_valid:
-            traced.update({edge['source'], edge['target']} & requirement_ids)
+    gaps = coverage_gaps(graph)
+    no_trace = {item['node_id'] for item in gaps if item['missing_implementation'] and item['missing_validation']}
+    traced = requirement_ids - no_trace
     graph['metadata'].update(source='managed_workspace', source_id=source_id, source_label=repository.label,
         revision=revision, indexed_at=datetime.now(timezone.utc).isoformat(), files=code_graph['metadata']['files'],
         retention='shared local SQLite until expiry' if settings.SESSION_STORE == 'sqlite' else 'session memory', connectors=statuses, coverage={'requirements': len(requirement_ids),
-        'linked_requirements': len(traced), 'unlinked_requirements': sorted(requirement_ids - traced)},
+        'linked_requirements': len(traced), 'unlinked_requirements': sorted(no_trace),
+        'missing_implementation': sorted(item['node_id'] for item in gaps if item['missing_implementation']),
+        'missing_validation': sorted(item['node_id'] for item in gaps if item['missing_validation'])},
         schema_domains=['AM', 'RM', 'CM', 'QM', 'TRS', 'SCHEMA'],
         limits={'render_nodes': settings.WORKSPACE_RENDER_NODES, 'render_edges': settings.WORKSPACE_RENDER_EDGES})
     graph['architecture_audit'] = audit

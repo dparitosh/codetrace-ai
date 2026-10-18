@@ -1,5 +1,12 @@
 # Current audit status
 
+The [2026-10-18 follow-up audit](audit-2026-10-18.md) records 35 findings at review time
+from 50 checks, including the historical P1 repository-local Git filter execution
+path. The subsequent agent implementation removes worktree status inspection and
+adds a passing filter-isolation regression. It also fixes tracking-only coverage,
+the post-refresh session race, expiry cleanup in local analysis, parallel labels
+and graph navigation state. Other findings in that dated report remain open. Earlier resolved rows below are historical and do not supersede that audit.
+
 Updated 2026-10-18. Scope: the active local-first workspace, graph/search/inspection,
 Git boundary, sessions/reviews, SBOM, TRS/CI, OSLC collaboration and optional ORM.
 This is bounded source/test/browser evidence, not a guarantee that all bugs have
@@ -81,3 +88,15 @@ by [testing.md](testing.md). Historical content remains in Git history. Empty Co
 configuration, duplicate environment template, obsolete diagnostic scripts and
 unused packaging exclusions are removed; active source, lockfiles and private
 `.env.local` configuration are preserved.
+
+## Agent runtime follow-up
+
+Session Ollama registration (URL/key/header/chat/embedding models), native REST
+connectivity checks, bounded contextual embeddings, three read-only graph-agent
+roles, model-directed tools, citation validation and evidence highlights are now
+implemented. See README for user configuration and TSD for limits. Final validation:
+152 backend/core/ORM tests, 20 Vitest tests, 23 native frontend contracts, TypeScript,
+ESLint, production build and the disposable HTTP-fixture browser flow pass. No real
+Ollama model or live ALM/PostgreSQL integration was tested in this pass. Durable
+agent jobs, streaming/resume, long-term memory, distributed coordination and a
+persistent whole-corpus vector index are not implemented.

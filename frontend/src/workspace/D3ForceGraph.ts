@@ -3,13 +3,14 @@ import { select, type Selection } from 'd3-selection'
 import { drag, dragEnable, type D3DragEvent } from 'd3-drag'
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zoom'
 import { domainColors, domainOf, relationLabel, type TraceGraph, type TraceNode } from './types'
-import { forceEdgePath, layoutTargets, reconcileForceEdges, reconcileForceNodes, rebindForceNodes, type ForceEdge, type ForceLayout, type ForceNode } from './forceGraphModel'
+import { forceEdgePath, forceEdgeLabelPoint, layoutTargets, reconcileForceEdges, reconcileForceNodes, rebindForceNodes, type ForceEdge, type ForceLayout, type ForceNode } from './forceGraphModel'
 import type { TraversalDirection } from './graphModel'
 import './forceGraph.css'
 
 export interface ForceGraphOptions {
   layout: ForceLayout; focus: string | null; direction: TraversalDirection
   selected: string | null; paused: boolean; pinOnDrag: boolean; allLabels: boolean
+  highlighted?: string[]
 }
 export interface ForceGraphActions { fit: () => void; zoomBy: (factor: number) => void; reheat: () => void; releasePins: () => void }
 type Group = Selection<SVGGElement, unknown, null, undefined>
@@ -110,7 +111,8 @@ export class D3ForceGraph implements ForceGraphActions {
       if (changed || layoutChanged) this.simulation.alpha(.6).tick(70)
     } else if (changed || layoutChanged || previous?.paused) this.simulation.alpha(.65).alphaTarget(0).restart()
     this.draw()
-    if (!this.fitted) this.fit()
+    if (previous?.focus !== options.focus && options.focus) { this.simulation.tick(35); this.draw() }
+    if (!this.fitted || previous?.focus !== options.focus) this.fit()
   }
 
   private join() {
@@ -180,9 +182,11 @@ export class D3ForceGraph implements ForceGraphActions {
     if (this.appearanceDirty) {
       const selected = this.options?.selected, hovered = this.hovered
       const neighbors = new Set(selected ? [selected] : [])
+      const highlighted = new Set(this.options?.highlighted || [])
       this.edges.forEach(edge => { if (edge.source.id === selected || edge.target.id === selected) { neighbors.add(edge.source.id); neighbors.add(edge.target.id) } })
       this.nodeElements?.attr('aria-pressed', node => String(node.id === selected)).classed('is-selected', node => node.id === selected)
-        .classed('is-hovered', node => node.id === hovered).classed('is-faded', node => !!selected && !neighbors.has(node.id) && node.id !== hovered)
+        .classed('is-hovered', node => node.id === hovered).classed('is-evidence', node => highlighted.has(node.id))
+        .classed('is-faded', node => !!selected && !neighbors.has(node.id) && node.id !== hovered && !highlighted.has(node.id))
       this.nodeElements?.select('circle.d3-pin').attr('display', node => node.fx == null ? 'none' : null)
       this.edgeElements?.classed('is-lifecycle', edge => edge.resource.properties.origin === 'lifecycle_assertion')
         .classed('is-context', edge => edge.source.id === selected || edge.target.id === selected || edge.id === this.hoveredEdge)
@@ -191,19 +195,20 @@ export class D3ForceGraph implements ForceGraphActions {
       this.drawLabels()
       this.appearanceDirty = false
     }
-    this.labelElements?.filter(function () { return this.getAttribute('display') !== 'none' }).attr('x', edge => ((edge.source.x || 0) + (edge.target.x || 0)) / 2)
-      .attr('y', edge => ((edge.source.y || 0) + (edge.target.y || 0)) / 2 - 6)
+    this.labelElements?.filter(function () { return this.getAttribute('display') !== 'none' }).attr('x', edge => forceEdgeLabelPoint(edge).x)
+      .attr('y', edge => forceEdgeLabelPoint(edge).y)
   }
 
   private drawLabels() {
     const selected = this.options?.selected
+    const highlighted = new Set(this.options?.highlighted || [])
     this.nodeElements?.select('text').attr('display', node => this.options?.allLabels || node.id === selected || node.id === this.hovered || this.nodes.length <= 55
-      || this.transform.k > 1 || node.resource.type === 'repository' ? null : 'none')
+      || highlighted.has(node.id) || this.transform.k > 1 || node.resource.type === 'repository' ? null : 'none')
     this.labelElements?.attr('display', edge => edge.id === this.hoveredEdge || (this.transform.k > .6 && this.edges.length < 80
       && edge.resource.properties.origin === 'lifecycle_assertion' && (edge.source.id === selected || edge.target.id === selected)) ? null : 'none')
       .filter(function () { return this.getAttribute('display') !== 'none' })
-      .attr('x', edge => ((edge.source.x || 0) + (edge.target.x || 0)) / 2)
-      .attr('y', edge => ((edge.source.y || 0) + (edge.target.y || 0)) / 2 - 6)
+      .attr('x', edge => forceEdgeLabelPoint(edge).x)
+      .attr('y', edge => forceEdgeLabelPoint(edge).y)
   }
 
   fit = () => {

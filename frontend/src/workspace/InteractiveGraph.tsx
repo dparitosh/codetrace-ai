@@ -8,8 +8,8 @@ import { domainColors, domainOf, TraceGraph, TraceNode } from './types'
 import { containmentDescendants, localContext, matchingNodes, revealContextRoot, visibleGraph } from './graphModel'
 import type { TraversalDirection, RelationScope } from './graphModel'
 
-interface Props { graph: TraceGraph | null; selected: string | null; onSelect: (node: TraceNode | null) => void; busy: boolean }
-export default function InteractiveGraph({ graph, selected, onSelect, busy }: Props) {
+interface Props { graph: TraceGraph | null; selected: string | null; onSelect: (node: TraceNode | null) => void; busy: boolean; highlighted?: string[]; active?: boolean }
+export default function InteractiveGraph({ graph, selected, onSelect, busy, highlighted, active = true }: Props) {
   const engine = useRef<ForceGraphActions>(null)
   const [domain, setDomain] = useState('ALL')
   const [detail, setDetail] = useState(false)
@@ -32,7 +32,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
   const matches = useMemo(() => matchingNodes(graph, query, Infinity), [graph, query])
   const domains = useMemo(() => graph ? [...new Set(graph.nodes.map(domainOf))].filter(value => value !== 'EXTERNAL').sort() : [], [graph])
   useEffect(() => { setFocus(null); setQuery(''); setDomain('ALL'); setCollapsed(new Set()); setFocusDepth(1) }, [graph])
-  const options = useMemo(() => ({ layout, focus, direction, selected, paused, pinOnDrag, allLabels }), [layout, focus, direction, selected, paused, pinOnDrag, allLabels])
+  const options = useMemo(() => ({ layout, focus, direction, selected, paused: paused || !active, pinOnDrag, allLabels, highlighted }), [layout, focus, direction, selected, paused, pinOnDrag, allLabels, highlighted, active])
   const focusSelection = () => {
     if (!graph || !selected) return
     setDomain('ALL'); setCollapsed(current => revealContextRoot(graph, current, selected)); setFocus(selected)
@@ -83,6 +83,7 @@ export default function InteractiveGraph({ graph, selected, onSelect, busy }: Pr
       <IxButton variant="tertiary" disabled={!graph} onClick={() => { setPaused(false); engine.current?.reheat() }}>Reheat layout</IxButton>
       <IxButton variant={pinOnDrag ? 'primary' : 'secondary'} aria-pressed={pinOnDrag} onClick={() => setPinOnDrag(value => !value)}><span className="ix-button-label"><Pin size={13} />Pin after drag</span></IxButton>
       <IxButton variant="tertiary" disabled={!graph} onClick={() => engine.current?.releasePins()}>Release pins</IxButton>
+      <IxButton variant="secondary" disabled={!graph || !highlighted?.length} onClick={() => { setDomain('ALL'); setCollapsed(new Set()); setFocus(highlighted![0]); setFocusDepth(2) }}>Explore highlighted context</IxButton>
       <IxButton variant={allLabels ? 'primary' : 'secondary'} aria-pressed={allLabels} onClick={() => setAllLabels(value => !value)}>{allLabels ? 'All labels' : 'Contextual labels'}</IxButton>
     </div>
     <div className="graph-canvas-wrap">

@@ -69,6 +69,8 @@ class SQLiteReviewStore:
                 CREATE TABLE IF NOT EXISTS reviews(owner TEXT NOT NULL,id TEXT NOT NULL,body TEXT NOT NULL,payload BLOB,
                     reserved REAL NOT NULL,lease TEXT,PRIMARY KEY(owner,id),FOREIGN KEY(owner) REFERENCES sessions(token_hash) ON DELETE CASCADE);
                 CREATE TABLE IF NOT EXISTS work_leases(token TEXT PRIMARY KEY,expires REAL NOT NULL);
+                CREATE TABLE IF NOT EXISTS session_ai(owner TEXT PRIMARY KEY,encrypted BLOB NOT NULL,
+                    FOREIGN KEY(owner) REFERENCES sessions(token_hash) ON DELETE CASCADE);
             ''')
             if 'lease' not in {row[1] for row in db.execute('PRAGMA table_info(reviews)')}:
                 db.execute('ALTER TABLE reviews ADD COLUMN lease TEXT')
@@ -139,6 +141,23 @@ class SQLiteReviewStore:
         with self.transaction() as db:
             key, _ = self._session(db, token)
             db.execute('DELETE FROM sessions WHERE token_hash=?', (key,))
+
+    def ai_profile(self, token, value=None, clear=False):
+        # The raw session token is never persisted; another worker can decrypt
+        # only when the owning client supplies that token. Expiry cascades removal.
+        import base64
+        from cryptography.fernet import Fernet
+        cipher = Fernet(base64.urlsafe_b64encode(hashlib.sha256(('codetrace:ai:' + (token or '')).encode()).digest()))
+        with self.transaction() as db:
+            self._prune(db)
+            owner, _ = self._session(db, token, True)
+            if clear:
+                db.execute('DELETE FROM session_ai WHERE owner=?', (owner,))
+            elif value is not None:
+                encrypted = cipher.encrypt(json.dumps(value).encode())
+                db.execute('INSERT OR REPLACE INTO session_ai VALUES(?,?)', (owner, encrypted))
+            row = db.execute('SELECT encrypted FROM session_ai WHERE owner=?', (owner,)).fetchone()
+            return json.loads(cipher.decrypt(row[0])) if row else None
 
     def _record(self, db, owner, review_id, include_result=True):
         row = db.execute('SELECT body,payload FROM reviews WHERE owner=? AND id=?', (owner, review_id)).fetchone()

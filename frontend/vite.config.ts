@@ -37,6 +37,7 @@ export default defineConfig(({ mode }) => {
     preview: { host, port: frontendPort, strictPort: true, proxy },
     build: { outDir: 'dist', sourcemap: true, rollupOptions: { output: { manualChunks: {
       graph: ['d3-force', 'd3-selection', 'd3-drag', 'd3-zoom'],
+      session: [path.resolve(root, 'frontend/src/reviewSession.ts')],
       react: ['react', 'react-dom', 'react-dom/client'],
       icons: ['@siemens/ix-icons/icons'],
     } } } },
