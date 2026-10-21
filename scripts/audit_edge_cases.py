@@ -331,8 +331,12 @@ def capacity_bypass():
     held = []
     try:
         while review_routes.store.workers.acquire(blocking=False): held.append(True)
-        result = generate_local_graph(LocalGraphRequest(files=[{'path':'a.py','content':'x=1'}]))
-        expect(not result, 'direct graph route computed while all configured analysis permits were exhausted')
+        try:
+            generate_local_graph(LocalGraphRequest(files=[{'path':'a.py','content':'x=1'}]))
+        except HTTPException as error:
+            expect(error.status_code == 429, 'capacity rejection must return HTTP 429')
+        else:
+            expect(False, 'direct graph route computed while all configured analysis permits were exhausted')
     finally:
         for _ in held: review_routes.store.workers.release()
 

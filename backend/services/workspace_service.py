@@ -34,6 +34,17 @@ def read_repository(repository):
     def scan(path, env):
         before = raw_revision(path, env)
         graph = build_graph_from_directory(path, 'managed_repository')
+        if repository.manifest_path:
+            manifest_path = Path(repository.manifest_path)
+            manifest_path = manifest_path if manifest_path.is_absolute() else path / manifest_path
+            try:
+                with manifest_path.open('rb') as stream:
+                    content = stream.read(settings.MAX_TRACE_MANIFEST_BYTES + 1)
+                if len(content) > settings.MAX_TRACE_MANIFEST_BYTES:
+                    raise HTTPException(413, 'Managed manifest exceeds the configured limit')
+                graph['trace_manifest'] = TraceManifest.model_validate_json(content).model_dump()
+            except (OSError, ValueError) as exc:
+                raise HTTPException(422, 'Managed manifest is unavailable or invalid. Check central configuration.') from exc
         try:
             graph['sbom_inventory'] = inventory(path, repository)
         except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -137,13 +148,7 @@ def build_managed_snapshot(source_id, include_lifecycle=True):
     manifest = {'repository': {'uri': repository_uri, 'label': repository.label, 'revision': revision},
                 'resources': resources, 'links': links}
     if repository.manifest_path and include_lifecycle:
-        path = local_path(repository.manifest_path)
-        try:
-            if path.stat().st_size > settings.MAX_TRACE_MANIFEST_BYTES:
-                raise HTTPException(413, 'Managed manifest exceeds the configured limit')
-            imported = TraceManifest.model_validate_json(path.read_bytes()).model_dump()
-        except (OSError, ValueError) as exc:
-            raise HTTPException(422, 'Managed manifest is unavailable or invalid. Check central configuration.') from exc
+        imported = code_graph['trace_manifest']
         if imported['repository']['uri'] != repository_uri:
             raise HTTPException(422, 'Managed lifecycle manifest repository URI does not match the managed source')
         nodes_by_uri = {node['uri']: node for node in manifest['resources']}
@@ -180,6 +185,8 @@ def build_managed_snapshot(source_id, include_lifecycle=True):
     traced = requirement_ids - no_trace
     graph['metadata'].update(source='managed_workspace', source_id=source_id, source_label=repository.label,
         revision=revision, indexed_at=datetime.now(timezone.utc).isoformat(), files=code_graph['metadata']['files'],
+        skipped=code_graph['metadata'].get('skipped', {}),
+        source_digest=code_graph['metadata']['source_digest'],
         retention='shared local SQLite until expiry' if settings.SESSION_STORE == 'sqlite' else 'session memory', connectors=statuses, coverage={'requirements': len(requirement_ids),
         'linked_requirements': len(traced), 'unlinked_requirements': sorted(no_trace),
         'missing_implementation': sorted(item['node_id'] for item in gaps if item['missing_implementation']),
@@ -187,6 +194,7 @@ def build_managed_snapshot(source_id, include_lifecycle=True):
         schema_domains=['AM', 'RM', 'CM', 'QM', 'TRS', 'SCHEMA'],
         limits={'render_nodes': settings.WORKSPACE_RENDER_NODES, 'render_edges': settings.WORKSPACE_RENDER_EDGES})
     graph['architecture_audit'] = audit
+    graph['source_assessments'] = code_graph.get('source_assessments')
     graph['trs_events'] = events
     graph['pipeline_runs'] = pipeline_runs
     # Bind approval to the enriched provider state, checkpoints, and scan evidence.

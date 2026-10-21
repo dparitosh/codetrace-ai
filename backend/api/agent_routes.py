@@ -4,7 +4,8 @@ from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from services.analysis_capacity import require_analysis_capacity
 from pydantic import BaseModel, Field
 
 from api.graph_routes import LocalGraphRequest, build_graph_from_files
@@ -74,7 +75,7 @@ def _build_architecture_audit(graph_data: Dict[str, Any]) -> Dict[str, Any]:
     return architecture.audit()
 
 
-@agent_router.post("/context", summary="Build bounded source context for a coding agent")
+@agent_router.post("/context", summary="Build bounded source context for a coding agent", dependencies=[Depends(require_analysis_capacity)])
 def create_agent_context(request: AgentContextRequest) -> Dict[str, Any]:
     graph = build_graph_from_files(request)
     audit = _build_architecture_audit(graph)

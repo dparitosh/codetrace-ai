@@ -1,11 +1,12 @@
 import SourceAnalysisPage from './SourceAnalysisPage'
-export default function QualityPage({ onBack }: { onBack: () => void }) {
-  return <SourceAnalysisPage title="Quality assessment" description="Structural metrics are review prompts, not proof that code is correct." kind="quality" onBack={onBack}>
-    {result => <>
-      <div className="flex items-center gap-6"><div className="text-5xl font-bold text-emerald-700">{result.overall_score ?? 'N/A'}</div><b>Grade {result.grade}</b></div>
-      <div className="mt-6 divide-y">{result.metrics.map((metric: any) => <div className="flex justify-between py-3" key={metric.name}><span>{metric.name}</span><b>{metric.value ?? 'N/A'}</b></div>)}</div>
-      <h2 className="mt-6 font-semibold">Recommendations</h2>
-      <ul className="mt-2 list-disc pl-5">{result.recommendations.map((item: string) => <li key={item}>{item}</li>)}</ul>
-    </>}
+import { useWorkspaceGraph } from '../workspace/workspaceContext'
+
+export default function QualityPage() {
+  const { graph } = useWorkspaceGraph()
+  const quality = graph?.source_assessments?.quality
+  return <SourceAnalysisPage title="Quality assessment" description="Structural scores and recommended improvements; these do not establish correctness.">
+    {quality ? <><div className="source-metrics"><span><b>{quality.overall_score ?? 'N/A'}</b> structural score</span><span><b>{quality.grade}</b> grade</span></div>
+      <dl className="source-metric-list">{quality.metrics.map(metric => <div key={metric.name}><dt>{metric.name}<small>{metric.description}</small></dt><dd>{metric.value ?? 'N/A'} · {metric.status}</dd></div>)}</dl>
+      <ul>{quality.recommendations.map(item => <li key={item}>{item}</li>)}</ul></> : <p>Quality evidence is unavailable in this older snapshot. Synchronize the source to generate it.</p>}
   </SourceAnalysisPage>
 }

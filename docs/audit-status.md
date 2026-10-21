@@ -1,5 +1,61 @@
 # Current audit status
 
+## Page density and purpose audit (2026-10-21)
+
+Removed repeated global metric cards, decorative slogans/eyebrows, snapshot
+blocks, footer branding and duplicate configuration entry points. Shared context
+is one compact source/snapshot/status line. Session retention, description search,
+advanced graph controls and graph help are expandable. Classification legend and
+projection limits remain visible. The companion opens on demand or row selection.
+
+Source overview now provides structure/language inventory and filtering coverage;
+quality leads with scores/recommendations, security with file findings, and domain
+overviews with imported types, link counts and resources without explicit edges.
+Graph and AG Grid occupy separate sub-tabs; keyboard tab navigation is supported.
+The existing graph canvas and visited grid persist while their panels are hidden.
+Provider gaps are reported explicitly rather than padded with repeated summaries.
+Production build, TypeScript and ESLint pass, with 31 unit tests and 23 native
+contracts. Browser verification used the configured 39,731-resource snapshot:
+source inventory/languages, quality, security, empty RM overview, resource and
+relationship grids, optional technical columns, retained filters, keyboard tabs,
+row inspection, graph, delivery, review, administration and connections. Populated
+remote lifecycle-provider views and live Ollama execution were not exercised.
+
+## Shared graph workspace follow-up (2026-10-21)
+
+Source overview, quality and security assessments now share the active review
+with lifecycle domains, the persistent graph canvas, resource tables, search
+and the companion. Assessments are computed from the graph's exact filtered
+source files and retained in the same result. Domain selection scopes search
+and initial agent retrieval. Inspecting a file includes its bounded static
+findings in agent evidence. Model execution remains read-only and optional.
+Review-history decisions propagate to the active view without replacing the
+graph object for an unchanged result digest. Final automated validation:
+202 backend/core/ORM tests, 23 frontend unit tests and 23 native frontend
+contracts pass; TypeScript, ESLint and production build pass. The existing
+deferred AG Grid bundle-size advisory remains. No live Ollama validation.
+
+## 2026-10-21 P2 fixes and source-folder configuration
+
+The 23 reproduced defects from the edge audit and four additional AI connection
+defects are fixed in the working tree. The edge diagnostic now passes all 32
+checks. Regression coverage includes session-owned companion routing/disable,
+key headers, credential retention restricted to the same base/header, upstream
+JSON validation, configuration-scoped OSLC resources/links, RDF evidence and
+validators, TRS replay, SBOM imports, extraction, capacity and ORM locations.
+The capacity diagnostic now expects an explicit HTTP 429 rejection.
+Verification: 199 backend/core/optional ORM tests and 23 native frontend
+contracts pass, including 44 new regression cases. A live read-only folder sync
+of the configured external project processed 1,054 files into 39,731 resources
+and 57,064 relationships, with generated Python environments excluded.
+
+`SOURCE_FOLDER` selects the default local workspace independently of the launch
+directory. An explicit `MANAGED_REPOSITORIES` catalog overrides it. See README.
+No live Ollama, gateway, ALM or PostgreSQL server was used for verification.
+Older source-traced findings below are historical and are not all covered by
+this bounded repair pass. The table-bundle warning and unsupported OCR/ontology,
+dedicated circuit-breaker and dedicated Ollama-concurrency options remain.
+
 The [2026-10-18 follow-up audit](audit-2026-10-18.md) records 35 findings at review time
 from 50 checks, including the historical P1 repository-local Git filter execution
 path. The subsequent agent implementation removes worktree status inspection and

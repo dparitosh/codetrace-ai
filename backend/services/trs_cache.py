@@ -91,7 +91,9 @@ def collect_incremental(provider, client):
                         else:
                             nodes[uri] = incoming[uri]
                             properties[uri] = delta[2].get(uri, {})
-                    links = [item for item in old_links if item['source']['uri'] not in changes and item['target'].get('uri') not in deleted]
+                    # Preserve unchanged source assertions across target deletion/recreation.
+                    # The target tombstone carries deletion state in the snapshot.
+                    links = [item for item in old_links if item['source']['uri'] not in changes]
                     links.extend(item for item in delta[1] if item['source']['uri'] in changes and item['source']['uri'] not in deleted)
                     events = {item['id']: item for item in old_events}
                     events.update({item['id']: item for item in delta[3]})

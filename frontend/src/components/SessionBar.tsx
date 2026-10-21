@@ -29,15 +29,15 @@ export default function SessionBar() {
     try { await action() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Session action failed') }
     finally { setBusy(false) }
   }
-  return <aside className="border-b bg-indigo-50 px-6 py-3" aria-label="Review session">
+  return <aside className="session-toolbar" aria-label="Review session">
     <div className="flex flex-wrap items-center gap-4 text-sm">
       <b>{remaining ? `Session expires in ${Math.floor(remaining / 60)}m ${remaining % 60}s` : 'No active review session'}</b>
       {remaining ? <>
-        <IxButton disabled={busy} onClick={() => run(() => refreshSession(true))} className="underline">Keep session active</IxButton>
-        <IxButton disabled={busy} onClick={() => run(async () => setReviews(await listReviews()))} className="underline">Review history</IxButton>
-        <IxButton disabled={busy} onClick={() => run(endSession)} className="underline">End session and clear reviews</IxButton>
+        <IxButton variant="tertiary" disabled={busy} onClick={() => run(() => refreshSession(true))}>Extend</IxButton>
+        <IxButton variant="tertiary" disabled={busy} onClick={() => run(async () => setReviews(await listReviews()))}>History</IxButton>
+        <IxButton variant="tertiary" disabled={busy} onClick={() => run(endSession)} aria-label="End session and clear reviews">End session</IxButton>
       </> : <IxButton disabled={busy} onClick={() => run(startSession)} className="underline">Start session</IxButton>}
-      <span>{session?.retention || 'Reviews are cleared when the session ends or expires.'}</span>
+      <details className="session-retention"><summary>Retention</summary><p>{session?.retention || 'Reviews are cleared when the session ends or expires.'}</p></details>
     </div>
     {error && <p role="alert" className="mt-2 text-red-700">{error}</p>}
     {reviews && remaining > 0 && <div className="mt-3 flex flex-wrap gap-3">

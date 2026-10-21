@@ -37,9 +37,13 @@ def _normalize(document):
             if not isinstance(items, list):
                 raise ValueError('Invalid CycloneDX component list')
             for item in items:
-                if not isinstance(item, dict) or not item.get('name') or not item.get('bom-ref'):
-                    raise ValueError('Every imported component requires name and bom-ref')
-                components.append({'ref': item['bom-ref'], 'name': item['name'], 'version': item.get('version'),
+                if not isinstance(item, dict) or not item.get('name'):
+                    raise ValueError('Every imported component requires a name')
+                reference = item.get('bom-ref')
+                if reference is None:
+                    reference = 'urn:codetrace:anonymous-component:' + hashlib.sha256(
+                        (str(len(components)) + '\n' + json.dumps(item, sort_keys=True)).encode()).hexdigest()
+                components.append({'ref': reference, 'name': item['name'], 'version': item.get('version'),
                                    'purl': item.get('purl'), 'licenses': item.get('licenses', [])})
                 if len(components) > settings.SBOM_MAX_COMPONENTS:
                     raise ValueError('SBOM component limit exceeded')
@@ -55,7 +59,10 @@ def _normalize(document):
         for item in document.get('packages', []):
             components.append({'ref': item['SPDXID'], 'name': item['name'], 'version': item.get('versionInfo'),
                                'purl': next((ref['referenceLocator'] for ref in item.get('externalRefs', []) if ref.get('referenceType') == 'purl'), None),
-                               'licenses': [item.get('licenseConcluded', 'NOASSERTION')]})
+                               'license_declared': item.get('licenseDeclared', 'NOASSERTION'),
+                               'license_concluded': item.get('licenseConcluded', 'NOASSERTION'),
+                               'licenses': list(dict.fromkeys([item.get('licenseDeclared', 'NOASSERTION'),
+                                                              item.get('licenseConcluded', 'NOASSERTION')]))})
         for item in document.get('relationships', []):
             if item.get('relationshipType') == 'DEPENDS_ON':
                 dependencies.append((item['spdxElementId'], item['relatedSpdxElement']))
@@ -87,8 +94,8 @@ def inventory(root, repository):
 
 def _inventory(root, repository):
     if repository.sbom_path:
-        from services.oslc_service import local_path
-        document = read_json(local_path(repository.sbom_path))
+        path = Path(repository.sbom_path)
+        document = read_json(path if path.is_absolute() else Path(root) / path)
         components, dependencies = normalize(document)
         return {'document': document, 'components': components, 'dependencies': dependencies,
                 'origin': 'imported_sbom', 'limitations': ['Imported supplier assertions; not independently verified.']}

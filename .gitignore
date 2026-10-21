@@ -19,6 +19,7 @@ frontend/dist/
 frontend/.vite/
 frontend/.cache/
 *.tsbuildinfo
+.tools/
 
 # Runtime data and logs
 backend/data/

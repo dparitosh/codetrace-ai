@@ -6,6 +6,7 @@ never followed as arbitrary navigation; external JSON-LD contexts are disabled.
 import json
 import os
 import base64
+import hashlib
 import sqlite3
 from pathlib import Path
 from urllib.parse import unquote, urlsplit, urljoin
@@ -22,7 +23,7 @@ TRS = 'http://open-services.net/ns/core/trs#'
 CT = 'urn:codetrace:vocab:'
 TYPE_MAP = {
     'http://open-services.net/ns/rm#Requirement': ('requirement', 'RM'),
-    'http://open-services.net/ns/rm#RequirementCollection': ('requirement', 'RM'),
+    'http://open-services.net/ns/rm#RequirementCollection': ('requirement_collection', 'RM'),
     'http://open-services.net/ns/am#Resource': ('architecture', 'AM'),
     'http://open-services.net/ns/cm#ChangeRequest': ('change_request', 'CM'),
     'http://open-services.net/ns/cm#Defect': ('change_request', 'CM'),
@@ -85,7 +86,9 @@ def allowed_url(provider, url):
         if decoded == target_path:
             break
         target_path = decoded
-    if (target.scheme, target.hostname, target.port) != (base.scheme, base.hostname, base.port):
+    def origin(value):
+        return value.scheme, value.hostname, value.port or (443 if value.scheme == 'https' else 80)
+    if origin(target) != origin(base):
         raise ValueError('Linked OSLC endpoint is outside the configured origin')
     if (target.username or target.password or target.fragment or '\\' in target_path
             or '%' in target_path or any(part in {'.', '..'} for part in target_path.split('/'))
@@ -155,6 +158,7 @@ def ingest_provider(provider, client, supplied_graph=None):
     def fetch(url):
         nonlocal pages, complete
         if url in visited:
+            complete = False
             return Graph()
         if pages >= settings.OSLC_MAX_PAGES:
             complete = False
@@ -183,6 +187,11 @@ def ingest_provider(provider, client, supplied_graph=None):
         while pending:
             page_url = pending.pop(0)
             page = fetch(page_url)
+            if page_next.get(page_url) in visited:
+                complete = False
+            for target in page.objects(None, URIRef(OSLC + 'nextPage')):
+                if str(target) in visited:
+                    complete = False
             if page_url in page_next and page_next[page_url] not in visited and page_next[page_url] not in pending:
                 pending.append(page_next[page_url])
             for predicate in (OSLC + 'nextPage', TRS + 'base', TRS + 'changeLog', TRS + 'previous'):
@@ -210,7 +219,7 @@ def ingest_provider(provider, client, supplied_graph=None):
                 complete = False
                 targets = targets[:settings.OSLC_MAX_RESOURCES]
             for target in targets:
-                if not any(graph.triples((URIRef(target), RDF.type, None))):
+                if not any(predicate != RDF.type for _, predicate, _ in graph.triples((URIRef(target), None, None))):
                     if pages >= settings.OSLC_MAX_PAGES:
                         complete = False
                         break
@@ -241,6 +250,10 @@ def ingest_provider(provider, client, supplied_graph=None):
             value = next(iter(graph.objects(subject, predicate)), None)
             if value is not None:
                 properties[name] = str(value)[:2000]
+        if 'status' not in properties:
+            value = next(iter(graph.objects(subject, URIRef(CT + 'status'))), None)
+            if value is not None:
+                properties['status'] = str(value)[:2000]
         outcome = next(iter(graph.objects(subject, URIRef('http://open-services.net/ns/qm#status'))), None)
         if outcome is not None:
             properties['outcome'] = str(outcome)[:512]
@@ -307,6 +320,20 @@ def collect_oslc(repository_id):
                     nodes, edges, enrich, changes, status = collect_incremental(provider, client)
                 else:
                     nodes, edges, enrich, changes, status = ingest_provider(provider, client)
+                if provider.configuration_uri:
+                    def scoped(uri):
+                        return 'urn:codetrace:configuration-resource:' + hashlib.sha256(
+                            (provider.configuration_uri + '\n' + uri).encode()).hexdigest()
+                    mapping = {node['uri']: scoped(node['uri']) for node in nodes}
+                    enrich = {mapping.get(uri, uri): {**value, 'concept_uri': uri,
+                              'configuration_uri': provider.configuration_uri} for uri, value in enrich.items()}
+                    nodes = [{**node, 'uri': mapping[node['uri']]} for node in nodes]
+                    edges = [{**edge, 'configuration_uri': provider.configuration_uri,
+                              'source': {**edge['source'], 'uri': mapping.get(edge['source']['uri'], scoped(edge['source']['uri']))},
+                              'target': ({**edge['target'], 'uri': mapping.get(edge['target']['uri'], scoped(edge['target']['uri']))}
+                                         if 'uri' in edge['target'] else edge['target'])} for edge in edges]
+                    changes = [{**event, 'resource_uri': mapping.get(event['resource_uri'], scoped(event['resource_uri']))}
+                               for event in changes]
                 resources.update({node['uri']: node for node in nodes})
                 links.extend(edges); properties.update(enrich); events.extend(changes); statuses.append(status)
             except (ValueError, OSError, sqlite3.Error, httpx.HTTPError) as exc:

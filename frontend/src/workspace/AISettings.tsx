@@ -46,8 +46,8 @@ export default function AISettings() {
     window.dispatchEvent(new Event('codetrace:ai-config'))
   }
   return <section className="ai-settings" aria-label="Ollama AI configuration">
-    <span className="eyebrow">AGENT RUNTIME</span><h2>Connect Ollama REST</h2>
-    <p>Register your chat model and Nomic embedding model for this review session. Keys stay on the server and are never stored in browser storage or returned by this form.</p>
+    <h2>AI connection</h2>
+    <p>Configure this session’s models and agents. Credentials stay on the server; source catalogs and endpoint allowlists are managed in .env.local.</p>
     {!profile ? <IxButton disabled={busy} onClick={() => run(load)}>Start session and load AI settings</IxButton> : <>
       <label><input type="checkbox" checked={profile.enabled} onChange={event => setProfile({ ...profile, enabled: event.target.checked })} />Enable Ollama agent execution</label>
       <div className="ai-settings-grid">

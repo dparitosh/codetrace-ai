@@ -62,12 +62,64 @@ export function visibleGraph(graph: TraceGraph, domain: string, detail: boolean,
     || Number(b.type === 'repository') - Number(a.type === 'repository')
     || (domainOf(b) === 'SBOM' ? -1 : Number(domainOf(b) !== 'CODE')) - (domainOf(a) === 'SBOM' ? -1 : Number(domainOf(a) !== 'CODE'))
     || (degree.get(b.id) || 0) - (degree.get(a.id) || 0) || a.id.localeCompare(b.id))
-  const nodes = candidates.slice(0, limit)
+  // Grow the preview through real links instead of independently taking the
+  // highest-degree nodes, which can discard the paths between those nodes.
+  const byId = new Map(candidates.map(node => [node.id, node]))
+  const rank = new Map(candidates.map((node, index) => [node.id, index]))
+  const neighbors = new Map<string, Set<string>>()
+  graph.edges.forEach(edge => {
+    if (!byId.has(edge.source) || !byId.has(edge.target) || !matchesRelationScope(edge.type, relationScope)) return
+    if (!neighbors.has(edge.source)) neighbors.set(edge.source, new Set())
+    if (!neighbors.has(edge.target)) neighbors.set(edge.target, new Set())
+    neighbors.get(edge.source)!.add(edge.target)
+    neighbors.get(edge.target)!.add(edge.source)
+  })
+  const nodes: TraceNode[] = []
+  const added = new Set<string>(), frontier = new Set<string>()
+  const typeCounts = new Map<string, number>()
+  let seedIndex = 0
+  while (nodes.length < Math.max(0, limit) && nodes.length < candidates.length) {
+    let next: string | undefined
+    for (const id of frontier) {
+      // Focus already carries breadth-first witness order. In an overview,
+      // balance classifications so directories cannot crowd out their symbols.
+      const score = (value: string) => focusIds ? rank.get(value)!
+        : (typeCounts.get(byId.get(value)!.type) || 0) * candidates.length + rank.get(value)!
+      if (!next || score(id) < score(next)) next = id
+    }
+    if (!next) {
+      while (seedIndex < candidates.length && added.has(candidates[seedIndex].id)) seedIndex++
+      next = candidates[seedIndex]?.id
+    }
+    if (!next) break
+    frontier.delete(next); added.add(next)
+    const node = byId.get(next)!
+    nodes.push(node); typeCounts.set(node.type, (typeCounts.get(node.type) || 0) + 1)
+    neighbors.get(next)?.forEach(id => { if (!added.has(id)) frontier.add(id) })
+  }
   const visible = new Set(nodes.map(node => node.id))
   const eligibleEdges = graph.edges.filter(edge => visible.has(edge.source) && visible.has(edge.target) && matchesRelationScope(edge.type, relationScope))
     .sort((a, b) => Number(b.properties.origin === 'lifecycle_assertion') - Number(a.properties.origin === 'lifecycle_assertion'))
-  const edges = eligibleEdges.slice(0, edgeLimit)
-  return { nodes, edges, omittedEdges: eligibleEdges.length - edges.length, omitted: candidates.length - nodes.length, total: candidates.length }
+  // Preserve a spanning forest before spending the edge budget on parallel
+  // links and cycles. Lifecycle assertions retain priority within each group.
+  const parents = new Map(nodes.map(node => [node.id, node.id]))
+  const root = (id: string): string => {
+    let current = id
+    while (parents.get(current) !== current) current = parents.get(current)!
+    while (id !== current) { const parent = parents.get(id)!; parents.set(id, current); id = parent }
+    return current
+  }
+  const forest: typeof eligibleEdges = [], extra: typeof eligibleEdges = []
+  eligibleEdges.forEach(edge => {
+    const a = root(edge.source), b = root(edge.target)
+    if (a !== b) { parents.set(a, b); forest.push(edge) } else extra.push(edge)
+  })
+  const edges = [...forest, ...extra].slice(0, Math.max(0, edgeLimit))
+  // Count components in the rendered edges, including isolates and edge caps.
+  nodes.forEach(node => parents.set(node.id, node.id))
+  edges.forEach(edge => parents.set(root(edge.source), root(edge.target)))
+  const components = new Set(nodes.map(node => root(node.id))).size
+  return { nodes, edges, components, omittedEdges: eligibleEdges.length - edges.length, omitted: candidates.length - nodes.length, total: candidates.length }
 }
 
 export function matchingNodes(graph: TraceGraph | null, query: string, limit = 12): TraceNode[] {

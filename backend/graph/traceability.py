@@ -19,6 +19,7 @@ QM = 'http://open-services.net/ns/qm#'
 RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'
 RDFS = 'http://www.w3.org/2000/01/rdf-schema#'
 TYPE_URIS = {'requirement': RM + 'Requirement', 'test': QM + 'TestCase'}
+TYPE_URIS['requirement_collection'] = RM + 'RequirementCollection'
 TYPE_URIS.update({'architecture': 'http://open-services.net/ns/am#Resource',
                   'change_request': 'http://open-services.net/ns/cm#ChangeRequest',
                   'tracked_resource': 'http://open-services.net/ns/core/trs#TrackedResourceSet',
@@ -119,14 +120,14 @@ def materialize(code_graph, manifest, source_digest):
         source, target = resolve(link['source']), resolve(link['target'])
         edge(source, target, link['predicate'], {
             'origin': 'lifecycle_assertion', 'asserted_by': link['asserted_by'],
-            'configuration_uri': manifest.get('configuration_uri'),
+            'configuration_uri': link.get('configuration_uri') or manifest.get('configuration_uri'),
         })
 
     nodes = [{'id': key, **data} for key, data in sorted(graph.nodes(data=True))]
     edges = sorted(({'source': source, 'target': target, **data} for source, target, data in graph.edges(data=True)),
                    key=lambda value: (value['source'], value['target'], value['type'], json.dumps(value['properties'], sort_keys=True)))
     snapshot = hashlib.sha256(json.dumps([nodes, edges], sort_keys=True).encode()).hexdigest()
-    return {'nodes': nodes, 'edges': edges, 'metadata': {
+    return {'nodes': nodes, 'edges': edges, 'source_assessments': code_graph.get('source_assessments'), 'metadata': {
         'schema_version': '1.0', 'source': 'combined_trace', 'repository_uri': repo_uri,
         'revision': repository.get('revision'), 'configuration_uri': manifest.get('configuration_uri'),
         'snapshot_id': snapshot, 'nodes': len(nodes), 'edges': len(edges),
@@ -183,7 +184,7 @@ def as_jsonld(data):
     for node in data['nodes']:
         record = {'@id': node['id'], '@type': TYPE_URIS.get(node['type'], CT + node['type']),
                   RDFS + 'label': node['label']}
-        for key in ('path', 'start', 'code_id', 'revision', 'source_digest'):
+        for key in ('path', 'start', 'code_id', 'revision', 'source_digest', 'deleted', 'status', 'outcome', 'configuration_uri'):
             if node['properties'].get(key) is not None:
                 record[CT + key] = node['properties'][key]
         records.append(record)

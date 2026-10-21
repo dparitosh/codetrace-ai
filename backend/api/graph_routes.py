@@ -12,7 +12,8 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, List, Literal, Optional
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from services.analysis_capacity import analysis_capacity, require_analysis_capacity
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from core.config import settings
@@ -63,6 +64,7 @@ class GraphData(BaseModel):
     nodes: List[Node]
     edges: List[Edge]
     metadata: Dict[str, Any]
+    source_assessments: Optional[Dict[str, Any]] = None
 
 
 class LocalSourceFile(BaseModel):
@@ -137,7 +139,21 @@ def build_graph_from_files(request: LocalGraphRequest) -> Dict[str, Any]:
     if not summary['files']:
         raise HTTPException(422, 'No supported source files were selected')
     digest = hashlib.sha256(json.dumps(sorted((file.path, hashlib.sha256(file.content.encode()).hexdigest()) for file in request.files)).encode()).hexdigest()
-    return _serialize_graph(graph, {**summary, "source_digest": digest, "source": "local_folder", "analysis_profile": request.profile, "selected_files": len(request.files), "selected_bytes": payload_size, "source_paths": [file.path for file in request.files]})
+    result = _serialize_graph(graph, {**summary, "source_digest": digest, "source": "local_folder", "analysis_profile": request.profile, "selected_files": len(request.files), "selected_bytes": payload_size, "source_paths": [file.path for file in request.files]})
+    from api.quality_routes import assess_graph_quality
+    from api.security_routes import scan_local_source
+    scanned_paths = {node['properties']['path'] for node in result['nodes'] if node['type'] == 'file'}
+    result['source_assessments'] = {
+        'source_digest': digest,
+        'summary': {'total_files': summary['files'], 'total_lines': sum(
+            int(node['properties'].get('loc', 0)) for node in result['nodes'] if node['type'] == 'file')},
+        'quality': assess_graph_quality(result).model_dump(),
+        'security': scan_local_source(LocalGraphRequest(files=[file for file in request.files
+            if file.path in scanned_paths])).model_dump(),
+    }
+    result['metadata']['snapshot_id'] = hashlib.sha256(json.dumps(
+        [result['nodes'], result['edges']], sort_keys=True).encode()).hexdigest()
+    return result
 
 
 def build_graph_from_directory(directory: Path, source: str, project_url: Optional[str] = None) -> Dict[str, Any]:
@@ -145,28 +161,45 @@ def build_graph_from_directory(directory: Path, source: str, project_url: Option
     config = source_scan_config()
     files = []
     total = 0
-    for current, directories, names in os.walk(directory, followlinks=False):
+    skipped = {'unsupported': 0, 'non_utf8': 0, 'symlinks': 0, 'excluded_directories': 0}
+    def unreadable_directory(error):
+        raise HTTPException(422, 'Source folder contains an unreadable directory') from error
+    for current, directories, names in os.walk(directory, followlinks=False, onerror=unreadable_directory):
+        original_count = len(directories)
         directories[:] = sorted(name for name in directories if name not in config.excludes
-                                and not (Path(current) / name).is_symlink())
+                                and not (Path(current) / name).is_symlink()
+                                and not (Path(current) / name / 'pyvenv.cfg').is_file())
+        skipped['excluded_directories'] += original_count - len(directories)
         for name in sorted(names):
             path = Path(current) / name
-            if path.is_symlink() or path.suffix.lower() not in config.allowed_extensions():
+            if path.is_symlink():
+                skipped['symlinks'] += 1
                 continue
-            if path.stat().st_size > config.max_file_size:
-                raise HTTPException(status_code=413, detail="Repository contains an oversized source file")
-            data = path.read_bytes()
+            if path.suffix.lower() not in config.allowed_extensions():
+                skipped['unsupported'] += 1
+                continue
+            try:
+                if path.stat().st_size > config.max_file_size:
+                    raise HTTPException(status_code=413, detail="Repository contains an oversized source file")
+                with path.open('rb') as stream:
+                    data = stream.read(config.max_file_size + 1)
+                if len(data) > config.max_file_size:
+                    raise HTTPException(413, 'Source file grew beyond the configured size limit')
+            except OSError as exc:
+                raise HTTPException(422, 'Source folder contains an unreadable source file') from exc
             total += len(data)
             if total > settings.MAX_LOCAL_PAYLOAD_BYTES or len(files) >= settings.MAX_LOCAL_FILES:
                 raise HTTPException(status_code=413, detail="Repository exceeds analysis file or byte limits")
             try:
                 content = data.decode('utf-8')
             except UnicodeDecodeError:
+                skipped['non_utf8'] += 1
                 continue
             files.append(LocalSourceFile(path=path.relative_to(directory).as_posix(), content=content))
     if not files:
         raise HTTPException(status_code=422, detail="No supported UTF-8 source files found")
     graph = build_graph_from_files(LocalGraphRequest(files=files))
-    graph['metadata'].update(source=source, project_url=project_url)
+    graph['metadata'].update(source=source, project_url=project_url, skipped=skipped)
     return graph
 
 
@@ -185,17 +218,18 @@ def _validate_gitlab_url(project_url: str) -> str:
 
 @graph_router.post("/local", response_model=GraphData, summary="Build a graph from local source files")
 def generate_local_graph(request: LocalGraphRequest):
-    return build_graph_from_files(request)
+    with analysis_capacity():
+        return build_graph_from_files(request)
 
 
-@graph_router.post("/local/analyze", summary="Analyze local source files")
+@graph_router.post("/local/analyze", summary="Analyze local source files", dependencies=[Depends(require_analysis_capacity)])
 def analyze_local_sources(request: LocalGraphRequest):
     graph = build_graph_from_files(request)
     total_lines = sum(int(node["properties"].get("loc", 0)) for node in graph["nodes"] if node["type"] == "file")
     return {"analysis_id": f"local-{int(datetime.now(timezone.utc).timestamp() * 1000)}", "status": "completed", "repository": "local-folder", "branch": "local", "results": {"summary": {"total_files": graph["metadata"].get("files", 0), "total_lines": total_lines}, "graph": graph}}
 
 
-@graph_router.post("/gitlab", response_model=GraphData, summary="Build a graph from a GitLab project")
+@graph_router.post("/gitlab", response_model=GraphData, summary="Build a graph from a GitLab project", dependencies=[Depends(require_analysis_capacity)])
 def generate_gitlab_graph(request: GitLabGraphRequest):
     project_url = _validate_gitlab_url(str(request.project_url))
     clone_url = project_url if project_url.endswith(".git") else f"{project_url}.git"

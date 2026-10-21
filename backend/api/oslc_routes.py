@@ -71,16 +71,20 @@ def rdf_response(graph, request, etag=None, headers=None):
     if not ranks:
         raise HTTPException(406, 'Supported representations: text/turtle, application/rdf+xml, application/ld+json')
     _, _, _, media, format = max(ranks)
+    body = graph.serialize(format=format)
     response_headers = {'Vary': 'Accept', 'OSLC-Core-Version': '2.0', 'Cache-Control': 'private, no-cache', **(headers or {})}
     if etag:
+        from services.oslc_store import representation_etag
+        etag = representation_etag(body, etag)
         response_headers['ETag'] = etag
         if etag in request.headers.get('If-None-Match', '').split(',') or request.headers.get('If-None-Match') == '*':
             return Response(status_code=304, headers=response_headers)
-    return Response(graph.serialize(format=format), media_type=media, headers=response_headers)
+    return Response(body, media_type=media, headers=response_headers)
 
 
 def type_for_kind(kind):
-    return TYPE_URIS.get(kind, AM + 'Resource' if kind in {'repository', 'package', 'file', 'module', 'class', 'function', 'method', 'variable', 'symbol', 'external_symbol'} else CT + kind)
+    from services.oslc_store import publication_type
+    return publication_type(kind)
 
 
 @oslc_router.get('/catalog')
@@ -366,15 +370,18 @@ def propose_link(request: LinkProposalRequest, x_codetrace_session: Optional[str
     if source['properties'].get('provider_id') != request.provider_id or request.predicate not in LINK_PREDICATES:
         raise HTTPException(422, 'Select the source provider and a supported contextual predicate')
     provider = writable_provider(request.provider_id)
+    remote_source = source['properties'].get('concept_uri', request.source)
+    remote_target = target['properties'].get('concept_uri', request.target)
     try:
         with OSLCClient(provider) as client:
-            prepared = client.prepare_link(request.source, request.predicate, request.target)
+            prepared = client.prepare_link(remote_source, request.predicate, remote_target)
     except (ValueError, httpx.HTTPError) as exc:
         raise HTTPException(502, 'Cannot prepare remote link; check access, representation and strong ETag support') from exc
     session_owner(x_codetrace_session)
     if prepared['already_linked']:
         raise HTTPException(409, 'The remote resource already contains this link')
-    return publication_store().propose(owner, {**request.model_dump(), **prepared, 'result_digest': record['result_digest'],
+    return publication_store().propose(owner, {**request.model_dump(), 'source': remote_source, 'target': remote_target,
+                                             **prepared, 'result_digest': record['result_digest'],
                                              'audit': [{'action': 'prepared', 'at': now()}]})
 
 

@@ -76,6 +76,26 @@ For architecture, limits and API contracts see [technical design](docs/TSD.md).
 
 One root `.env.local` configures the backend, frontend dev/preview server, launch URLs, review sessions, and source limits. It is ignored by Git. `.env.local.example` documents supported keys; `config/defaults.json` centralizes shared defaults.
 
+Set `SOURCE_FOLDER=D:/GenAI_Projects/Apps/PMem` in `.env.local` to analyze that
+folder through the default managed workspace. Any readable local folder can be
+selected; it does not need to contain this application or be a Git checkout.
+Relative paths resolve from the application checkout. Restart both services
+after changing it. The folder is checked when synchronizing, so an unavailable
+folder produces an explicit error without scanning another directory.
+An explicit `MANAGED_REPOSITORIES` JSON catalog takes precedence over
+`SOURCE_FOLDER`; remove that override to use the single-folder setting.
+For a catalog entry, relative `manifest_path`, `sbom_path` and `sbom_lockfiles`
+resolve inside its selected repository, including a cloned Git repository.
+`SOURCE_EXTENSIONS` and `SOURCE_EXCLUDES` configure the supported UTF-8 artifact
+selection; file/byte/graph limits remain configurable. A folder scan reports
+skipped unsupported/non-UTF-8 files and excluded directories in result metadata.
+Selecting a folder does not execute its code, install its dependencies or change
+its files. Binary documents and OCR are not parsed by this source scanner.
+Python environments containing `pyvenv.cfg` are excluded from managed folder
+scans even when they have a custom directory name. Increase `MAX_LOCAL_FILES`
+and the documented byte/graph limits explicitly for larger project folders;
+exceeding a limit reports an error rather than returning a partial graph.
+
 Precedence: process environment > root `.env.local` > root `.env` (legacy) > defaults. Restart both services after editing. Backend loading is independent of the current working directory. Vite also supports its standard mode-specific env files; avoid them when the backend must share the same settings.
 
 | Setting | Default | Purpose |
@@ -116,6 +136,22 @@ Use JSON arrays for list settings, not comma-separated strings. `PORT` remains a
 - [Contributing](CONTRIBUTING.md)
 
 ## Review and session workflow
+
+Source overview, Quality assessment, Security patterns and lifecycle domains use
+one workspace snapshot. Synchronize the configured source once to populate its
+graph, source metrics and static security findings. Source and domain pages lead
+with their own Overview, Assessment or Findings, with separate Graph and Data grid
+sub-tabs using the same selection and companion. Search
+and agent planning start in the selected domain and can follow cross-domain
+evidence. A security finding selects its file for graph inspection and agent
+explanation. Decisions made in review history also update the active snapshot.
+
+Use **Analyze a different folder** in Source overview to replace the active
+workspace with an uploaded-folder graph and its assessments. Synchronizing the
+configured source restores its managed lifecycle connections. Uploaded folders
+do not inherit lifecycle links from a different source. Graph layout, selection
+and pins persist while navigating views of the same snapshot; a different
+snapshot or ended session clears the associated evidence.
 
 1. Select a folder and analyze it. Dependency/build folders and unsupported files are filtered before reading/uploading; the UI reports the skipped count.
 2. Inspect the result and enter review notes. Every result begins **pending**.
@@ -182,7 +218,7 @@ These scripts create missing tables/indexes without sample records. They do not 
 
 Graph controls support child collapse/expand, context expansion, background-click highlight clearing and reset. Companion similarity uses label and directed-neighbor feature overlap; it does not assert semantic equivalence. Recommendations identify missing supported links and incomplete providers. See [audit status](docs/audit-status.md) for validation boundaries.
 
-Graph resources use circular nodes with domain colors and an enlarged selection outline. Hierarchy is the initial layout; Circular, Organic, Concentric and Grid remain available. Select a resource to traverse upstream, downstream or both directions over 1–6 hops. Choose containment hierarchy or code/lifecycle evidence separately to avoid treating a shared container as impact evidence.
+Graph resources use classification colors and type glyphs with domain rings and an enlarged selection outline. Force network is the initial layout; hierarchical, circular, concentric and grid layouts remain available. Expand Traversal & layout controls to traverse upstream, downstream or both directions over 1–6 hops. Choose containment hierarchy or code/lifecycle evidence separately to avoid treating a shared container as impact evidence.
 
 Current graph review results and known limits are consolidated in [audit status](docs/audit-status.md).
 
@@ -190,4 +226,4 @@ Current graph review results and known limits are consolidated in [audit status]
 
 Open **Administration** to edit the system prompt and registered tool selection for each graph agent, tool descriptions, and legacy companion instructions. Save AI connection applies these changes to subsequent runs in your review session; restore agent and tool defaults preserves the connection and saved key. Configuration is session-owned and removed with the session. This local admin module does not add account-based administrator authorization. Runtime citation validation, registered tool implementations/parameter schemas, read-only restrictions and execution budgets remain enforced. Custom shell/HTTP tools cannot be registered from the form.
 
-The Resource index and lifecycle-domain pages use AG Grid Community. Resources and Relationships tabs provide sortable/filterable columns, resizable headers, pagination, resource identifiers and JSON properties. Relationship rows include links incident to the filtered resource set; selecting one inspects its source resource. Filtering uses the immutable review snapshot and does not change graph data. AG Grid loads only when a table page is opened.
+The Data grid sub-tab uses AG Grid Community, separate from the Graph and page assessments. Resources and Relationships switches provide sortable/filterable columns, resizable headers and pagination. Enable **IDs & properties** for resource identifiers and raw JSON. Relationship rows include links incident to the filtered resource set; selecting one opens the inspector for its source resource. Filtering uses the immutable review snapshot and does not change graph data. AG Grid loads on first opening Data grid and preserves its state when switching evidence tabs. The Agent & inspector button opens or hides the companion without replacing the active panel.

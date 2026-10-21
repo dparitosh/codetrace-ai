@@ -46,6 +46,16 @@ def etag(body):
     return '"' + hashlib.sha256(body.encode()).hexdigest() + '"'
 
 
+def representation_etag(body, revision):
+    return etag(revision + '\n' + body)
+
+
+def publication_type(kind):
+    return TYPE_URIS.get(kind, AM + 'Resource' if kind in {
+        'repository', 'package', 'file', 'module', 'class', 'function', 'method',
+        'variable', 'symbol', 'external_symbol'} else CT + kind)
+
+
 def graph_from_body(body):
     graph = Graph()
     graph.parse(data=body, format='nt')
@@ -131,18 +141,19 @@ class OSLCStore:
             resource_id = ids[node['id']]
             uri = URIRef(self.uri(resource_id))
             graph = Graph()
-            type_uri = TYPE_URIS.get(node['type'], AM + 'Resource' if node['properties'].get('domain') == 'CODE' else CT + node['type'])
+            type_uri = publication_type(node['type'])
             graph.add((uri, RDF.type, URIRef(type_uri)))
             graph.add((uri, DCTERMS.title, Literal(node['label'])))
             graph.add((uri, DCTERMS.identifier, Literal(resource_id)))
             graph.add((uri, URIRef(OSLC + 'serviceProvider'), URIRef(self.provider_uri(source_id))))
             graph.add((uri, URIRef(OSLC + 'instanceShape'), URIRef(settings.OSLC_PUBLIC_BASE_URL.rstrip('/') + '/shapes/' + node['type'])))
             graph.add((uri, URIRef(CT + 'sourceIdentity'), URIRef(node['id'])))
-            graph.add((uri, URIRef(CT + 'approvedSnapshot'), Literal(snapshot['metadata']['snapshot_id'])))
+            # Approval provenance belongs to publication/audit history. Embedding
+            # a changing snapshot stamp here spuriously modifies every resource.
             for key in ('path', 'start', 'source_digest', 'status', 'outcome', 'domain'):
                 value = node['properties'].get(key)
                 if value is not None:
-                    predicate = QM + 'status' if key == 'outcome' else CT + key
+                    predicate = QM + 'status' if key == 'outcome' else CM + 'status' if key == 'status' and node['type'] == 'change_request' else CT + key
                     graph.add((uri, URIRef(predicate), Literal(value)))
             for edge in outgoing.get(node['id'], []):
                 target = self.uri(ids[edge['target']]) if edge['target'] in ids else edge['target']
@@ -205,7 +216,7 @@ class OSLCStore:
         if kind:
             kinds = kind if isinstance(kind, list) else [kind]
             filters.append('kind IN (' + ','.join('?' for _ in kinds) + ')'); parameters.extend(kinds)
-        if title:
+        if title is not None:
             filters.append('label=?'); parameters.append(title)
         clause = ' AND '.join(filters)
         with self.transaction() as db:
@@ -219,9 +230,11 @@ class OSLCStore:
             row = db.execute('SELECT * FROM resources WHERE id=? AND deleted=0', (resource_id,)).fetchone()
             if not row:
                 raise HTTPException(404, 'Published resource was not found')
-            if row['etag'] != expected_etag:
-                raise HTTPException(412, 'Resource ETag changed; reload before updating')
             original = graph_from_body(row['body'])
+            valid_etags = {row['etag']} | {representation_etag(graph_from_body(row['body']).serialize(format=format), row['etag'])
+                                          for format in ('turtle', 'xml', 'json-ld')}
+            if expected_etag not in valid_etags:
+                raise HTTPException(412, 'Resource ETag changed; reload before updating')
             source = URIRef(self.uri(resource_id))
             if any(subject != source for subject, _, _ in incoming):
                 raise HTTPException(422, 'Only the selected resource subject may be updated')

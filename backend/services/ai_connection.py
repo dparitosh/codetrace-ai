@@ -135,10 +135,16 @@ class OllamaREST:
                         raise ValueError('AI response exceeded the configured byte budget')
                     content.extend(chunk)
         self.check()
-        return json.loads(content)
+        result = json.loads(content)
+        if not isinstance(result, dict):
+            raise ValueError('Expected an Ollama JSON object')
+        return result
 
     def models(self):
-        items = self.request('tags').get('models', [])
+        response = self.request('tags')
+        if not isinstance(response, dict):
+            raise ValueError('Invalid model discovery response')
+        items = response.get('models', [])
         if not isinstance(items, list):
             raise ValueError('Invalid model discovery response')
         return sorted({item['name'] for item in items[:1000] if isinstance(item, dict) and isinstance(item.get('name'), str) and len(item['name']) <= 160})
@@ -146,7 +152,10 @@ class OllamaREST:
     def embed(self, texts):
         if not self.connection.embedding_model:
             raise ValueError('Select an embedding model')
-        vectors = self.request('embed', {'model': self.connection.embedding_model, 'input': texts, 'truncate': False}).get('embeddings')
+        response = self.request('embed', {'model': self.connection.embedding_model, 'input': texts, 'truncate': False})
+        if not isinstance(response, dict):
+            raise ValueError('Invalid embedding response')
+        vectors = response.get('embeddings')
         if not isinstance(vectors, list) or len(vectors) != len(texts):
             raise ValueError('Embedding count does not match input')
         dimension = None
@@ -173,6 +182,8 @@ class OllamaREST:
         else:
             payload['format'] = 'json'
         result = self.request('chat', payload)
+        if not isinstance(result, dict):
+            raise ValueError('Invalid chat response')
         message = result.get('message')
         if not isinstance(message, dict) or message.get('role', 'assistant') != 'assistant':
             raise ValueError('Invalid chat response')

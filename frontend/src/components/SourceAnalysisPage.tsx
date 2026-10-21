@@ -1,56 +1,21 @@
 import { ReactNode, useEffect, useState } from 'react'
-import { ArrowLeft, FolderOpen } from 'lucide-react'
-import { loadSourceConfiguration, readSourceFiles } from '../sourceFiles'
-import { ReviewRecord, submitForReview, useReviewSession } from '../reviewSession'
-import ReviewPanel from './ReviewPanel'
+import { IxButton } from '@siemens/ix-react'
+import { useWorkspaceGraph } from '../workspace/workspaceContext'
 
-interface Props {
-  title: string
-  description: string
-  kind: 'analysis' | 'quality' | 'security'
-  onBack?: () => void
-  children: (result: any) => ReactNode
-}
-
-export default function SourceAnalysisPage({ title, description, kind, onBack, children }: Props) {
+interface Props { title: string; description: string; children: ReactNode; allowUpload?: boolean }
+export default function SourceAnalysisPage({ title, description, children, allowUpload = false }: Props) {
+  const { graph, review, sourceLabel, busy, notice, analyzeUpload } = useWorkspaceGraph()
   const [files, setFiles] = useState<File[]>([])
-  const [review, setReview] = useState<ReviewRecord | null>(null)
-  const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
-  const [loading, setLoading] = useState(false)
-  const session = useReviewSession()
-  useEffect(() => {
-    const clear = () => { if (review && (!session || session.token !== review.sessionToken || session.deadline <= Date.now())) { setReview(null); setFiles([]) } }
-    clear(); const timer = setInterval(clear, 1000); return () => clearInterval(timer)
-  }, [session, review])
-  const analyze = async () => {
-    if (!files.length) { setError('Select a local source folder.'); return }
-    setLoading(true); setError(''); setNotice(''); setReview(null)
-    try {
-      const config = await loadSourceConfiguration()
-      const source = { files: await readSourceFiles(files, setNotice, config) }
-      setReview(await submitForReview(kind, source, config.request_timeout_seconds))
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Analysis failed') }
-    finally { setLoading(false) }
-  }
-  return <main className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-5xl">
-    {onBack && <button onClick={onBack} className="mb-5 inline-flex items-center gap-2 text-indigo-700"><ArrowLeft className="h-4 w-4" />Dashboard</button>}
-    <h1 className="text-3xl font-bold">{title}</h1><p className="mt-1 text-slate-600">{description}</p>
-    <section className="mt-6 rounded-xl bg-white p-6 shadow-sm">
-      <label className="block font-medium">Source folder<input type="file" multiple disabled={loading}
-        ref={input => input?.setAttribute('webkitdirectory', '')}
-        onChange={event => { setFiles(Array.from(event.target.files || [])); setReview(null); setError(''); setNotice('') }}
-        className="mt-3 block" /></label>
-      {files.length > 0 && <p className="mt-2 text-emerald-700">{files.length} files selected before filtering</p>}
-      <button onClick={analyze} disabled={loading} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-5 py-2.5 text-white disabled:opacity-50">
-        <FolderOpen className="h-4 w-4" />{loading ? 'Analyzing…' : 'Analyze and submit for review'}
-      </button>
-      {notice && <p className="mt-3 text-amber-800">{notice}</p>}
-      {error && <p role="alert" className="mt-4 text-red-700">{error}</p>}
-    </section>
-    {review && <>
-      <section className="mt-6 rounded-xl bg-white p-6 shadow-sm">{children(review.result)}</section>
-      <ReviewPanel key={review.id} review={review} onChange={setReview} />
-    </>}
-  </div></main>
+  useEffect(() => setFiles([]), [review?.sessionToken, sourceLabel])
+  return <section className="source-context-panel" aria-label={title}>
+    <p className="page-purpose">{description}</p>
+    {!graph && <div className="empty-section"><h2>No source evidence yet</h2><p>Use Synchronize to analyze the configured source.</p></div>}
+    {graph && children}
+    {allowUpload && <details className="source-upload"><summary>Analyze a different folder</summary><p>Replaces this snapshot. Synchronize to return to the configured source.</p>
+      <label>Local source folder<input type="file" multiple disabled={busy} ref={input => input?.setAttribute('webkitdirectory', '')}
+        onChange={event => setFiles(Array.from(event.target.files || []))} /></label>
+      <IxButton disabled={busy || !files.length} onClick={async () => { if (await analyzeUpload(files)) setFiles([]) }}>{busy ? 'Analyzing…' : 'Analyze folder into workspace'}</IxButton>
+    </details>}
+    {notice && <p role="status">{notice}</p>}
+  </section>
 }

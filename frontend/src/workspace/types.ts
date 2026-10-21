@@ -5,6 +5,12 @@ export interface TraceGraph {
   edges: TraceEdge[]
   metadata: Record<string, any>
   architecture_audit?: Record<string, any>
+  source_assessments?: {
+    source_digest: string
+    summary: { total_files: number; total_lines: number }
+    quality: { overall_score: number | null; grade: string; metrics: { name: string; value: number | null; status: string; description: string }[]; recommendations: string[] }
+    security: { total_findings: number; files_scanned: number; truncated: boolean; findings: { file: string; line: number; severity: string; description: string; rule: string }[] }
+  }
   trs_events?: { id: string; resource_uri: string; action: string; order: number; at: string; provider_id: string }[]
   pipeline_runs?: { id: string; label: string; status: string; revision: string; branch: string; at: string; matches_revision: boolean }[]
 }
@@ -31,5 +37,11 @@ export const domainColors: Record<string, string> = {
   CODE: '#687fa1', AM: '#0e9c91', RM: '#7963bd', CM: '#d89239', QM: '#548f65',
   TRS: '#d26873', CONFIG: '#69899e', SCHEMA: '#778590', CI: '#548bc4', SBOM: '#ae784b', EXTERNAL: '#9ba5af',
 }
-export const domainOf = (node: TraceNode) => String(node.properties.domain || 'CODE')
+const typeDomains: Record<string, string> = {
+  requirement: 'RM', requirement_collection: 'RM', architecture: 'AM', change_request: 'CM',
+  test: 'QM', test_plan: 'QM', test_script: 'QM', test_result: 'QM', test_execution_record: 'QM',
+  tracked_resource: 'TRS', configuration: 'CONFIG', resource_shape: 'SCHEMA', build: 'CI',
+  sbom_component: 'SBOM', external_resource: 'EXTERNAL',
+}
+export const domainOf = (node: TraceNode) => String(node.properties.domain || typeDomains[node.type] || 'CODE').trim().toUpperCase()
 export const relationLabel = (value: string) => value.split('#').pop()?.split(':').pop() || value

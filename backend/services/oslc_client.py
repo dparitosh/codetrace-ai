@@ -38,6 +38,20 @@ class OSLCClient:
                     'query_capabilities': [], 'creation_factories': [], 'dialogs': [], 'shapes': [],
                     'warning': 'Configure discovery_url to inspect this provider service catalog.'}
         graph, _ = self.resource(self.provider.discovery_url)
+        visited = {self.provider.discovery_url}
+        pending = sorted({str(value) for value in graph.objects(None, URIRef(OSLC + 'serviceProvider'))
+                          if isinstance(value, URIRef)} - visited)
+        while pending and len(visited) < settings.OSLC_MAX_PAGES:
+            uri = pending.pop(0)
+            if uri in visited:
+                continue
+            page, _ = self.resource(uri)
+            visited.add(uri)
+            graph += page
+            if len(graph) > settings.MAX_GRAPH_EDGES:
+                raise ValueError('Discovery exceeds the configured triple limit')
+            pending.extend(sorted({str(value) for value in page.objects(None, URIRef(OSLC + 'serviceProvider'))
+                                   if isinstance(value, URIRef)} - visited - set(pending)))
         def capabilities(predicate):
             values = []
             for subject, target in graph.subject_objects(URIRef(OSLC + predicate)):
@@ -46,8 +60,10 @@ class OSLCClient:
                 allowed_url(self.provider, str(target))
                 values.append({'uri': str(target), 'label': str(next(iter(graph.objects(subject, DCTERMS.title)), predicate))})
             return values
-        return {'provider_id': self.provider.id, 'product': self.provider.product, 'status': 'ready',
-                'query_capabilities': capabilities('queryBase'), 'creation_factories': capabilities('creation'),
+        queries, creations = capabilities('queryBase'), capabilities('creation')
+        return {'provider_id': self.provider.id, 'product': self.provider.product,
+                'status': 'partial' if pending or not (queries or creations) else 'ready',
+                'query_capabilities': queries, 'creation_factories': creations,
                 'dialogs': capabilities('dialog'), 'shapes': capabilities('resourceShape')}
 
     def prepare_link(self, source, predicate, target):

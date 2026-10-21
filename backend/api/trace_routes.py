@@ -5,7 +5,8 @@ import json
 from typing import Annotated, Literal, Optional, Union
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from services.analysis_capacity import require_analysis_capacity
 from fastapi.responses import JSONResponse
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
@@ -42,7 +43,7 @@ class Repository(TraceModel):
 
 class LifecycleResource(TraceModel):
     uri: URI
-    kind: Literal['requirement', 'feature', 'variant', 'test', 'test_plan', 'test_script', 'test_execution_record', 'test_result', 'product', 'architecture', 'change_request', 'configuration', 'tracked_resource', 'build', 'resource_shape']
+    kind: Literal['requirement', 'requirement_collection', 'feature', 'variant', 'test', 'test_plan', 'test_script', 'test_execution_record', 'test_result', 'product', 'architecture', 'change_request', 'configuration', 'tracked_resource', 'build', 'resource_shape']
     label: str = Field(min_length=1, max_length=512)
     provider_uri: Optional[URI] = None
 
@@ -63,6 +64,7 @@ class LifecycleLink(TraceModel):
     predicate: URI
     target: Endpoint
     asserted_by: URI = Field(description='URI identifying the assertion provider/export')
+    configuration_uri: Optional[URI] = None
 
 
 class TraceManifest(TraceModel):
@@ -105,12 +107,12 @@ def build_trace(request):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@trace_router.post('/materialize', response_model=GraphData)
+@trace_router.post('/materialize', response_model=GraphData, dependencies=[Depends(require_analysis_capacity)])
 def materialize_trace(request: TraceRequest):
     return build_trace(request)
 
 
-@trace_router.post('/query', response_model=GraphData)
+@trace_router.post('/query', response_model=GraphData, dependencies=[Depends(require_analysis_capacity)])
 def query_trace(request: TraceQueryRequest):
     from graph.traceability import code_uri
     data = build_trace(request)
@@ -121,6 +123,6 @@ def query_trace(request: TraceQueryRequest):
         raise HTTPException(status_code=404, detail='Trace start node was not found') from exc
 
 
-@trace_router.post('/jsonld', responses={200: {'content': {'application/ld+json': {}}}})
+@trace_router.post('/jsonld', responses={200: {'content': {'application/ld+json': {}}}}, dependencies=[Depends(require_analysis_capacity)])
 def export_trace(request: TraceRequest):
     return JSONResponse(content=as_jsonld(build_trace(request)), media_type='application/ld+json')

@@ -27,8 +27,10 @@ def test_paths_are_portably_relative(path):
 
 
 @pytest.mark.parametrize('endpoint', ['graph/local', 'quality/local', 'security/local', 'agent/context'])
-def test_limits_apply_to_every_source_endpoint(endpoint):
-    payload = {'query': 'test', 'files': [{'path': f'f{i}.py', 'content': ''} for i in range(501)]}
+def test_limits_apply_to_every_source_endpoint(endpoint, monkeypatch):
+    from core.config import settings
+    monkeypatch.setattr(settings, 'MAX_LOCAL_FILES', 2)
+    payload = {'query': 'test', 'files': [{'path': f'f{i}.py', 'content': ''} for i in range(3)]}
     assert client.post('/api/v1/' + endpoint, json=payload).status_code == 413
 
 

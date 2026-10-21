@@ -60,8 +60,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = PROJECT_ROOT / 'data/uploads'
     TEMP_DIR: Path = PROJECT_ROOT / 'temp'
     LOG_DIR: Path = PROJECT_ROOT / 'logs'
-    MANAGED_REPOSITORIES: List[ManagedRepository] = Field(default_factory=lambda: [
-        ManagedRepository(id='workspace', label='CodeTrace workspace', kind='local', path='.')])
+    SOURCE_FOLDER: Path = PROJECT_ROOT
+    MANAGED_REPOSITORIES: Optional[List[ManagedRepository]] = None
     OSLC_PROVIDERS: List[OSLCProvider] = Field(default_factory=list)
     CI_MAX_PAGES: int = Field(default=5, ge=1, le=100)
     CI_MAX_RUNS: int = Field(default=100, ge=1, le=2000)
@@ -121,6 +121,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode='after')
     def resolve_local_settings(self):
+        self.SOURCE_FOLDER = (self.SOURCE_FOLDER if self.SOURCE_FOLDER.is_absolute()
+                              else PROJECT_ROOT / self.SOURCE_FOLDER).resolve()
+        if self.MANAGED_REPOSITORIES is None:
+            self.MANAGED_REPOSITORIES = [ManagedRepository(
+                id='workspace', label='Configured source folder', kind='local', path=str(self.SOURCE_FOLDER))]
         connection_url(self.AI_BASE_URL)
         for url in self.AI_ALLOWED_BASE_URLS:
             connection_url(url)

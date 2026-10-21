@@ -2,7 +2,8 @@
 
 from datetime import datetime, timezone
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from services.analysis_capacity import require_analysis_capacity
 from pydantic import BaseModel
 from api.graph_routes import LocalGraphRequest, build_graph_from_files
 
@@ -26,9 +27,14 @@ class QualityAssessmentResponse(BaseModel):
     assessed_at: str
 
 
-@quality_router.post("/local", response_model=QualityAssessmentResponse, summary="Assess a local source folder")
+@quality_router.post("/local", response_model=QualityAssessmentResponse, summary="Assess a local source folder", dependencies=[Depends(require_analysis_capacity)])
 def assess_local_quality(request: LocalGraphRequest):
     graph = build_graph_from_files(request)
+    return assess_graph_quality(graph)
+
+
+def assess_graph_quality(graph):
+    """Compute metrics from the exact graph already retained in the snapshot."""
     nodes, edges = graph["nodes"], graph["edges"]
     files = [node for node in nodes if node["type"] == "file"]
     if not files:

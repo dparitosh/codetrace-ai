@@ -5,12 +5,14 @@ import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zo
 import { domainColors, domainOf, relationLabel, type TraceGraph, type TraceNode } from './types'
 import { forceEdgePath, forceEdgeLabelPoint, layoutTargets, reconcileForceEdges, reconcileForceNodes, rebindForceNodes, type ForceEdge, type ForceLayout, type ForceNode } from './forceGraphModel'
 import type { TraversalDirection } from './graphModel'
+import { classifyNode, nodeFill, nodeGlyphColor, type NodeColorMode } from './nodeAppearance'
 import './forceGraph.css'
 
 export interface ForceGraphOptions {
   layout: ForceLayout; focus: string | null; direction: TraversalDirection
   selected: string | null; paused: boolean; pinOnDrag: boolean; allLabels: boolean
   highlighted?: string[]
+  colorMode?: NodeColorMode
 }
 export interface ForceGraphActions { fit: () => void; zoomBy: (factor: number) => void; reheat: () => void; releasePins: () => void }
 type Group = Selection<SVGGElement, unknown, null, undefined>
@@ -106,13 +108,14 @@ export class D3ForceGraph implements ForceGraphActions {
         .force('x', forceX<ForceNode>(node => targets.get(node.id)!.x).strength(options.layout === 'force' ? .035 : .35))
         .force('y', forceY<ForceNode>(node => targets.get(node.id)!.y).strength(options.layout === 'hierarchy' ? .8 : options.layout === 'force' ? .035 : .35))
     }
+    // Fit settled positions, rather than the initial spiral or cached positions
+    // from a different projection (which can leave the network off-screen).
+    if (changed || layoutChanged) this.simulation.alpha(.65).tick(70)
     if (options.paused) {
       this.simulation.stop()
-      if (changed || layoutChanged) this.simulation.alpha(.6).tick(70)
     } else if (changed || layoutChanged || previous?.paused) this.simulation.alpha(.65).alphaTarget(0).restart()
     this.draw()
-    if (previous?.focus !== options.focus && options.focus) { this.simulation.tick(35); this.draw() }
-    if (!this.fitted || previous?.focus !== options.focus) this.fit()
+    if (!this.fitted || changed || layoutChanged) this.fit()
   }
 
   private join() {
@@ -126,12 +129,17 @@ export class D3ForceGraph implements ForceGraphActions {
       .text(edge => relationLabel(edge.resource.type))
     this.nodeElements = this.nodeLayer.selectAll<SVGGElement, ForceNode>('g.d3-node').data(this.nodes, node => node.id).join(enter => {
       const group = enter.append('g').attr('class', 'd3-node').attr('tabindex', 0).attr('role', 'button')
+      group.append('circle').attr('class', 'd3-domain-ring').attr('fill', 'none')
       group.append('circle').attr('class', 'd3-node-disc')
+      group.append('text').attr('class', 'd3-node-glyph').attr('text-anchor', 'middle').attr('dy', '.35em').attr('aria-hidden', 'true')
       group.append('circle').attr('class', 'd3-pin').attr('r', 3)
       group.append('text').attr('class', 'd3-node-label').attr('text-anchor', 'middle').attr('aria-hidden', 'true')
       group.append('title')
       return group
-    }).attr('data-node-id', node => node.id).attr('aria-label', node => `${node.resource.label} · ${domainOf(node.resource)} · ${node.resource.type}`)
+    }).attr('data-node-id', node => node.id).attr('data-classification', node => classifyNode(node.resource).key)
+      .attr('data-domain', node => domainOf(node.resource))
+      .classed('is-deleted', node => !!node.resource.properties.deleted)
+      .attr('aria-label', node => `${node.resource.label} · ${domainOf(node.resource)} · ${classifyNode(node.resource).label}${node.resource.properties.deleted ? ' · deleted' : ''}`)
       .on('click.graph', (event, node) => { event.stopPropagation(); this.onSelect(node.resource) })
       .on('dblclick.graph', (event, node) => { event.stopPropagation(); this.onExpand(node.resource) })
       .on('mouseenter.graph', (_event, node) => { this.hovered = node.id; this.appearanceDirty = true; this.draw() })
@@ -142,10 +150,15 @@ export class D3ForceGraph implements ForceGraphActions {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); if (event.shiftKey) this.onExpand(node.resource); else this.onSelect(node.resource) }
       })
     this.nodeElements.select<SVGCircleElement>('circle.d3-node-disc').attr('r', node => node.radius)
-      .attr('fill', node => domainColors[domainOf(node.resource)] || domainColors.EXTERNAL)
+      .attr('fill', node => nodeFill(node.resource, this.options?.colorMode))
+    this.nodeElements.select<SVGCircleElement>('circle.d3-domain-ring').attr('r', node => node.radius + 4)
+      .attr('stroke', node => domainColors[domainOf(node.resource)] || domainColors.EXTERNAL)
+      .attr('display', this.options?.colorMode === 'domain' ? 'none' : null)
+    this.nodeElements.select('text.d3-node-glyph').text(node => classifyNode(node.resource).glyph)
+      .style('fill', node => node.resource.properties.deleted ? 'var(--ct-text, #203643)' : nodeGlyphColor(node.resource, this.options?.colorMode))
     this.nodeElements.select<SVGCircleElement>('circle.d3-pin').attr('cx', node => node.radius * .7).attr('cy', node => -node.radius * .7)
-    this.nodeElements.select('title').text(node => `${node.resource.label}\n${domainOf(node.resource)} · ${node.resource.type}\n${node.resource.properties.path || node.id}\nDouble-click or Shift+Enter to expand context.`)
-    this.nodeElements.select<SVGTextElement>('text').each(function (node) {
+    this.nodeElements.select('title').text(node => `${node.resource.label}\n${classifyNode(node.resource).label} · ${domainOf(node.resource)}${node.resource.properties.deleted ? ' · Deleted resource' : ''}\n${node.resource.properties.path || node.id}\nDouble-click or Shift+Enter to expand context.`)
+    this.nodeElements.select<SVGTextElement>('text.d3-node-label').each(function (node) {
       const label = node.resource.type === 'file' ? String(node.resource.properties.path || node.resource.label.replace(/^file:/, '')).split(/[\\/]/).pop()! : node.resource.label
       const lines = label.length <= 19 ? [label] : [label.slice(0, 19), label.slice(19, 36) + (label.length > 36 ? '…' : '')]
       select(this).selectAll('tspan').data(lines).join('tspan').attr('x', 0).attr('dy', (_line, index) => index ? '1.15em' : 0).text(line => line)
@@ -202,7 +215,7 @@ export class D3ForceGraph implements ForceGraphActions {
   private drawLabels() {
     const selected = this.options?.selected
     const highlighted = new Set(this.options?.highlighted || [])
-    this.nodeElements?.select('text').attr('display', node => this.options?.allLabels || node.id === selected || node.id === this.hovered || this.nodes.length <= 55
+    this.nodeElements?.select('text.d3-node-label').attr('display', node => this.options?.allLabels || node.id === selected || node.id === this.hovered || this.nodes.length <= 55
       || highlighted.has(node.id) || this.transform.k > 1 || node.resource.type === 'repository' ? null : 'none')
     this.labelElements?.attr('display', edge => edge.id === this.hoveredEdge || (this.transform.k > .6 && this.edges.length < 80
       && edge.resource.properties.origin === 'lifecycle_assertion' && (edge.source.id === selected || edge.target.id === selected)) ? null : 'none')

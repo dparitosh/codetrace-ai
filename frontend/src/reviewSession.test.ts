@@ -6,6 +6,25 @@ const timing = { expires_in_seconds: 60, absolute_remaining_seconds: 120 }
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); vi.resetModules() })
 
 describe('review session client', () => {
+  it('publishes decisions so history and the active graph share review state', async () => {
+    const updated = { id: 'graph', kind: 'graph', status: 'approved', result_digest: 'digest', revision: 1 }
+    vi.stubGlobal('fetch', vi.fn(async (url, options) => {
+      if (String(url).endsWith('/decision')) {
+        expect(JSON.parse(options.body).result_digest).toBe('digest')
+        return json(updated)
+      }
+      return json(String(url).endsWith('/session') && options?.method === 'POST' ? { token: 'session', ...timing } : timing)
+    }))
+    const api = await import('./reviewSession')
+    await api.startSession()
+    const listener = vi.fn()
+    const unsubscribe = api.subscribeReviewChanges(listener)
+    const result = await api.decideReview({ id: 'graph', sessionToken: 'session', result_digest: 'digest', revision: 0 } as any, 'approved', '')
+    expect(listener).toHaveBeenCalledWith(result)
+    unsubscribe()
+    await api.decideReview({ ...result }, 'approved', '')
+    expect(listener).toHaveBeenCalledTimes(1)
+  })
   it('coalesces concurrent session creation', async () => {
     const fetch = vi.fn(async () => json({ token: 'one', ...timing }))
     vi.stubGlobal('fetch', fetch)

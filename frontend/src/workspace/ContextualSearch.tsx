@@ -8,7 +8,7 @@ import type { AIProfile } from './AISettings'
 interface SearchResult { node_id: string; label: string; domain: string; lexical_score: number; semantic_score: number | null }
 interface Result { results: SearchResult[]; query: string; mode: string; semantic_nodes: number; candidate_nodes: number; warning?: string; limitations: string[] }
 
-export default function ContextualSearch({ review, graph, onSelect, onHighlight }: { review: ReviewRecord | null; graph: TraceGraph | null; onSelect: (node: TraceNode) => void; onHighlight: (ids: string[]) => void }) {
+export default function ContextualSearch({ review, graph, onSelect, onHighlight, domain = 'ALL' }: { review: ReviewRecord | null; graph: TraceGraph | null; onSelect: (node: TraceNode) => void; onHighlight: (ids: string[]) => void; domain?: string }) {
   const [query, setQuery] = useState(''), [semantic, setSemantic] = useState(true)
   const [busy, setBusy] = useState(false), [error, setError] = useState('')
   const [result, setResult] = useState<Result | null>(null)
@@ -17,14 +17,14 @@ export default function ContextualSearch({ review, graph, onSelect, onHighlight 
     const requestCounter = generation
     requestCounter.current++; setResult(null); setBusy(false); setError('')
     return () => { requestCounter.current++ }
-  }, [review?.id, review?.sessionToken])
+  }, [review?.id, review?.sessionToken, domain])
   const search = async () => {
     if (!review || !query.trim() || busy) return
     const current = ++generation.current
     setBusy(true); setError(''); setResult(null)
     try {
       const profile = await aiRequest<AIProfile>('config')
-      const answer = await workspaceRequest<Result>('search', { review_id: review.id, query, semantic, limit: 20 }, profile.request_timeout_seconds || 125, review.sessionToken)
+      const answer = await workspaceRequest<Result>('search', { review_id: review.id, query, semantic, limit: 20, domain }, profile.request_timeout_seconds || 125, review.sessionToken)
       if (current !== generation.current) return
       setResult(answer); onHighlight(answer.results.map(node => node.node_id))
     } catch (cause) { if (current === generation.current) setError(cause instanceof Error ? cause.message : 'Search failed') }

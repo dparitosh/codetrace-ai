@@ -45,6 +45,7 @@ class ContextQuery(BaseModel):
 
 class AgentQuery(CompanionQuery):
     agent_id: Literal['trace-explorer', 'coverage-reviewer', 'change-analyst'] = 'trace-explorer'
+    domain: str = Field(default='ALL', min_length=1, max_length=40)
 
 
 class SearchQuery(BaseModel):
@@ -75,7 +76,8 @@ def ai_configuration(x_codetrace_session: Optional[str] = Header(default=None)):
 def configure_ai(request: AIConnection, x_codetrace_session: Optional[str] = Header(default=None)):
     if request.keep_key and not request.api_key.get_secret_value():
         current = connection_for(review_routes.store, x_codetrace_session)
-        request = request.model_copy(update={'api_key': SecretStr(current.api_key.get_secret_value())})
+        if request.base_url == current.base_url and request.key_header == current.key_header:
+            request = request.model_copy(update={'api_key': SecretStr(current.api_key.get_secret_value())})
     review_routes.store.ai_profile(x_codetrace_session, request.private())
     return request.public()
 
@@ -154,7 +156,7 @@ def run_graph_agent(request: AgentQuery, x_codetrace_session: Optional[str] = He
         if request.selected_id and not any(node['id'] == request.selected_id for node in graph['nodes']):
             raise HTTPException(404, 'Selected resource is not in this snapshot')
         rest = OllamaREST(connection_for(store, x_codetrace_session), ai_guard(x_codetrace_session))
-        return GraphAgent(graph, rest, request.agent_id).run(request.question, request.selected_id)
+        return GraphAgent(graph, rest, request.agent_id).run(request.question, request.selected_id, request.domain)
     except (ValueError, TypeError, KeyError):
         raise HTTPException(422, 'Agent could not complete within the configured evidence and execution budgets.') from None
     finally:
@@ -231,7 +233,10 @@ def workspace_companion(request: CompanionQuery, x_codetrace_session: Optional[s
             raise HTTPException(404, 'Selected resource is not present in this graph')
         profile = store.ai_profile(x_codetrace_session)
         answer = answer_question(graph, request.question, request.selected_id,
-                                 system_prompt=(profile or {}).get('companion_system_prompt'))
+                                 system_prompt=(profile or {}).get('companion_system_prompt'),
+                                 connection=connection_for(store, x_codetrace_session)
+                                 if profile or settings.AI_PROVIDER == 'ollama' else None,
+                                 guard=ai_guard(x_codetrace_session))
         store.info(x_codetrace_session, touch=False)  # Do not disclose a late answer after expiry.
         return answer
     finally:

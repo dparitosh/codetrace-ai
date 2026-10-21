@@ -18,6 +18,11 @@ let session: Session | null = null
 let creating: Promise<Session> | null = null
 let generation = 0
 const listeners = new Set<() => void>()
+const reviewListeners = new Set<(record: ReviewRecord) => void>()
+export function subscribeReviewChanges(listener: (record: ReviewRecord) => void) {
+  reviewListeners.add(listener)
+  return () => { reviewListeners.delete(listener) }
+}
 const base = '/api/v1/review'
 const notify = () => listeners.forEach(listener => listener())
 export const useReviewSession = () => useSyncExternalStore(
@@ -123,7 +128,9 @@ export async function decideReview(record: ReviewRecord, action: 'approved' | 'r
   if (session?.token !== current.token) throw new Error('Session changed while deciding the review.')
   await refreshSession().catch(() => undefined)
   if (session?.token !== current.token || (session?.deadline || 0) <= Date.now()) throw new Error('Session ended or expired while refreshing the result.')
-  return { ...result, sessionToken: current.token }
+  const updated = { ...result, sessionToken: current.token }
+  reviewListeners.forEach(listener => listener(updated))
+  return updated
 }
 
 export async function exportReview(id: string) {

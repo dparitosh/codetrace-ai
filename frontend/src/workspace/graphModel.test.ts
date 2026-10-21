@@ -13,6 +13,34 @@ const graph: TraceGraph = { nodes: [
 ], metadata: {} }
 
 describe('interactive graph projection', () => {
+  it('connects a bounded preview through low-degree bridge nodes and includes deep symbols', () => {
+    const nodes = ['repo', 'pkg', 'file', 'class', 'method', 'variable', 'feature'].map((id, index) => ({
+      id, label: id, type: ['repository', 'package', 'file', 'class', 'method', 'variable', 'feature'][index], properties: {},
+    }))
+    const edges = nodes.slice(1).map((node, index) => ({ source: nodes[index].id, target: node.id, type: 'contains', properties: {} }))
+    const snapshot = { nodes, edges, metadata: {} }
+    const view = visibleGraph(snapshot, 'ALL', true, 6, 10)
+    expect(view.nodes.map(node => node.id)).toEqual(['repo', 'pkg', 'file', 'class', 'method', 'variable'])
+    expect(view.components).toBe(1)
+    expect(view.edges).toHaveLength(5)
+    const focused = visibleGraph(snapshot, 'ALL', true, 7, 10, localContext(snapshot, 'method', 2), new Set(), 'method')
+    expect(focused.nodes.some(node => node.type === 'feature')).toBe(true)
+    expect(focused.components).toBe(1)
+  })
+  it('spends edge limits on connectivity before parallel edges and reports real isolates', () => {
+    const snapshot = { ...graph, edges: [graph.edges[0], { ...graph.edges[0], type: 'defines' }, graph.edges[1]] }
+    const view = visibleGraph(snapshot, 'ALL', true, 100, 2)
+    expect(view.edges.some(edge => edge.type === 'contains')).toBe(true)
+    expect(view.edges.some(edge => edge.type === 'implementedBy')).toBe(true)
+    expect(view.components).toBe(2) // The unrelated file is genuinely isolated.
+    expect(view.omittedEdges).toBe(1)
+  })
+  it('uses only the selected relationship scope to grow a connected preview', () => {
+    const view = visibleGraph(graph, 'ALL', true, 3, 10, undefined, new Set(), 'file', 'hierarchy')
+    expect(view.nodes.slice(0, 2).map(node => node.id)).toEqual(['file', 'function'])
+    expect(view.edges.every(edge => edge.type === 'contains')).toBe(true)
+    expect(visibleGraph(graph, 'ALL', true, 100, 0).components).toBe(4)
+  })
   it('keeps overview concise while symbol view preserves code/lifecycle links', () => {
     const overview = visibleGraph(graph, 'ALL', false, 100, 100)
     expect(overview.nodes.some(node => node.id === 'function')).toBe(true)

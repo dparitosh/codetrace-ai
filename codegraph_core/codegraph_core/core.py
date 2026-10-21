@@ -167,7 +167,9 @@ class CodeGraph:
                 "snippets": [snippet for nid in picked if (snippet := self._snippet_for(nid))]}
 
     def _module_id(self, path: Path) -> str:
-        return "module:" + path.with_suffix("").as_posix()
+        # Keep Python import identities compatible with `import package.module`;
+        # other languages retain their extension to avoid same-stem collisions.
+        return "module:" + (path.with_suffix("") if path.suffix == '.py' else path).as_posix()
 
     def _scan_python_file(self, p: Path, source: str, file_id: str):
         try:
@@ -190,6 +192,8 @@ class CodeGraph:
 
         def add_function(node: Any, owner: str, scope: str) -> str:
             function_id = f"function:{p.as_posix()}::{scope}::{node.name}"
+            if function_id in self.g.nodes:
+                function_id += f'@{node.lineno}'
             self.g.upsert_node(function_id, "function", name=node.name, path=p.as_posix(), start=node.lineno,
                                language="python", owner=owner, scope=scope,
                                docstring=ast.get_docstring(node) or "")
@@ -203,9 +207,13 @@ class CodeGraph:
                 add_variable(function_id, node.args.vararg.arg, node.args.vararg.lineno, "parameter")
             if node.args.kwarg:
                 add_variable(function_id, node.args.kwarg.arg, node.args.kwarg.lineno, "parameter")
+            for child in _function_body_nodes(node):
+                if isinstance(child, (ast.Assign, ast.AnnAssign)):
+                    for name in _assigned_names(child):
+                        add_variable(function_id, name, child.lineno, 'local')
             return function_id
 
-        for node in tree.body:
+        for node in _scope_statements(tree.body):
             if isinstance(node, ast.Import):
                 for item in node.names:
                     self.g.add_edge(module_id, "module:" + item.name, "imports", name=item.name)
@@ -219,7 +227,7 @@ class CodeGraph:
                 for base in node.bases:
                     if isinstance(base, ast.Name):
                         self.g.add_edge(class_id, "symbol:" + base.id, "inherits_from", name=base.id)
-                for child in node.body:
+                for child in _scope_statements(node.body):
                     if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         add_function(child, class_id, f"{node.name}.")
                     elif isinstance(child, (ast.Assign, ast.AnnAssign)):
@@ -281,6 +289,17 @@ class CodeGraph:
                     "code": "\n".join(lines[start - 1:end])}
         except (OSError, ValueError):
             return None
+
+
+def _scope_statements(body):
+    """Visit conditional/loop/try statements without crossing lexical scopes."""
+    pending = list(reversed(body))
+    while pending:
+        node = pending.pop()
+        yield node
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+            pending.extend(reversed([child for child in ast.iter_child_nodes(node)
+                                     if isinstance(child, (ast.stmt, ast.ExceptHandler, ast.match_case))]))
 
 
 def _function_body_nodes(node):

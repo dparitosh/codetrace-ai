@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUpRight, ArrowRight, Bot, ChevronRight, Code2, Sparkles, X, FileText, Link2 } from 'lucide-react'
+import { ArrowUpRight, ArrowRight, ChevronRight, Code2, Sparkles, X, FileText, Link2 } from 'lucide-react'
 import { aiRequest, ReviewRecord, workspaceRequest } from '../reviewSession'
 import type { AIProfile } from './AISettings'
 import { Catalog, CompanionAnswer, domainColors, domainOf, relationLabel, TraceGraph, TraceNode } from './types'
+import NodeBadge from './NodeBadge'
 
-interface Props { graph: TraceGraph | null; review: ReviewRecord | null; selected: TraceNode | null; catalog: Catalog | null; onSelect: (node: TraceNode) => void; onHighlight?: (ids: string[]) => void }
-export default function Companion({ graph, review, selected, catalog, onSelect, onHighlight }: Props) {
+interface Props { graph: TraceGraph | null; review: ReviewRecord | null; selected: TraceNode | null; catalog: Catalog | null; onSelect: (node: TraceNode) => void; onHighlight?: (ids: string[]) => void; contextDomain?: string }
+export default function Companion({ graph, review, selected, catalog, onSelect, onHighlight, contextDomain = 'ALL' }: Props) {
   const [tab, setTab] = useState<'ask' | 'inspect'>('ask')
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState<CompanionAnswer | null>(null)
+  const [answerDomain, setAnswerDomain] = useState('ALL')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [profile, setProfile] = useState<AIProfile | null>(null)
@@ -27,6 +29,7 @@ export default function Companion({ graph, review, selected, catalog, onSelect, 
     invalidate(); setAnswer(null); setError(''); setBusy(false)
     return invalidate
   }, [review?.id, review?.sessionToken])
+  useEffect(() => { requestGeneration.current++; setBusy(false); setError('') }, [contextDomain])
   useEffect(() => { if (selected) setTab('inspect') }, [selected])
   const ask = async (value: string) => {
     if (!review || !value.trim() || !catalog || busy) return
@@ -37,9 +40,10 @@ export default function Companion({ graph, review, selected, catalog, onSelect, 
     setTab('ask'); setBusy(true); setError(''); setQuestion(value)
     try {
       const result = await workspaceRequest<CompanionAnswer>('agent/run', { review_id: review.id, question: value,
-        selected_id: selected?.id, agent_id: chosenAgent }, profile?.request_timeout_seconds || catalog.ai.timeout_seconds + 5, review.sessionToken)
+        selected_id: selected?.id, agent_id: chosenAgent, domain: contextDomain }, profile?.request_timeout_seconds || catalog.ai.timeout_seconds + 5, review.sessionToken)
       if (generation !== requestGeneration.current) return
       setAnswer(result)
+      setAnswerDomain(contextDomain)
       onHighlight?.(result.highlight_ids || [])
       setQuestion('')
     } catch (cause) { if (generation === requestGeneration.current) setError(cause instanceof Error ? cause.message : 'Companion request failed') }
@@ -49,14 +53,14 @@ export default function Companion({ graph, review, selected, catalog, onSelect, 
   const nodes = useMemo(() => new Map(graph?.nodes.map(node => [node.id, node]) || []), [graph])
   const prompts = ['Where are the traceability gaps?', 'Explain the selected resource', 'Find similar resources to the selected resource', 'Which builds match this revision?']
   return <aside className="companion-panel">
-    <div className="companion-heading"><div className="companion-icon"><Sparkles size={19} /></div><div><span>YOUR CONTEXTUAL PARTNER</span><h2>Trace companion</h2></div><i /></div>
+    <div className="companion-heading"><div className="companion-icon"><Sparkles size={19} /></div><div><h2>Companion</h2></div><small>{contextDomain === 'ALL' ? 'All domains' : contextDomain}</small></div>
     <div className="companion-tabs"><button className={tab === 'ask' ? 'active' : ''} onClick={() => setTab('ask')}><Sparkles size={13} />Ask companion</button><button className={tab === 'inspect' ? 'active' : ''} onClick={() => setTab('inspect')}><Code2 size={13} />Inspect resource</button></div>
-    <label className="agent-selector">Agent<select aria-label="Graph agent" value={agentId} disabled={busy} onChange={event => setAgentId(event.target.value)}>{(profile?.agents || [{ id: 'trace-explorer', label: 'Trace explorer' }]).map(agent => <option key={agent.id} value={agent.id}>{agent.label}</option>)}</select><small>Read-only graph tools · writes remain subject to ALM approval</small></label>
+    <label className="agent-selector">Agent<select aria-label="Graph agent" value={agentId} disabled={busy} onChange={event => setAgentId(event.target.value)}>{(profile?.agents || [{ id: 'trace-explorer', label: 'Trace explorer' }]).map(agent => <option key={agent.id} value={agent.id}>{agent.label}</option>)}</select></label>
     <div className="companion-content">
       {tab === 'ask' ? <>
-        {!answer && <div className="companion-intro"><div className="companion-orbit"><Bot size={28} /></div><h3>See the connections.<br />Understand the impact.</h3><p>Explore code, requirements, architecture and changes with answers grounded in your graph.</p>
+        {!answer && <div className="companion-intro"><p>Ask a question or start with a graph query.</p>
           <div className="companion-prompts">{prompts.map(prompt => <button key={prompt} disabled={!review || busy} onClick={() => ask(prompt)}>{prompt}<ArrowUpRight size={14} /></button>)}</div></div>}
-        {answer && <div className="companion-answer"><div className="answer-label"><Sparkles size={13} />{answer.mode === 'evidence' ? 'GRAPH EVIDENCE' : 'AGENT ANSWER'}<button aria-label="Clear companion answer" onClick={() => setAnswer(null)}><X size={13} /></button></div>
+        {answer && <div className="companion-answer"><div className="answer-label"><Sparkles size={13} />{answer.mode === 'evidence' ? 'GRAPH EVIDENCE' : 'AGENT ANSWER'} · {answerDomain}<button aria-label="Clear companion answer" onClick={() => setAnswer(null)}><X size={13} /></button></div>
           <p className="answer-body">{answer.answer}</p>
           {answer.trace && <details className="agent-execution"><summary>Agent execution · {answer.trace.length} tools</summary>{answer.trace.map(step => <div key={step.step}><strong>{step.step}. {step.tool.replace(/_/g, ' ')}</strong><small>{step.status} · {step.resource_ids.length} resources · {step.elapsed_ms} ms</small><button onClick={() => onHighlight?.(step.resource_ids)}>Highlight step evidence</button><details><summary>Parameters</summary><pre>{JSON.stringify(step.arguments, null, 2)}</pre></details></div>)}</details>}
           {answer.warning && <p className="answer-warning">{answer.warning}</p>}
@@ -67,8 +71,7 @@ export default function Companion({ graph, review, selected, catalog, onSelect, 
         </div>}
         {busy && <div className="companion-thinking"><span className="pulse-dot" />Executing bounded graph tools and verifying evidence…</div>}
       </> : selected ? <div className="resource-inspector">
-        <div className="resource-domain"><i style={{ background: domainColors[domainOf(selected)] }} />{domainOf(selected)} RESOURCE</div>
-        <h3>{selected.label}</h3><p className="resource-type">{selected.type.replace(/_/g, ' ')}</p>
+        <h3>{selected.label}</h3><NodeBadge node={selected} />
         <dl><dt>Evidence origin</dt><dd>{String(selected.properties.origin || 'Code analyzer').replace(/_/g, ' ')}</dd>
           {selected.properties.path && <><dt>Source location</dt><dd className="source-location"><FileText size={12} />{selected.properties.path}{selected.properties.start ? ':' + selected.properties.start : ''}</dd></>}
           {selected.properties.status && <><dt>Status</dt><dd>{selected.properties.status}</dd></>}

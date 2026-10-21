@@ -3,6 +3,11 @@
 .d3-force-svg:active { cursor: grabbing; }
 .d3-node { cursor: grab; outline: none; }
 .d3-node-disc { stroke: var(--ct-surface, #fff); stroke-width: 2; }
+.d3-domain-ring { stroke-width: 2; pointer-events: none; }
+.d3-node-glyph { font: 700 11px var(--theme-font-family, system-ui, sans-serif); fill: #fff; stroke: none; pointer-events: none; }
+.d3-node.is-deleted .d3-node-disc { fill-opacity: .25; stroke-dasharray: 3 2; }
+.d3-node.is-deleted .d3-node-glyph { fill: var(--ct-text, #203643); }
+.d3-node.is-deleted .d3-domain-ring { stroke-dasharray: 3 2; }
 .d3-node.is-selected .d3-node-disc, .d3-node.is-hovered .d3-node-disc, .d3-node:focus .d3-node-disc { stroke: var(--theme-color-primary, #008f9b); stroke-width: 4; }
 .d3-node.is-selected .d3-node-disc { filter: drop-shadow(0 0 7px var(--theme-color-primary, #008f9b)); }
 .d3-node-label, .d3-edge-labels text { font: 11px var(--theme-font-family, system-ui, sans-serif); fill: var(--ct-text, #203643); paint-order: stroke; stroke: var(--ct-background, #fff); stroke-width: 4; stroke-linejoin: round; pointer-events: none; }

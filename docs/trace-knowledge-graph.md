@@ -44,6 +44,10 @@ Manifest processing treats URIs as identifiers and never fetches them. Separatel
 
 Python extraction uses AST structure; other languages have structural/heuristic coverage. Complete cross-module semantic resolution is not provided. The UI renders a bounded projection with contextual traversal, filtering, hierarchy and reported omissions. Approved exports retain the full snapshot. Model stress tests do not establish browser frame-rate guarantees.
 
+The force network includes functions, methods and variables by default. Its bounded preview grows along actual relationships, balances visible classifications and reserves the edge budget for a spanning forest before parallel links. It reports connected components and omitted nodes/edges; separate source components, domain/relationship filters and insufficient edge budgets can still produce multiple components. Search covers the full snapshot, and expanding a resource reveals its bounded context. Reset restores symbol visibility and the force network layout.
+
+Node fill and letter identify the classification (for example class, function, method or feature); the outer ring identifies the lifecycle domain. The legend counts the visible projection, and the color selector can instead color by domain. Inspectors and the resource table use the same classification badges. Features require explicit manifest/provider artifacts and trace links; the scanner does not infer product features from source classes. A snapshot with zero imported features reports that fact in the graph legend.
+
 ## Verification
 
 `backend/tests/test_traceability.py` covers hierarchy, lifecycle traversal, bounded queries, repository isolation, content-sensitive snapshots, invalid links, unresolved resources, duplicate assertion handling, JSON-LD provenance, agent integration, and OpenAPI registration. Run `.venv\Scripts\python.exe -m pytest -q` from the repository root.
