@@ -98,6 +98,8 @@ exceeding a limit reports an error rather than returning a partial graph.
 
 Precedence: process environment > root `.env.local` > root `.env` (legacy) > defaults. Restart both services after editing. Backend loading is independent of the current working directory. Vite also supports its standard mode-specific env files; avoid them when the backend must share the same settings.
 
+If startup reports an invalid configuration, run `.venv\Scripts\python.exe backend/local_config.py` from the checkout. Diagnostics name the invalid setting without printing its value or the full settings dictionary. Check both `.env.local` and process environment overrides. `HOST` is a bare hostname/IP such as `127.0.0.1`, with no scheme, port or path. `AI_BASE_URL` is a complete HTTP(S) URL; `AI_ALLOWED_BASE_URLS` is a JSON array of complete URLs. `OSLC_PUBLIC_BASE_URL` may be left blank to derive it from the host and backend port. Remote connection endpoints require HTTPS; credentials belong in named secret variables or the session AI settings, never embedded in a URL.
+
 | Setting | Default | Purpose |
 | --- | --- | --- |
 | `HOST` | `127.0.0.1` | Backend and frontend bind address; keep loopback for local use |

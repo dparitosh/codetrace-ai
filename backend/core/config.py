@@ -1,12 +1,13 @@
 """Configuration for the local-first CodeTrace AI service."""
 
 import json
+import ipaddress
 from pathlib import Path
 from typing import List, Optional, Literal
 from urllib.parse import urlsplit, quote
 from core.connection_models import ManagedRepository, OSLCProvider, PipelineProvider, connection_url
 
-from pydantic import AliasChoices, Field, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +18,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(PROJECT_ROOT / '.env', PROJECT_ROOT / '.env.local'),
         env_file_encoding='utf-8', case_sensitive=True, extra='ignore', populate_by_name=True,
+        hide_input_in_errors=True,
     )
     APP_NAME: str = "CodeTrace AI"
     APP_VERSION: str = "1.0.0"
@@ -106,6 +108,40 @@ class Settings(BaseSettings):
     OSLC_SERVER_MAX_BYTES: int = Field(default=100000000, ge=1)
     OSLC_SERVER_MAX_PROPOSALS: int = Field(default=1000, ge=1)
 
+    @field_validator('HOST')
+    @classmethod
+    def bare_bind_host(cls, value):
+        message = 'Use a hostname or IP address only, without http://, https://, a port, path or credentials'
+        if any(char.isspace() for char in value) or any(char in value for char in '/\\?#@'):
+            raise ValueError(message)
+        if ':' in value:
+            host = value[1:-1] if value.startswith('[') and value.endswith(']') else value
+            try:
+                ipaddress.IPv6Address(host)
+            except ValueError:
+                raise ValueError(message) from None
+            return host
+        if '[' in value or ']' in value:
+            raise ValueError(message)
+        return value
+
+    @field_validator('AI_BASE_URL', 'OSLC_PUBLIC_BASE_URL')
+    @classmethod
+    def named_endpoint(cls, value, info):
+        if info.field_name == 'OSLC_PUBLIC_BASE_URL' and value == '':
+            return None
+        return connection_url(value)
+
+    @field_validator('AI_ALLOWED_BASE_URLS')
+    @classmethod
+    def named_allowed_endpoints(cls, values):
+        for index, value in enumerate(values):
+            try:
+                connection_url(value)
+            except ValueError as error:
+                raise ValueError(f'Entry {index}: {error}') from None
+        return values
+
     @classmethod
     def settings_customise_sources(cls, settings_cls, init_settings, env_settings, dotenv_settings, file_secret_settings):
         # Normalize aliases within each source before sources are merged. Otherwise
@@ -126,9 +162,6 @@ class Settings(BaseSettings):
         if self.MANAGED_REPOSITORIES is None:
             self.MANAGED_REPOSITORIES = [ManagedRepository(
                 id='workspace', label='Configured source folder', kind='local', path=str(self.SOURCE_FOLDER))]
-        connection_url(self.AI_BASE_URL)
-        for url in self.AI_ALLOWED_BASE_URLS:
-            connection_url(url)
         self.OSLC_PUBLIC_BASE_URL = self.OSLC_PUBLIC_BASE_URL or f'http://{self.browser_host}:{self.PORT}/oslc'
         connection_url(self.OSLC_PUBLIC_BASE_URL)
         if self.AI_PROVIDER == 'ollama' and urlsplit(self.AI_BASE_URL).hostname not in {'localhost', '127.0.0.1', '::1'}:

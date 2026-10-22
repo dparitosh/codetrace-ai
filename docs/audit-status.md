@@ -1,5 +1,16 @@
 # Current audit status
 
+## Startup configuration diagnostics (2026-10-22)
+
+URL settings now validate at their named fields, with indexed diagnostics for
+the AI allowlist. HOST rejects schemes, ports and paths before generating public
+URLs. Settings validation hides input values; the native launcher prints concise
+field diagnostics instead of a traceback containing the settings dictionary.
+Blank optional OSLC publication URLs retain their derived default. All 216
+backend/core tests pass, including 14 startup regression cases. No live model
+requests were made. A malformed configuration on another installation still
+requires correcting the field identified by that installation's diagnostic.
+
 ## Page density and purpose audit (2026-10-21)
 
 Removed repeated global metric cards, decorative slogans/eyebrows, snapshot
