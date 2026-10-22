@@ -31,7 +31,12 @@ class SearchReviewContract(unittest.TestCase):
         self.assertEqual(caught.exception.status_code, 400)
 
     def test_evidence_preserves_bounded_allowlisted_properties(self):
+        domain_tree = ast.parse((ROOT / 'graph/traceability.py').read_text(encoding='utf-8'))
+        domains = next(node.value for node in domain_tree.body if isinstance(node, ast.Assign)
+                       and any(isinstance(target, ast.Name) and target.id == 'RESOURCE_DOMAINS' for target in node.targets))
+        domain_of = load_function('graph/traceability.py', 'node_domain', {'RESOURCE_DOMAINS': ast.literal_eval(domains)})
         namespace = {'re': re, 'settings': type('Settings', (), {'AI_CONTEXT_NODES': 35, 'AI_CONTEXT_RELATIONS': 80})()}
+        namespace['node_domain'] = domain_of
         retrieve = load_function('services/companion_service.py', 'context_evidence', namespace)
         graph = {'nodes': [{'id': 'test', 'label': 'Verification', 'type': 'test_result',
                             'properties': {'domain': 'QM', 'outcome': 'failed', 'deleted': True,

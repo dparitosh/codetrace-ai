@@ -1,0 +1,161 @@
+CODETRACE AI: FULL-STACK AUDIT — 2026-10-22
+Baseline: f41d045. Corrections are local working-tree changes, not pushed by this audit.
+Scope: existing functionality only. No live Ollama tests, model downloads, production writes, destructive operations, or new features.
+
+1. EXECUTIVE SUMMARY AND COVERAGE
+
+Nine confirmed defects were reproduced, reported before application changes, and corrected with regression validation. Two installed Python dependency risks remain open because published fixes require major-version compatibility work. There is no claim that application exploitation of those Python advisories was demonstrated.
+
+All 171 baseline Git-tracked first-party files (26,306 lines) were indexed, including sources, tests, lockfile, scripts and documentation. Indexing includes hashes, line counts, Python AST declarations/imports and JavaScript imports. It is NOT a complete line-by-line semantic audit. Critical paths and confirmed findings received targeted review. Legacy modules, documentation and some components received indexing/static inspection only. application-inventory.json records that distinction per file. Two new regression files are listed separately. Private .env.local values, installed packages and generated runtime data are excluded from first-party coverage.
+
+Validation: backend/core 248 passed; frontend 34 passed; native frontend tests 23 passed; TypeScript/Vite build, ESLint and pip check passed. npm audit reports zero vulnerabilities after the Vitest correction. Installed Python advisory scanning found the two open dependency findings. These results do not establish production integration readiness or complete browser accessibility/functionality.
+
+The API matrix contains all 54 OpenAPI operations. Route functions for 36 operations executed during the instrumented offline suite; 18 did not. Function invocation is not complete branch or business-outcome coverage. Equivalent service-level tests do not replace HTTP contract tests for an unexecuted route. See api-audit-matrix.json for the exact method/path/source/function/line, request schemas, documented responses and measured counts.
+
+2. APPLICATION INVENTORY AND DEPENDENCY MAP
+
+Machine inventory: application-inventory.json. Baseline categories: 95 source files, 29 test files, 33 configuration/scripts, 13 documentation files and one lockfile. AST index: 722 Python declarations, 800 import records and 54 route declarations. These are inventory counts, not defect counts.
+
+Active frontend: React 18, TypeScript 5, Siemens iX 5, D3 force graph, AG Grid 36 and Vite 7.3.7. App.tsx/main.tsx mount the workspace; reviewSession.ts owns session requests; sourceFiles.ts handles supported file selection; workspaceContext/graphModel/forceGraphModel/nodeAppearance supply shared context and presentation. Components under components/ provide source, quality, security and review views; workspace/ provides lifecycle views, graph, search, companion, administration, collaboration and tables.
+
+Active backend: FastAPI 0.156.7, Starlette 1.9.0, Pydantic 2.14.1, HTTPX 0.28.1 and Uvicorn 0.54. backend/main.py mounts graph, quality, security, agent-context, trace, review, workspace, OSLC and collaboration routers. NetworkX 3.7 and RDFLib 7.6 support graph extraction/materialization. codegraph_core provides Python AST and heuristic multi-language extraction.
+
+Persistence: memory or SQLite review sessions; encrypted session AI profiles using Fernet; SQLite OSLC publication and durable TRS cache. Optional SQLAlchemy 2.0.55/PostgreSQL utilities target the legacy ORM schema and do not switch the active API to PostgreSQL. There is no active vector database. Semantic retrieval uses a bounded temporary candidate index.
+
+Execution/dependency map:
+  Browser Workspace -> reviewSession/sourceFiles/shared graph context
+    -> same-origin /api -> Vite proxy -> backend/main.py routers
+    -> source extraction / quality / security / trace materialization
+    -> session review store -> exact-result decision -> approved export
+  Managed source catalog -> workspace service -> filesystem/Git/OSLC/TRS/CI adapters
+    -> graph normalization + source evidence + optional lockfile SBOM
+    -> review snapshot -> graph/search/domain pages/companion
+  Search/agent route -> session-owned review + AI profile -> bounded retrieval
+    -> allowlisted read-only tools -> optional model -> validated citation IDs
+    -> evidence response -> selected/highlighted graph context
+  Approved review -> OSLC publication / link proposal -> approval + ETag
+    -> configured write-enabled provider -> apply or reconcile uncertain outcome
+
+Legacy/unmounted boundaries: cli/codetrace.js repository-host commands, older repository ORM/graph/quality implementations, unused GraphPage, and old MCP analysis scripts are not evidence of active integrations. They remain present; no feature was removed or reconnected. Active agents are hand-written Python orchestration, not LangChain/LangGraph. No active MCP server/client transport or Docker/deployment infrastructure was found in tracked manifests. The manual workflow named mcp-analysis runs local checks rather than a live MCP session.
+
+3. ARCHITECTURE FINDINGS
+
+The local-first modular monolith has useful separation between routers, graph extraction, providers, review storage and agent tools. Shared frontend graph context supports multiple views. Existing review decisions bind to a revision and digest; model tools do not directly perform writes. Those are source/test observations, not enterprise assurance.
+
+Confirmed cross-layer inconsistencies were domain inference (AUD-002), IPv6 host normalization (AUD-005), and sync dependency teardown relying on worker-thread identity (AUD-006). Domain normalization is now shared across backend materialization, managed snapshots, retrieval and citations, preserving explicit provider domains. SQLite capacity release now carries its acquired lease across worker threads.
+
+Architectural risks, distinct from demonstrated bugs:
+  R-01: Session bearer tokens isolate reviewers but are not user identity, RBAC or independent approval. Loopback is the supported default; externally exposed deployments require an authenticated TLS gateway and suitable process/file protections.
+  R-02: Request parsing can allocate JSON before source-content limits are evaluated. Analysis deadlines cannot interrupt every Python parser operation mid-file. Gateway request-body limits and adversarial resource testing remain deployment work.
+  R-03: SQLite leases depend on renewal. Prolonged renewal/storage failure could permit expiry while work continues. Cross-thread teardown is tested; renewal-loss overlap is not fault-injected here.
+  R-04: Provider/agent modules combine several responsibilities and share settings/store state. Maintainability refactoring is deferred to avoid unrelated changes.
+  R-05: /health is local liveness and does not prove external AI/provider/database readiness.
+  R-06: Import indexing alone cannot prove all circular dependencies or dead-code reachability. No exhaustive cycle/dead-code elimination claim is made.
+
+4. PRIORITIZED BUG REGISTER
+
+The authoritative detailed register is full-stack-audit-findings.json. Each entry contains identifier, severity, category, exact file/function/baseline line, description, evidence, root cause, impact, reproduction, recommended fix, effort, status and validation. Absolute paths are included there. Baseline lines describe reproductions; line_after_fix gives current definition lines where unambiguous.
+
+AUD-006 High, conditional on SQLite: dependency cleanup can run on a different worker than acquisition, leaving capacity leases and raising during release. Fixed with explicit lease ownership; deterministic cross-thread cleanup and eight concurrent ASGI requests pass.
+AUD-001 Medium: readiness accepts JSON decoding but assumes a mapping, producing 500 for arrays/null/scalars. Fixed with object/ready validation and controlled 502 responses; six malformed cases pass and capacity is released.
+AUD-002 Medium: lifecycle resources without explicit domain disappear from domain-scoped retrieval/citations. Fixed canonical type-domain inference and consistent materialization/provider enrichment. Explicit domain overrides and source-to-export workflow pass.
+AUD-003 Medium: valid BOM-prefixed Python falls into generic extraction and loses typed symbols. Fixed parser-local BOM removal, preserving raw source identity; graph equivalence and distinct digest assertions pass.
+AUD-004 Medium: endpoint URL validation accepts invalid/zero/out-of-range ports. Fixed explicit port parsing and redacted errors; valid IPv6/ordinary ports remain accepted.
+AUD-005 Medium: bracketed IPv6 HOST becomes double-bracketed in frontend proxy. Fixed shared effective host normalization; three real Vite configuration cases pass.
+AUD-008 Medium security, development only: Vitest UI advisory GHSA-p458-7748-mcp3 affects installed 5.0.4 family. Updated matched Vitest/UI/coverage dependencies to 5.0.5; lockfile pruned unused optional peers. Production dependency versions unchanged; npm audit zero, build/tests pass. Applies to test UI/API/Browser exposure, not a demonstrated production frontend exploit.
+AUD-007 Low: SQLite setup/BEGIN exceptions bypass connection close in two transaction adapters. Fixed outer finally; six setup/body-failure cases prove close and rollback behavior without hiding exceptions.
+AUD-009 Low: invoking core CLI with no command reads an absent argument and crashes. Fixed early help return; real subprocess exits zero without traceback.
+AUD-010 Medium, open dependency risk: installed cryptography 48.0.1 matches published PKCS7/X509 advisories; current <49 bound excludes fixes. App uses Fernet, not the identified PKCS7/X509 APIs. No application exploit established. Review cryptography 50 compatibility and platform support before widening the bound.
+AUD-011 Low, open developer-tool risk: installed pytest 8.4.2 matches temporary-directory advisory GHSA-6w46-j5rx-g56g, fixed 9.0.3. Current <9 bound excludes the fix. Major-version migration and CI compatibility remain; no exploit attempted.
+
+Advisory references:
+  https://github.com/vitest-dev/vitest/security/advisories/GHSA-p458-7748-mcp3
+  https://github.com/pyca/cryptography/security/advisories/GHSA-g6cj-pr64-35w5
+  https://github.com/pyca/cryptography/security/advisories/GHSA-jwv3-5hgf-82ww
+  https://github.com/pyca/cryptography/security/advisories/GHSA-m2h6-j472-rp4c
+  https://github.com/advisories/GHSA-6w46-j5rx-g56g
+Installed Python advisory scan covered 40 installed distributions, not every optional legacy requirement or every ecosystem. Advisory matching is not exploit reproduction.
+
+5. FRONTEND PAGE-BY-PAGE AUDIT
+
+Workspace/App: shared source/review/selection state and navigation inspected in source; graph/context pure-function tests execute. No fresh exhaustive browser click-through was performed. Race/cleanup/accessibility branches outside existing tests remain unverified.
+SourceAnalysisPage/AnalysisPage: supported files -> bounded source submission -> review result; offline ASGI workflow proves source assessment survives decision/export. Browser file-picker permissions, huge-tree interaction and every button were not exercised in this audit.
+QualityPage: graph/source assessments and quality endpoint feed review rendering. Existing automated checks pass; metric validity is bounded by heuristic/static extraction, not a certification of code quality.
+SecurityPage: source patterns and counts feed result rendering; pattern findings are not dependency scanning or complete vulnerability detection. No claim of exhaustive OWASP detection.
+DomainOverview: lifecycle domain filtering shares graph data; AUD-002 aligns backend evidence with frontend type inference. Every provider/domain permutation is not live verified.
+InteractiveGraph/ForceGraphCanvas/D3ForceGraph: node classification/color helpers, connected preview model, selection and traversal are covered by model/native tests. Current canvas gestures, visual overlap, screen readers and large-graph frame rate were not manually rechecked.
+GraphDataTable/EvidenceTabs: AG Grid is a separate lazy-loaded table view. Build succeeds; deferred grid bundle remains approximately 850 kB before compression. Browser spreadsheet-like interaction/performance is unverified here.
+ReviewPanel/SessionBar: session, revision/digest decision, pending-export refusal, approval/export and end-session isolation execute through ASGI. Frontend session tests pass. Browser reload intentionally loses in-memory token; exports should precede session termination.
+ContextualSearch/Companion: shared review/domain/selection feed lexical/hybrid search and evidence agent. Source-to-requirement evidence/citation workflow executes; live semantic model quality and all UI error presentations remain unverified.
+AdminModule/AISettings: session profile, model discovery and readiness routes examined; malformed readiness now returns controlled error. Secret redaction/session ownership have automated coverage. No live Ollama discovery, embedding or generation test was run.
+CollaborationPanel: publication/proposal decision/apply/reconciliation flow traced; relevant services/routes have offline tests. Real ALM writes, provider policy and all UI transitions require disposable integration validation.
+GraphPage: legacy unused component; not counted as a verified visible page.
+
+6. BACKEND API-BY-API AUDIT
+
+api-audit-matrix.json enumerates every operation with its individual contracts and measured execution status. Routers include:
+  graph: public limits, local graph, analysis, GitLab ingestion;
+  quality/security/agent: bounded local assessment and agent source context;
+  trace: explicit lifecycle materialization, query and JSON-LD;
+  review: create/status/end/keepalive, history, submit/read, exact-result decision/export;
+  workspace: AI config save/read/remove, model discovery/readiness, search, agent run,
+    catalog/sync/context/companion and approved SBOM export;
+  OSLC: catalog/provider/shapes/resources/query/TRS publication surfaces;
+  collaboration: status, publication, discovery, proposal list/create/decision/apply/reconcile;
+  root: liveness, root/version and capability responses.
+
+18 unmeasured route functions in this suite: GET /health, /api/health, /, /api/v1, /api/v1/capabilities; POST /api/v1/workspace/context; GET /oslc/catalog, /oslc/providers/{source_id}, /oslc/shapes/{kind}, /oslc/resources/{resource_id}, /oslc/query/{source_id}, /oslc/trs, /oslc/trs/events/{sequence}, /oslc/trs/base/{base_id}, /oslc/trs/changelog; GET /api/v1/oslc/status; POST /api/v1/oslc/publish; GET /api/v1/oslc/discovery/{provider_id}. These retain a source/schema coverage limitation even where underlying service methods are tested.
+
+Response status inventories are OpenAPI declarations, not proof all runtime errors conform. Source/security stateless routes and session-bound review routes have different trust contracts. HTTP success alone is not counted as business success: the added workflow asserts pending status, refusal before approval, expected lifecycle search result, citation domain, approved export content/digest and denial after session end.
+
+7. AGENT-BY-AGENT / TOOL-BY-TOOL AUDIT
+
+trace-explorer: search/inspect/directed traversal evidence. coverage-reviewer: coverage and missing-link evidence. change-analyst: change-oriented neighborhood/similarity evidence. Shared executor has allowlisted tools, bounded steps/deadline/output/context and controlled evidence fallback. There is no autonomous shell or arbitrary provider-write tool.
+search_graph: bounded lexical/hybrid candidates and domain scoping; AUD-002 fixed missing lifecycle inference. Live embedding relevance and exhaustive graph recall not established.
+inspect_resource: node-ID lookup yields existing resource evidence; model-supplied unknown IDs are not fabricated as resources.
+traverse_graph: direction/hops and result bounds constrain expansion; containment and evidence relationships have different meaning. A path is not proof of real-world causation.
+coverage_gaps: examines supported links/provider completeness; cannot certify requirements quality or test adequacy.
+similar_resources: label/neighborhood overlap suggests candidates, not equivalence or merge authorization.
+
+Offline suite exercises malformed model output, unavailable model/tool errors and execution budgets using controlled transports/fixtures. Citation-ID validation and structured parsing constrain output but cannot prove every natural-language claim. Prompt-injection resistance is bounded by read-only tools, scope and validation, not a formal guarantee. No live model latency, gateway protocol, embedding compatibility or interrupted remote stream validation occurred.
+MCP: inactive legacy scripts are inventoried; no active transport exists to validate. LangChain/LangGraph state/checkpoint tests are not applicable to this implementation.
+
+8. END-TO-END WORKFLOW TRACEABILITY
+
+W-01 local source -> session review -> manifest requirement -> RM search -> evidence agent -> decision -> export -> session end: real ASGI calls, in-memory store and parser, assertions on content/digest/status/isolation; AI disabled. New regression test_source_review_search_agent_decision_export_workflow.
+W-02 malformed remote readiness -> transport fixture -> validation -> 502 -> capacity release: real ASGI with mocked HTTP/model response; proves error contract, not live gateway compatibility.
+W-03 concurrent source requests -> SQLite capacity acquire -> parse -> worker teardown -> lease deletion: eight real requests and deterministic different-thread teardown; proves cleanup, not all crash/renewal-failure conditions.
+W-04 Windows BOM file -> managed file scan -> Python AST -> typed graph -> raw digest: temporary real filesystem fixture and graph assertions; no external project data modified.
+W-05 IPv6 env -> actual Vite resolveConfig -> bind/proxy URL: three parameter cases; URL configuration checked, IPv6 network socket connection not exercised.
+W-06 OSLC proposal -> strong ETag/approval -> provider apply/conflict/uncertain outcome reconciliation: existing deterministic adapter/route suite; real vendor endpoints and production write policy unverified.
+W-07 TRS/CI ingestion -> pagination/checkpoint/tombstone -> normalized snapshot: existing offline fixtures; live server pagination/history discontinuity and throttling not validated.
+W-08 SBOM lockfile -> inventory/domain -> approved export: supported fixture paths covered by existing suite; built-artifact provenance, vulnerability verdict and cross-ecosystem completeness are outside implemented behavior.
+W-09 installation -> dependencies -> shared config -> startup readiness: manifests/scripts source-reviewed and installed environment build/test checked. Clean-machine reinstall, Linux execution, optional PostgreSQL and service restart were not performed. Existing in-memory reviews were preserved.
+
+9. SECURITY AND DEPLOYMENT FINDINGS
+
+No secrets are included in these deliverables. Private configuration was not dumped. Existing remote URL/provider allowlists, credential headers, scoped sessions, origin policy, bounded graph/tool results, approval/digest binding and ETags reduce specific risks; none constitute a complete penetration test.
+AUD-004 fixes invalid endpoint acceptance without echoing sensitive input. AUD-008 removes a confirmed development dependency advisory. AUD-010/011 remain open. R-01/R-02 describe network deployment boundaries rather than newly added authentication features.
+Remote source/provider content and model responses remain untrusted input. Static security checks do not cover all injection/XSS/SSRF patterns. No destructive exploitation, live external writes, production migration, credential harvesting or model download was attempted.
+Windows launchers and shared root configuration are maintained install paths. Node 24 is used locally/in CI; project supports documented newer Node ranges. Native scripts exist for Linux/macOS but were not executed here. No Docker artifact exists to certify. Optional PostgreSQL bootstrap is not active persistence and was not run against a database.
+
+10. REMEDIATION PLAN AND EFFORT
+
+Completed, dependency order: document reproductions -> add failing deterministic scenarios -> repair capacity/transaction lifecycle -> repair parser/domain/URL/config/CLI behavior -> patch matched Vitest dev family -> run focused/full checks -> inspect diff. Individual estimates are in the bug register; estimates are planning guidance, not recorded elapsed time.
+Next P2 work: AUD-010 cryptography 50 upgrade compatibility review (2-4 h), dependent on supported Python/platform decision and Fernet/session roundtrip plus Windows/Linux CI. AUD-011 pytest 9.0.3+ migration (1-2 h), dependent on plugin compatibility and full test/CI run. No version bounds silently widened.
+Coverage follow-up: remaining 18 HTTP route contract scenarios (4-8 h); full browser journeys/accessibility/performance (1-2 days); disposable live AI/provider/PostgreSQL integrations (1-3 days, dependent on provisioned services); adversarial request/lease-renewal failure tests (4-8 h). These are validation tasks, not proposed new product functionality.
+
+11. VALIDATION DETAILS
+
+Baseline: backend/core 216 tests passed; frontend 31 + 23 native tests, build and lint passed. Post-fix: 248 backend/core tests passed, including 32 regression cases; frontend 34 in seven files + 23 native tests passed. TypeScript/Vite build and ESLint passed; pip check found no broken requirements. Full instrumented backend suite independently passed 248 tests and recorded endpoint function counts. One Starlette TestClient/httpx deprecation warning remains.
+An intermediate suite failure exposed an AST-based test harness missing the new domain helper; the harness now loads the actual helper and mapping, preserving its assertions. No tests were skipped or exceptions hidden to achieve the final result.
+npm audit: final zero vulnerabilities. Python scan: 40 installed packages queried, open cryptography/pytest findings above. Git diff whitespace validation passed; Windows LF/CRLF notices are informational. Lockfile changes are scoped to Vitest package family and pruning unused optional peers; build/test verifies current installed resolution, not a fresh clean-machine installation.
+Regression locations: backend/tests/test_full_stack_regressions.py; frontend/src/startupConfiguration.test.ts; existing backend/tests/test_search_review_contract.py harness updated for shared domain helper.
+Reproduce supported checks from repo: .venv/Scripts/python.exe -m pytest; frontend npm test -- --run; npm run build; npm run lint; node --test graph-audit.test.mjs installation-audit.test.mjs session-audit.test.mjs. This machine uses the bootstrapped npm CLI under ignored .tools because npm is not globally available.
+Raw probe, advisory, JUnit and function-execution evidence is in ignored .runtime/audit; committed-readable conclusions and coverage are in docs artifacts.
+
+12. REMAINING RISKS AND REVIEW STATUS
+
+Open: two dependency findings; all architectural risks R-01..06; 18 route execution gaps; unmeasured frontend browser/accessibility/performance branches; live remote service and optional database/OCR validation; exact non-Python/cross-module analysis semantics. Python uses typed AST extraction, other language symbols are heuristic; full call resolution is incomplete.
+Source indexing is complete for the baseline file set; semantic and live end-to-end audit coverage is explicitly partial. No blanket assertion that every visible action, optional integration or file is fully verified is made.
+Changes preserve existing APIs/features and are ready for local review. No production deployment, commit or push was performed as part of this audit.

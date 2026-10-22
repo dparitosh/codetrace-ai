@@ -1,0 +1,2092 @@
+[
+  {
+    "method": "GET",
+    "path": "/health",
+    "operation_id": "health_check_health_get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/main.py",
+      "function": "health_check",
+      "line": 103,
+      "method": "GET",
+      "route": "/health",
+      "router": "app"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\main.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/api/health",
+    "operation_id": "api_health_check_api_health_get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/main.py",
+      "function": "api_health_check",
+      "line": 108,
+      "method": "GET",
+      "route": "/api/health",
+      "router": "app"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\main.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/",
+    "operation_id": "root__get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/main.py",
+      "function": "root",
+      "line": 113,
+      "method": "GET",
+      "route": "/",
+      "router": "app"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\main.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1",
+    "operation_id": "api_info_api_v1_get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/main.py",
+      "function": "api_info",
+      "line": 118,
+      "method": "GET",
+      "route": "/api/v1",
+      "router": "app"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\main.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/capabilities",
+    "operation_id": "capabilities_api_v1_capabilities_get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/main.py",
+      "function": "capabilities",
+      "line": 123,
+      "method": "GET",
+      "route": "/api/v1/capabilities",
+      "router": "app"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\main.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/graph/configuration",
+    "operation_id": "source_configuration_api_v1_graph_configuration_get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/api/graph_routes.py",
+      "function": "source_configuration",
+      "line": 39,
+      "method": "GET",
+      "route": "/configuration",
+      "router": "graph_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\graph_routes.py",
+    "measured_function_calls": 1,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/graph/local",
+    "operation_id": "generate_local_graph_api_v1_graph_local_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/LocalGraphRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/graph_routes.py",
+      "function": "generate_local_graph",
+      "line": 220,
+      "method": "POST",
+      "route": "/local",
+      "router": "graph_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\graph_routes.py",
+    "measured_function_calls": 19,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/graph/local/analyze",
+    "operation_id": "analyze_local_sources_api_v1_graph_local_analyze_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/LocalGraphRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/graph_routes.py",
+      "function": "analyze_local_sources",
+      "line": 226,
+      "method": "POST",
+      "route": "/local/analyze",
+      "router": "graph_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\graph_routes.py",
+    "measured_function_calls": 12,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/graph/gitlab",
+    "operation_id": "generate_gitlab_graph_api_v1_graph_gitlab_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/GitLabGraphRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/graph_routes.py",
+      "function": "generate_gitlab_graph",
+      "line": 233,
+      "method": "POST",
+      "route": "/gitlab",
+      "router": "graph_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\graph_routes.py",
+    "measured_function_calls": 6,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/quality/local",
+    "operation_id": "assess_local_quality_api_v1_quality_local_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/LocalGraphRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/quality_routes.py",
+      "function": "assess_local_quality",
+      "line": 31,
+      "method": "POST",
+      "route": "/local",
+      "router": "quality_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\quality_routes.py",
+    "measured_function_calls": 6,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/security/local",
+    "operation_id": "scan_local_source_api_v1_security_local_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/LocalGraphRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/security_routes.py",
+      "function": "scan_local_source",
+      "line": 36,
+      "method": "POST",
+      "route": "/local",
+      "router": "security_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\security_routes.py",
+    "measured_function_calls": 72,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/agent/context",
+    "operation_id": "create_agent_context_api_v1_agent_context_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/AgentContextRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/agent_routes.py",
+      "function": "create_agent_context",
+      "line": 79,
+      "method": "POST",
+      "route": "/context",
+      "router": "agent_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\agent_routes.py",
+    "measured_function_calls": 7,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/trace/materialize",
+    "operation_id": "materialize_trace_api_v1_trace_materialize_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/TraceRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/trace_routes.py",
+      "function": "materialize_trace",
+      "line": 111,
+      "method": "POST",
+      "route": "/materialize",
+      "router": "trace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\trace_routes.py",
+    "measured_function_calls": 9,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/trace/query",
+    "operation_id": "query_trace_api_v1_trace_query_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/TraceQueryRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/trace_routes.py",
+      "function": "query_trace",
+      "line": 116,
+      "method": "POST",
+      "route": "/query",
+      "router": "trace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\trace_routes.py",
+    "measured_function_calls": 3,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/trace/jsonld",
+    "operation_id": "export_trace_api_v1_trace_jsonld_post",
+    "request": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/TraceRequest"
+          }
+        }
+      },
+      "required": true
+    },
+    "parameters": [],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/trace_routes.py",
+      "function": "export_trace",
+      "line": 127,
+      "method": "POST",
+      "route": "/jsonld",
+      "router": "trace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\trace_routes.py",
+    "measured_function_calls": 2,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/review/session",
+    "operation_id": "create_session_api_v1_review_session_post",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "create_session",
+      "line": 203,
+      "method": "POST",
+      "route": "/session",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 23,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/review/session",
+    "operation_id": "session_info_api_v1_review_session_get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "session_info",
+      "line": 208,
+      "method": "GET",
+      "route": "/session",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 3,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/review/session",
+    "operation_id": "end_session_api_v1_review_session_delete",
+    "request": {},
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "end_session",
+      "line": 218,
+      "method": "DELETE",
+      "route": "/session",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 2,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/review/session/keepalive",
+    "operation_id": "keep_session_api_v1_review_session_keepalive_post",
+    "request": {},
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "keep_session",
+      "line": 213,
+      "method": "POST",
+      "route": "/session/keepalive",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 4,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/review/reviews",
+    "operation_id": "list_reviews_api_v1_review_reviews_get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "list_reviews",
+      "line": 224,
+      "method": "GET",
+      "route": "/reviews",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 4,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/review/reviews",
+    "operation_id": "submit_review_api_v1_review_reviews_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/ReviewRequest"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "submit_review",
+      "line": 229,
+      "method": "POST",
+      "route": "/reviews",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 19,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/review/reviews/{review_id}",
+    "operation_id": "get_review_api_v1_review_reviews__review_id__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "review_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Review Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "get_review",
+      "line": 266,
+      "method": "GET",
+      "route": "/reviews/{review_id}",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 3,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/review/reviews/{review_id}/decision",
+    "operation_id": "decide_review_api_v1_review_reviews__review_id__decision_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/Decision"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "review_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Review Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "decide_review",
+      "line": 271,
+      "method": "POST",
+      "route": "/reviews/{review_id}/decision",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 7,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/review/reviews/{review_id}/export",
+    "operation_id": "export_review_api_v1_review_reviews__review_id__export_get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "review_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Review Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/review_routes.py",
+      "function": "export_review",
+      "line": 276,
+      "method": "GET",
+      "route": "/reviews/{review_id}/export",
+      "router": "review_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\review_routes.py",
+    "measured_function_calls": 6,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspace/ai/config",
+    "operation_id": "ai_configuration_api_v1_workspace_ai_config_get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "ai_configuration",
+      "line": 65,
+      "method": "GET",
+      "route": "/ai/config",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 12,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/workspace/ai/config",
+    "operation_id": "configure_ai_api_v1_workspace_ai_config_put",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/AIConnection"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "configure_ai",
+      "line": 76,
+      "method": "PUT",
+      "route": "/ai/config",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 18,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/workspace/ai/config",
+    "operation_id": "reset_ai_api_v1_workspace_ai_config_delete",
+    "request": {},
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "reset_ai",
+      "line": 86,
+      "method": "DELETE",
+      "route": "/ai/config",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 4,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspace/ai/models",
+    "operation_id": "ai_models_api_v1_workspace_ai_models_post",
+    "request": {},
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "ai_models",
+      "line": 92,
+      "method": "POST",
+      "route": "/ai/models",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 4,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspace/ai/test",
+    "operation_id": "test_ai_api_v1_workspace_ai_test_post",
+    "request": {},
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "test_ai",
+      "line": 106,
+      "method": "POST",
+      "route": "/ai/test",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 6,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspace/search",
+    "operation_id": "search_workspace_api_v1_workspace_search_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/SearchQuery"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "search_workspace",
+      "line": 135,
+      "method": "POST",
+      "route": "/search",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 3,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspace/agent/run",
+    "operation_id": "run_graph_agent_api_v1_workspace_agent_run_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/AgentQuery"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "run_graph_agent",
+      "line": 150,
+      "method": "POST",
+      "route": "/agent/run",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 3,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspace/catalog",
+    "operation_id": "workspace_catalog_api_v1_workspace_catalog_get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "workspace_catalog",
+      "line": 167,
+      "method": "GET",
+      "route": "/catalog",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 1,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspace/sync",
+    "operation_id": "sync_workspace_api_v1_workspace_sync_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/ManagedSync"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "sync_workspace",
+      "line": 188,
+      "method": "POST",
+      "route": "/sync",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 1,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspace/context",
+    "operation_id": "resource_context_api_v1_workspace_context_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/ContextQuery"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "resource_context",
+      "line": 212,
+      "method": "POST",
+      "route": "/context",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspace/companion",
+    "operation_id": "workspace_companion_api_v1_workspace_companion_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/CompanionQuery"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "workspace_companion",
+      "line": 223,
+      "method": "POST",
+      "route": "/companion",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 5,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspace/sbom/{review_id}",
+    "operation_id": "export_sbom_api_v1_workspace_sbom__review_id__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "review_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Review Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/workspace_routes.py",
+      "function": "export_sbom",
+      "line": 247,
+      "method": "GET",
+      "route": "/sbom/{review_id}",
+      "router": "workspace_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\workspace_routes.py",
+    "measured_function_calls": 2,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/catalog",
+    "operation_id": "service_catalog_oslc_catalog_get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "service_catalog",
+      "line": 91,
+      "method": "GET",
+      "route": "/catalog",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/providers/{source_id}",
+    "operation_id": "service_provider_oslc_providers__source_id__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "source_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Source Id"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "service_provider",
+      "line": 104,
+      "method": "GET",
+      "route": "/providers/{source_id}",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/shapes/{kind}",
+    "operation_id": "resource_shape_oslc_shapes__kind__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "kind",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Kind"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "resource_shape",
+      "line": 130,
+      "method": "GET",
+      "route": "/shapes/{kind}",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/resources/{resource_id}",
+    "operation_id": "get_resource_oslc_resources__resource_id__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "resource_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Resource Id"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "get_resource",
+      "line": 157,
+      "method": "GET",
+      "route": "/resources/{resource_id}",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "PUT",
+    "path": "/oslc/resources/{resource_id}",
+    "operation_id": "put_resource_oslc_resources__resource_id__put",
+    "request": {},
+    "parameters": [
+      {
+        "name": "resource_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Resource Id"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "put_resource",
+      "line": 164,
+      "method": "PUT",
+      "route": "/resources/{resource_id}",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 2,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/query/{source_id}",
+    "operation_id": "query_resources_oslc_query__source_id__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "source_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Source Id"
+        }
+      },
+      {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "title": "Page"
+        }
+      },
+      {
+        "name": "oslc.pageSize",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "maximum": 200,
+          "minimum": 1,
+          "default": 50,
+          "title": "Oslc.Pagesize"
+        }
+      },
+      {
+        "name": "oslc.where",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Oslc.Where"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "query_resources",
+      "line": 183,
+      "method": "GET",
+      "route": "/query/{source_id}",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/trs",
+    "operation_id": "tracked_resource_set_oslc_trs_get",
+    "request": {},
+    "parameters": [],
+    "responses": [
+      "200"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "tracked_resource_set",
+      "line": 235,
+      "method": "GET",
+      "route": "/trs",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/trs/events/{sequence}",
+    "operation_id": "trs_event_oslc_trs_events__sequence__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "sequence",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Sequence"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "trs_event",
+      "line": 250,
+      "method": "GET",
+      "route": "/trs/events/{sequence}",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/trs/base/{base_id}",
+    "operation_id": "trs_base_oslc_trs_base__base_id__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "base_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "title": "Base Id"
+        }
+      },
+      {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "title": "Page"
+        }
+      },
+      {
+        "name": "page_size",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "maximum": 200,
+          "minimum": 1,
+          "default": 100,
+          "title": "Page Size"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "trs_base",
+      "line": 257,
+      "method": "GET",
+      "route": "/trs/base/{base_id}",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/oslc/trs/changelog",
+    "operation_id": "trs_changelog_oslc_trs_changelog_get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "before",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Before"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "trs_changelog",
+      "line": 273,
+      "method": "GET",
+      "route": "/trs/changelog",
+      "router": "oslc_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/oslc/status",
+    "operation_id": "publication_status_api_v1_oslc_status_get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "source_id",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Source Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "publication_status",
+      "line": 297,
+      "method": "GET",
+      "route": "/status",
+      "router": "collaboration_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/oslc/publish",
+    "operation_id": "publish_snapshot_api_v1_oslc_publish_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/PublishRequest"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "publish_snapshot",
+      "line": 307,
+      "method": "POST",
+      "route": "/publish",
+      "router": "collaboration_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/oslc/discovery/{provider_id}",
+    "operation_id": "discover_provider_api_v1_oslc_discovery__provider_id__get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "provider_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Provider Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "discover_provider",
+      "line": 317,
+      "method": "GET",
+      "route": "/discovery/{provider_id}",
+      "router": "collaboration_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 0,
+    "validation": "Source/schema inventory only; no function execution measured in this suite."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/oslc/proposals",
+    "operation_id": "list_proposals_api_v1_oslc_proposals_get",
+    "request": {},
+    "parameters": [
+      {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "title": "Offset"
+        }
+      },
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "maximum": 100,
+          "minimum": 1,
+          "default": 100,
+          "title": "Limit"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "list_proposals",
+      "line": 358,
+      "method": "GET",
+      "route": "/proposals",
+      "router": "collaboration_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 2,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/oslc/proposals",
+    "operation_id": "propose_link_api_v1_oslc_proposals_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/LinkProposalRequest"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "propose_link",
+      "line": 363,
+      "method": "POST",
+      "route": "/proposals",
+      "router": "collaboration_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 5,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/oslc/proposals/{proposal_id}/decision",
+    "operation_id": "decide_link_api_v1_oslc_proposals__proposal_id__decision_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/ProposalDecision"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "proposal_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Proposal Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "decide_link",
+      "line": 389,
+      "method": "POST",
+      "route": "/proposals/{proposal_id}/decision",
+      "router": "collaboration_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 5,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/oslc/proposals/{proposal_id}/apply",
+    "operation_id": "apply_link_api_v1_oslc_proposals__proposal_id__apply_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/ProposalAction"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "proposal_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Proposal Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "apply_link",
+      "line": 395,
+      "method": "POST",
+      "route": "/proposals/{proposal_id}/apply",
+      "router": "collaboration_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 7,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/oslc/proposals/{proposal_id}/reconcile",
+    "operation_id": "reconcile_link_api_v1_oslc_proposals__proposal_id__reconcile_post",
+    "request": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/ProposalAction"
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "proposal_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "title": "Proposal Id"
+        }
+      },
+      {
+        "name": "x-codetrace-session",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "X-Codetrace-Session"
+        }
+      }
+    ],
+    "responses": [
+      "200",
+      "422"
+    ],
+    "source": {
+      "file": "backend/api/oslc_routes.py",
+      "function": "reconcile_link",
+      "line": 420,
+      "method": "POST",
+      "route": "/proposals/{proposal_id}/reconcile",
+      "router": "collaboration_router"
+    },
+    "absolute_file": "C:\\Users\\Admin\\Documents\\ChatGPT\\codetrack\\codetrace-ai\\backend\\api\\oslc_routes.py",
+    "measured_function_calls": 1,
+    "validation": "Function executed in offline suite; see tests for scenario assertions. Counts do not prove every branch or live integration."
+  }
+]

@@ -82,16 +82,17 @@ class OSLCStore:
     @contextmanager
     def transaction(self, write=False):
         db = sqlite3.connect(self.path, timeout=10, isolation_level=None)
-        db.row_factory = sqlite3.Row
-        db.execute('PRAGMA journal_mode=WAL')
-        db.execute('PRAGMA busy_timeout=10000')
-        db.execute('BEGIN IMMEDIATE' if write else 'BEGIN')
         try:
-            yield db
-            db.commit()
-        except Exception:
-            db.rollback()
-            raise
+            db.row_factory = sqlite3.Row
+            db.execute('PRAGMA journal_mode=WAL')
+            db.execute('PRAGMA busy_timeout=10000')
+            db.execute('BEGIN IMMEDIATE' if write else 'BEGIN')
+            try:
+                yield db
+                db.commit()
+            except Exception:
+                db.rollback()
+                raise
         finally:
             db.close()
 

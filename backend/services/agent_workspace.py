@@ -7,7 +7,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 from core.config import settings
-from graph.traceability import neighborhood
+from graph.traceability import neighborhood, node_domain
 from services.evidence_algorithms import tokens, similar_resources
 from services.companion_service import evidence_answer
 from services.agent_configuration import TOOL_DESCRIPTIONS, configured_agent
@@ -77,7 +77,7 @@ class GraphSearch:
     def search(self, query, domain='ALL', limit=20, semantic=True):
         query_tokens = tokens(query)
         candidates = [node for node in self.nodes.values() if not node['properties'].get('deleted')
-                      and (domain == 'ALL' or node['properties'].get('domain', 'CODE') == domain)]
+                      and (domain == 'ALL' or node_domain(node) == domain)]
         scores = {}
         for node in candidates:
             text = self.text(node)
@@ -123,7 +123,7 @@ class GraphSearch:
                 warning = 'Embeddings unavailable, invalid or over budget; results use explicit keyword evidence.'
                 semantic_scores = {}
         ranked = sorted(candidates, key=lambda node: (-(scores[node['id']] + max(0, semantic_scores.get(node['id'], 0))), node['id']))
-        results = [{'node_id': node['id'], 'label': node['label'], 'type': node['type'], 'domain': node['properties'].get('domain', 'CODE'),
+        results = [{'node_id': node['id'], 'label': node['label'], 'type': node['type'], 'domain': node_domain(node),
                     'lexical_score': round(scores[node['id']], 4), 'semantic_score': round(semantic_scores[node['id']], 4) if node['id'] in semantic_scores else None}
                    for node in ranked if scores[node['id']] > 0 or semantic_scores.get(node['id'], 0) > .2][:limit]
         return {'results': results, 'query': query, 'mode': mode, 'semantic_nodes': indexed, 'candidate_nodes': len(candidates),
@@ -147,7 +147,7 @@ class GraphAgent:
             if key not in self.evidence and key in self.search.nodes and len(self.evidence) < settings.AI_CONTEXT_NODES:
                 node = self.search.nodes[key]
                 self.evidence[key] = {'citation_id': 'E' + str(len(self.evidence) + 1), 'node_id': key,
-                    'label': node['label'], 'type': node['type'], 'domain': node['properties'].get('domain', 'CODE'),
+                    'label': node['label'], 'type': node['type'], 'domain': node_domain(node),
                     'path': node['properties'].get('path'), 'line': node['properties'].get('start'),
                     'properties': {name: str(node['properties'][name])[:1200] for name in ('status', 'outcome', 'deleted', 'description', 'provider_id') if name in node['properties']}}
 

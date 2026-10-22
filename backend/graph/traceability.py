@@ -28,6 +28,17 @@ TYPE_URIS['resource_shape'] = 'http://open-services.net/ns/core#ResourceShape'
 TYPE_URIS.update({'test_plan': QM + 'TestPlan', 'test_script': QM + 'TestScript',
                   'test_execution_record': QM + 'TestExecutionRecord', 'test_result': QM + 'TestResult'})
 
+RESOURCE_DOMAINS = {
+    'requirement': 'RM', 'requirement_collection': 'RM', 'architecture': 'AM', 'change_request': 'CM',
+    'test': 'QM', 'test_plan': 'QM', 'test_script': 'QM', 'test_execution_record': 'QM', 'test_result': 'QM',
+    'configuration': 'CONFIG', 'tracked_resource': 'TRS', 'resource_shape': 'SCHEMA', 'build': 'CI',
+    'sbom_component': 'SBOM', 'external_resource': 'EXTERNAL',
+}
+
+
+def node_domain(node):
+    return str(node.get('properties', {}).get('domain') or RESOURCE_DOMAINS.get(node['type'], 'CODE')).strip().upper()
+
 
 def code_uri(repository_uri, code_id):
     """Stable within a repository across revisions, isolated across repositories."""
@@ -124,6 +135,8 @@ def materialize(code_graph, manifest, source_digest):
         })
 
     nodes = [{'id': key, **data} for key, data in sorted(graph.nodes(data=True))]
+    for node in nodes:
+        node['properties']['domain'] = node_domain(node)
     edges = sorted(({'source': source, 'target': target, **data} for source, target, data in graph.edges(data=True)),
                    key=lambda value: (value['source'], value['target'], value['type'], json.dumps(value['properties'], sort_keys=True)))
     snapshot = hashlib.sha256(json.dumps([nodes, edges], sort_keys=True).encode()).hexdigest()

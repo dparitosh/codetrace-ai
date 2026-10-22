@@ -15,7 +15,7 @@ from api.graph_routes import build_graph_from_directory
 from api.trace_routes import TraceManifest
 from api.agent_routes import _build_architecture_audit
 from core.config import PROJECT_ROOT, settings
-from graph.traceability import materialize, CT
+from graph.traceability import materialize, node_domain, CT
 from services.oslc_service import collect_oslc, local_path, read_response, server_secret, allowed_url
 from services.git_isolation import git_command, git_environment
 from services.sbom_service import inventory, attach as attach_sbom
@@ -171,12 +171,9 @@ def build_managed_snapshot(source_id, include_lifecycle=True):
         attach_sbom(graph, code_graph.get('sbom_inventory'), repository_uri)
     except ValueError as exc:
         raise HTTPException(422, 'Managed trace configuration could not be materialized: ' + str(exc)) from exc
-    domains = {'requirement': 'RM', 'architecture': 'AM', 'change_request': 'CM', 'test': 'QM',
-               'test_plan': 'QM', 'test_script': 'QM', 'test_execution_record': 'QM', 'test_result': 'QM',
-               'configuration': 'CONFIG', 'tracked_resource': 'TRS', 'resource_shape': 'SCHEMA', 'build': 'CI'}
     for node in graph['nodes']:
         node['properties'].update(properties.get(node['id'], {}))
-        node['properties'].setdefault('domain', domains.get(node['type'], 'EXTERNAL' if node['type'] == 'external_resource' else 'CODE'))
+        node['properties']['domain'] = node_domain(node)
     audit = _build_architecture_audit(code_graph)
     audit = {key: value[:100] if isinstance(value, list) else value for key, value in audit.items()}
     requirement_ids = {node['id'] for node in graph['nodes'] if node['type'] == 'requirement' and not node['properties'].get('deleted')}

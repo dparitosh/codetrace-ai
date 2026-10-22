@@ -5,6 +5,7 @@ import re
 import httpx
 
 from core.config import settings
+from graph.traceability import node_domain
 from services.oslc_service import server_secret
 from services.evidence_algorithms import similar_resources, recommendations
 
@@ -51,7 +52,7 @@ def context_evidence(graph, question, selected_id=None):
     chosen = chosen[:settings.AI_CONTEXT_NODES]
     ids = {node_id: f'E{index + 1}' for index, node_id in enumerate(chosen)}
     citations = [{'citation_id': ids[node_id], 'node_id': node_id, 'label': nodes[node_id]['label'],
-                  'type': nodes[node_id]['type'], 'domain': nodes[node_id]['properties'].get('domain', 'CODE'),
+                  'type': nodes[node_id]['type'], 'domain': node_domain(nodes[node_id]),
                   'path': nodes[node_id]['properties'].get('path'), 'line': nodes[node_id]['properties'].get('start'),
                   'provider_id': nodes[node_id]['properties'].get('provider_id'),
                   'properties': {key: (value[:2000] if isinstance(value, str) else value)

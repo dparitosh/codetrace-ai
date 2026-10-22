@@ -9,10 +9,16 @@ def analysis_capacity():
     workers = review_routes.store.workers
     if not workers.acquire(blocking=False):
         raise HTTPException(429, 'Analysis capacity is busy. Retry shortly.')
+    # A synchronous FastAPI yield dependency may be entered and finalized by
+    # different pool workers. Capture ownership in the generator, not the thread.
+    lease = getattr(getattr(workers, 'local', None), 'lease', None)
     try:
         yield
     finally:
-        workers.release()
+        if lease is None:
+            workers.release()
+        else:
+            workers.release(lease=lease)
 
 
 def require_analysis_capacity():

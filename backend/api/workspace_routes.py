@@ -112,7 +112,8 @@ def test_ai(x_codetrace_session: Optional[str] = Header(default=None)):
         names = rest.models()
         message = rest.chat([{'role': 'user', 'content': 'Return JSON {"ready":true}.'}])
         import json
-        if json.loads(message.get('content', '')).get('ready') is not True:
+        readiness = json.loads(message.get('content', ''))
+        if not isinstance(readiness, dict) or readiness.get('ready') is not True:
             raise ValueError('Chat readiness response was invalid')
         dimensions = len(rest.embed(['CodeTrace connection test'])[0]) if rest.connection.embeddings_enabled else None
         return {'chat': 'ready' if isinstance(message.get('content'), str) else 'invalid',

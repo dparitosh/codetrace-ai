@@ -24,6 +24,9 @@ def main():
     prompt.add_argument("--max-file-size", type=int, default=2_000_000)
 
     args = parser.parse_args()
+    if args.cmd is None:
+        parser.print_help()
+        return
     extensions = set(args.extensions) if getattr(args, "extensions", None) else None
     config = ScanConfig(extensions=extensions, max_file_size=args.max_file_size)
     cg = CodeGraph(config)

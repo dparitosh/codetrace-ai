@@ -172,6 +172,9 @@ class CodeGraph:
         return "module:" + (path.with_suffix("") if path.suffix == '.py' else path).as_posix()
 
     def _scan_python_file(self, p: Path, source: str, file_id: str):
+        # A UTF-8 BOM is valid Python source; preserve raw input/digests while
+        # matching Python's byte-source decoding before parsing its text.
+        source = source.removeprefix('\ufeff')
         try:
             tree = ast.parse(source)
             symbol_table = symtable.symtable(source, str(p), 'exec')

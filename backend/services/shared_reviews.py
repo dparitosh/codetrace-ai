@@ -50,13 +50,14 @@ class SharedCapacity:
         self.local.lease = (token, stop, thread)
         return True
 
-    def release(self):
-        token, stop, thread = self.local.lease
+    def release(self, lease=None):
+        token, stop, thread = lease if lease is not None else self.local.lease
         stop.set()
         thread.join(timeout=11)
         with self.store.transaction() as db:
             db.execute('DELETE FROM work_leases WHERE token=?', (token,))
-        del self.local.lease
+        if getattr(self.local, 'lease', (None,))[0] == token:
+            del self.local.lease
 
 
 class SQLiteReviewStore:
@@ -79,17 +80,18 @@ class SQLiteReviewStore:
     @contextmanager
     def transaction(self):
         db = sqlite3.connect(self.path, timeout=10, isolation_level=None)
-        db.row_factory = sqlite3.Row
-        db.execute('PRAGMA foreign_keys=ON')
-        db.execute('PRAGMA journal_mode=WAL')
-        db.execute('PRAGMA secure_delete=ON')
-        db.execute('BEGIN IMMEDIATE')
         try:
-            yield db
-            db.commit()
-        except Exception:
-            db.rollback()
-            raise
+            db.row_factory = sqlite3.Row
+            db.execute('PRAGMA foreign_keys=ON')
+            db.execute('PRAGMA journal_mode=WAL')
+            db.execute('PRAGMA secure_delete=ON')
+            db.execute('BEGIN IMMEDIATE')
+            try:
+                yield db
+                db.commit()
+            except Exception:
+                db.rollback()
+                raise
         finally:
             db.close()
 

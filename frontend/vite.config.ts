@@ -9,7 +9,8 @@ const defaults = JSON.parse(readFileSync(path.join(root, 'config/defaults.json')
 
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, root, ''), ...process.env }
-  const host = env.HOST || defaults.HOST
+  const rawHost = env.HOST || defaults.HOST
+  const host = rawHost.replace(/^\[([^\]]+)\]$/, '$1')
   const port = (name: string, fallback: number, raw = env[name]) => {
     const value = Number(raw ?? fallback)
     if (!Number.isInteger(value) || value < 1 || value > 65535) throw new Error(`${name} must be a port between 1 and 65535`)

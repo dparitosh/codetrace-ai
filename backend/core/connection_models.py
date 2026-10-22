@@ -13,7 +13,13 @@ class Connection(BaseModel):
 def connection_url(value):
     if value is None:
         return value
-    parsed = urlsplit(value)
+    try:
+        parsed = urlsplit(value)
+        port = parsed.port
+    except ValueError:
+        raise ValueError('Use a valid HTTP(S) endpoint with a port between 1 and 65535') from None
+    if port == 0:
+        raise ValueError('Use a valid HTTP(S) endpoint with a port between 1 and 65535')
     if parsed.scheme not in {'http', 'https'} or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
         raise ValueError('Use an HTTP(S) endpoint without embedded credentials or fragment')
     if parsed.scheme == 'http' and parsed.hostname not in {'localhost', '127.0.0.1', '::1'}:
