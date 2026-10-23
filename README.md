@@ -1,5 +1,26 @@
 # CodeTrace AI
 
+The **Change workbench** provides a durable conversation and evidence dossier for a
+selected source snapshot. Run trace, coverage and change agents to capture evidence,
+fill missing draft sections and update agent-owned proposals. Your edited fields are
+preserved. Agents propose source-code corrections; they do not modify software files.
+Review automated content, save the dossier and submit it to the local review queue.
+Approval freezes an exact submitted version; further changes require a new draft revision.
+Submitted conversation contents are included in the version digest. Older versions that
+did not retain them disclose that gap. Recovery refresh preserves unsaved dossier edits
+until you save or explicitly discard them.
+Conversation, evidence graph, AG Grid and imported changes have separate views.
+
+Set `CHANGE_DB_PATH`, `CHANGE_MAX_CASES` and `CHANGE_MAX_BYTES` in root `.env.local`
+for durable SQLite storage and capacity. This queue is shared by active local review
+sessions and survives their expiry; it does not provide enterprise accounts or independent
+sign-off. Protect its database/WAL as source evidence. AI-disabled mode provides explicit
+deterministic evidence summaries, without claiming model analysis or passing tests.
+
+Approved dossiers can be downloaded with evidence and audit history. External change-ticket
+creation is not configured: its UI action is disabled and its API returns 501 after approval.
+Existing approved ALM relationship actions remain separate under advanced controls.
+
 The application shell uses [Siemens Industrial Experience React](https://ix.siemens.io/docs/home/installation/react), with light/dark themes, managed-source selection, graph exploration and an evidence-grounded companion. Current verification and limitations are in [current audit status](docs/audit-status.md).
 
 Local-first source analysis, dependency graphs, quality checks, static security patterns, and explicit OSLC lifecycle links. The browser submits supported UTF-8 source files to a local FastAPI service. No database, cloud account, or access token is needed for local folders.
@@ -229,3 +250,12 @@ Current graph review results and known limits are consolidated in [audit status]
 Open **Administration** to edit the system prompt and registered tool selection for each graph agent, tool descriptions, and legacy companion instructions. Save AI connection applies these changes to subsequent runs in your review session; restore agent and tool defaults preserves the connection and saved key. Configuration is session-owned and removed with the session. This local admin module does not add account-based administrator authorization. Runtime citation validation, registered tool implementations/parameter schemas, read-only restrictions and execution budgets remain enforced. Custom shell/HTTP tools cannot be registered from the form.
 
 The Data grid sub-tab uses AG Grid Community, separate from the Graph and page assessments. Resources and Relationships switches provide sortable/filterable columns, resizable headers and pagination. Enable **IDs & properties** for resource identifiers and raw JSON. Relationship rows include links incident to the filtered resource set; selecting one opens the inspector for its source resource. Filtering uses the immutable review snapshot and does not change graph data. AG Grid loads on first opening Data grid and preserves its state when switching evidence tabs. The Agent & inspector button opens or hides the companion without replacing the active panel.
+### Supply-chain lineage
+
+Synchronize a managed source, then open **Supply-chain lineage**. npm lockfiles v2/v3 are inventoried automatically from the configured `sbom_lockfiles`; use `sbom_path` for CycloneDX JSON 1.4–1.6 or SPDX JSON 2.2–2.3. Folder uploads do not import SBOMs. Existing snapshots need synchronization to acquire the new application-root evidence.
+
+Choose **Dependencies**, **Dependents**, **Shortest dependency path**, or **Full inventory**. Filter the root and target selectors by package name, version, purl or lockfile identity. Traversal uses every recorded dependency in the retained snapshot, independently of the graph explorer's hop limits, and terminates safely on cycles. Path mode shows one shortest directed path; an absent path means no path was recorded, not that a component is unused.
+
+The **Lineage graph** provides hierarchical/force layouts, zoom, fit, pause and node inspection. **Data table · AG Grid** is separate and contains all matching resources and dependency relationships. The canvas and SVG diagram show at most 200 nodes and 500 edges; counts disclose any truncation. After approving the snapshot in **Review center**, export the diagram as SVG or the complete analysis as JSON. Exports recheck server approval and session ownership, then verify the returned snapshot digest.
+
+Arrows mean **consumer → dependency**. Repository inventory membership never creates a dependency shortcut. Application roots come only from declared npm root dependencies (including development/optional dependencies), CycloneDX metadata-root dependency assertions, or SPDX document `DESCRIBES`/`DESCRIBED_BY` relationships. CycloneDX references back to a metadata-only application root retain their direction and cycles. Without explicit root evidence, select a component as the starting point. Unresolved npm declarations produce a visible incomplete-lineage warning, with required/development/optional evidence retained in the snapshot, generated SBOM and JSON analysis export. Optional dependencies may be absent for the current platform or installation scope. Peer/workspace resolution and runtime reachability remain incomplete; these views do not assert vulnerabilities or exploitability.

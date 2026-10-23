@@ -1,0 +1,157 @@
+CHANGE WORKSPACE — FUNCTIONAL REVIEW
+Date: 2026-10-23
+Status: local conversation, dossier automation and versioned review implemented and tested.
+Confirmed user choice: local review queue first; external submission only after approval.
+
+IMPLEMENTED SCOPE AND VALIDATION
+
+The Change workbench replaces the CM landing page with conversation, Dossier & review,
+Evidence graph, a separate AG Grid tab and imported provider changes. Existing source /
+target / relationship operations remain available under advanced actions and retain their
+matching approved-snapshot requirements.
+
+Trace, coverage and change agents investigate the frozen graph. They capture citation
+provenance and fill missing sections. Subsequent automation corrects agent-owned proposal
+impact and scope sections; changed human fields are preserved. A retained human scope
+gets a review warning when the investigation context changes. Conversation and dossier context
+are bounded and treated as untrusted draft material. Agents propose software corrections;
+they cannot execute commands, modify source files, approve dossiers or submit externally.
+With AI disabled/unavailable, the existing deterministic evidence fallback reports its limits.
+
+SQLite records survive browser session expiry and process restart. CHANGE_DB_PATH,
+CHANGE_MAX_CASES and CHANGE_MAX_BYTES configure local storage and bounds. The queue
+is shared by active local reviewer sessions, not an enterprise identity/authorization system.
+Ending a review session clears ephemeral reviews but does not delete durable dossiers.
+Protect the SQLite database and WAL as source evidence. No automatic retention purge runs.
+
+Submission freezes an exact version, conversation contents and digest. Legacy submitted
+versions without frozen conversations disclose the historical gap without changing their digest.
+Recovery refresh preserves unsaved field edits until saved or explicitly discarded.
+Automated drafts need explicit human
+acknowledgement; decisions require notes. Editing a submitted/approved case requires a
+new draft revision which does not inherit approval. Approved export contains pinned evidence,
+the submitted version, conversation turns and audit history. Stale revisions are rejected.
+Analysis requests are idempotent and bounded; expired attempts cannot overwrite retries.
+
+External ticket creation remains UNIMPLEMENTED: no destination or create contract was
+provided. The button is disabled and the API returns 501 after approval (409 before it).
+Local approval/export never reports a ticket as submitted. Existing reviewed ALM link writes
+are a separate workflow. External reconcile/status tracking below is future scope only.
+
+Validation: backend suite 288 passed, including 14 targeted workbench tests
+covering persistence, scoped citations, failed retries,
+stale versions, storage rollback, human-edit preservation and immutable evidence versions.
+Frontend: 50 tests and 23 native regressions passed; production build and lint passed.
+Browser fixture: creation, three-agent offline analysis, manual curation, frozen submission,
+local approval, downloaded approved JSON, connected evidence graph, separate AG Grid,
+reload recovery in a new session, responsive layout and repeated draft automation were exercised.
+No live Ollama or external ticket integration was exercised.
+
+1. INTENDED JOURNEY
+
+Start with a selected graph resource, assessment finding or dependency path, or describe a concern in conversation. The agent investigates the retained snapshot, presents cited findings and proposes a change. The user captures evidence into a dossier, edits the change request, and submits a specific dossier version to the local review queue. A local reviewer approves, rejects or requests changes. An approved dossier can then be submitted to a configured external change-management system through a separate explicit action.
+
+The primary journey is:
+  Conversation -> Investigate -> Capture evidence -> Draft dossier -> Submit for local review
+  -> Approve / Request changes / Reject -> Submit approved version externally
+  -> Submitted / Conflict / Unknown outcome -> Reconcile -> Track provider status.
+
+A graph snapshot approval, dossier approval and external submission are distinct records. Approving a snapshot is not approval of every change subsequently proposed from it. Approving a dossier does not mean an external ticket has already been created.
+
+2. PRE-REFACTOR BASELINE: VERIFIED SOURCE FINDINGS (HISTORICAL)
+
+frontend/src/workspace/CollaborationPanel.tsx:73-79 presents manual source, target and predicate selectors, followed by link proposals for the active review. It has no dossier, issue narrative or evidence-curation workflow.
+frontend/src/workspace/Companion.tsx:42-45 sends one question with selected resource, agent and domain and replaces the previous answer. This is an individual agent exchange, not a durable multi-turn case conversation.
+backend/api/workspace_routes.py:46 accepts an AgentQuery extending a single-question CompanionQuery. There is no conversation ID, turn history contract or dossier association.
+frontend/src/workspace/DomainOverview.tsx:8 implements CM as imported change requests and linked evidence, with counts/types/relationships rather than a local change workbench.
+backend/api/oslc_routes.py:329,363-420 supports exact link proposals, decisions, approved apply and read-only reconciliation. Its request contains review/provider/source/predicate/target, not a change-request dossier.
+backend/services/oslc_client.py exposes resource/discovery/prepare_link/apply_link/link_exists. It does not implement external change-ticket creation.
+backend/services/oslc_store.py persists versioned link proposals and audit events. This is reusable transaction/audit infrastructure, not an existing dossier store.
+
+Existing strengths to retain: shared graph context, bounded read-only graph agents, citation validation, approved snapshot digests, provider write allowlists, proposal versions, strong ETag checks and uncertain-outcome reconciliation.
+
+3. UI / UX STRUCTURE
+
+Change management becomes a change workbench. Its local queue and imported external changes are distinct subviews. Change & delivery retains TRS/build evidence, with actions to capture that evidence into a dossier; it must not become a second duplicate change queue.
+
+Conversation: a full transcript with agent responses, question history, tool progress and failure/retry states. Display the source snapshot and selected resource as context chips. The agent asks targeted follow-up questions when scope is ambiguous rather than silently choosing a source/target. Choosing another resource must not silently rebind an existing dossier or previous turn.
+
+Evidence: cards for cited resources, findings, dependency paths, requirements, tests and build results. Each offers Inspect, Highlight in graph and Add to dossier. Added evidence shows its origin, capture time and verification status. Model claims and user notes have separate visual treatments from retrieved facts.
+
+Dossier: one persistent case with editable narrative and a curated evidence list. A compact drawer or second pane shows readiness and missing fields while the conversation remains usable. Full dossier editing uses a dedicated tab. Use responsive stacked panes on narrow screens rather than three permanently narrow columns.
+
+Proposed change: show human-readable cards such as “Link requirement R to test T” or “Investigate/update component A in application B.” Exact source/target IDs and predicates remain available under Advanced details. The agent may suggest these fields; the user can inspect and correct them. Existing server validation still decides whether the proposed operation is supported.
+
+Views: Conversation, Graph, Data grid and Dossier remain distinct. Graph selection, evidence cards and dossier entries share the same resource identities. AG Grid remains a separate tab with the complete result set. Selected dossier evidence highlights its exact graph context and discloses missing/truncated paths.
+
+Primary actions reflect the current state: Add evidence, Save draft, Submit for review, Request changes, Approve, Reject, Submit externally, Reconcile. A disabled action explains which field, approval or provider capability is missing. Avoid repeating snapshot labels and status summaries in every card.
+
+4. DOSSIER CONTENT AND EVIDENCE CONTRACT
+
+Case identity: dossier ID, version, title, change category and recorded author/time. Local actor labels are not independently authenticated reviewer identities in the current local app.
+Problem: observed behavior, expected behavior, business/technical impact, severity with rationale, scope and explicit exclusions.
+Proposal: intended change, affected resources, proposed link operations if any, alternatives considered, acceptance criteria, validation plan and rollback/recovery plan where applicable.
+Evidence: pinned source snapshot ID/digest/revision; stable resource IDs and provider origins; source locations or bounded excerpts when available; exact relationship/path witnesses; assessment values; test/build outcomes and execution timestamps; explicit coverage limitations and unresolved dependencies.
+AI provenance: conversation/turn IDs, agent/model identity, relevant executed tools and their observed evidence references. Store retrieved facts separately from model suggestions. Failed tools cannot become successful evidence cards.
+Review/submission: immutable submitted dossier version/digest, reviewer decision/note/time, external destination, exact submitted payload version, external identifier/URL, attempts and reconciliation/audit history.
+
+Citation labels such as E1 are local to a single agent run today. Dossier capture must assign stable evidence IDs and retain the mapping of turn ID + citation ID + snapshot digest + resource ID. Otherwise two turns can silently associate E1 with different resources.
+
+Evidence capture is server validated: each referenced resource/path must belong to the stated snapshot. Duplicate captures reuse the existing evidence entry. Users may annotate evidence but cannot overwrite original observed facts. Removed draft entries remain reflected in dossier revision history once they have been submitted.
+
+5. CONVERSATION AND AGENT BEHAVIOR
+
+Persist conversation turns on the server and associate them with a case and source snapshot. Keep complete bounded audit records and pass a bounded history/summary plus selected evidence into each agent run. Do not merely render old bubbles while sending unrelated single-turn questions to the backend.
+
+The agent can investigate, suggest evidence to capture, identify missing information and draft dossier text. It must distinguish a proposal from an applied change and identify partial/incomplete source data. It cannot invent provider ticket IDs, mark tests as passed, approve a dossier or autonomously submit changes.
+
+When AI is unavailable, retain ordinary resource selection, evidence capture, manual dossier editing and local review. Show model/tool failures without discarding the transcript or dossier. A retry must not duplicate the user turn, evidence entry or external operation.
+
+6. REVIEW AND SUBMISSION STATE MODEL
+
+Draft: author edits narrative and curates evidence. Save and reload must preserve it.
+Submitted for review: freeze a specific version/digest; surface it in the local queue.
+Changes requested: reviewer records reasons; author creates the next draft version.
+Rejected: preserve the submitted version, evidence and decision; no external submission.
+Approved: approval binds to the exact immutable version/digest. Editing creates a new draft and requires a new decision.
+Submitting externally: an explicit authorized submission attempt records destination, payload digest and correlation/idempotency identity.
+Submitted externally: only after a confirmed provider response or read-only reconciliation; retain provider ticket ID/URL.
+Submission unknown: timeouts/interrupted writes cannot be shown as success or blindly retried. Reconcile before another create attempt.
+Conflict: refresh provider state and prepare a revised operation; retain the previous approved intent and conflicting evidence.
+Closed/tracked: show the external provider's confirmed state. Provider acceptance or closure is not proof of code correctness.
+
+Source synchronization never silently rewrites a submitted dossier. It marks evidence needing revalidation and lets the author create a new dossier version. Durable dossiers and submitted evidence must survive browser reload and session expiry; session cleanup cannot erase the only record needed to explain an approval or reconcile an external attempt. Their storage/retention and local access policy must therefore be separate from ephemeral review-session cleanup.
+
+7. EXTERNAL CHANGE ADAPTER GAP
+
+Existing ALM link application can be reused for approved relationship operations. Actual change-request creation needs a provider-specific create contract or verified OSLC creation factory, supported payload schema, returned identity and duplicate/unknown-outcome reconciliation behavior.
+
+The destination is not yet specified. Keep external submission unavailable with a concrete “change creation not configured” explanation until a supported provider is configured. Do not rename the existing link PUT action “Create change request.” Downloading/exporting a dossier is an export event, not an external-submission success.
+
+The new local review queue is implementable independently of external configuration. Existing snapshot/link review flows must remain usable throughout the refactor.
+
+8. ACCEPTANCE SCENARIOS
+
+A. Select a graph finding, discuss it across multiple turns, capture a citation and save a dossier; reload restores the transcript and correct evidence identity.
+B. A follow-up pronoun such as “its dependents” uses the intended selected resource/snapshot and shows the actual dependency witnesses, including coverage limits.
+C. Two agent turns both cite E1 for different resources; capturing both preserves their distinct stable dossier identities.
+D. A spoofed/stale resource or path cannot be captured as verified evidence; user notes remain clearly labeled.
+E. Submission with missing problem, scope, proposed change or required evidence explains the missing fields and retains the draft.
+F. Submitted version is immutable; author revisions do not inherit the previous approval.
+G. Rejected/unapproved dossiers cannot call external create/apply operations. Exact-version checks are enforced server-side.
+H. Repeated submit/retry does not create duplicate queue entries or external tickets. Timeout results in unknown/reconciliation state, not success.
+I. AI/tool outage leaves the manual evidence/dossier/review workflow functional.
+J. Changing source, session expiry or navigation cannot move an old answer/evidence capture into another case. Submitted evidence remains recoverable under the defined local storage policy.
+K. Source/target/relationship advanced overrides are schema-validated; unsupported operations remain visibly unavailable.
+L. Desktop/narrow layouts, keyboard navigation, graph highlights, separate table tab, empty/loading/error states and reviewer actions have component and browser workflow validation.
+
+9. IMPLEMENTATION ORDER
+
+First: durable versioned dossier/evidence models, local queue and state-transition contracts, isolated from transient sessions.
+Second: conversation/turn persistence and bounded history propagation, with stable citation capture and existing agent tools.
+Third: conversational change workbench, evidence cards and dossier editor, retaining advanced link controls and shared graph/table context.
+Fourth: exact-version local review and explicit approval-gated submission attempts.
+Fifth: external change-creation adapter after the destination and contract are specified; verify against disposable provider resources.
+Throughout: deterministic session/isolation, stale-evidence, retry, malformed-model, approval and uncertain-outcome tests; no live Ollama testing is required for this refactor.
+
+Review boundary: this document is a functional review of the current source contracts and the proposed journey. It does not claim implemented conversation persistence, dossier storage, local change queue or external ticket creation.

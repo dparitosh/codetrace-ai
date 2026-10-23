@@ -5,8 +5,8 @@ import type { AIProfile } from './AISettings'
 import { Catalog, CompanionAnswer, domainColors, domainOf, relationLabel, TraceGraph, TraceNode } from './types'
 import NodeBadge from './NodeBadge'
 
-interface Props { graph: TraceGraph | null; review: ReviewRecord | null; selected: TraceNode | null; catalog: Catalog | null; onSelect: (node: TraceNode) => void; onHighlight?: (ids: string[]) => void; contextDomain?: string }
-export default function Companion({ graph, review, selected, catalog, onSelect, onHighlight, contextDomain = 'ALL' }: Props) {
+interface Props { graph: TraceGraph | null; review: ReviewRecord | null; selected: TraceNode | null; catalog: Catalog | null; onSelect: (node: TraceNode) => void; onHighlight?: (ids: string[]) => void; contextDomain?: string; onStartChange?: () => void }
+export default function Companion({ graph, review, selected, catalog, onSelect, onHighlight, contextDomain = 'ALL', onStartChange }: Props) {
   const [tab, setTab] = useState<'ask' | 'inspect'>('ask')
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState<CompanionAnswer | null>(null)
@@ -53,6 +53,7 @@ export default function Companion({ graph, review, selected, catalog, onSelect, 
   const nodes = useMemo(() => new Map(graph?.nodes.map(node => [node.id, node]) || []), [graph])
   const prompts = ['Where are the traceability gaps?', 'Explain the selected resource', 'Find similar resources to the selected resource', 'Which builds match this revision?']
   return <aside className="companion-panel">
+    {onStartChange && <button disabled={!review} onClick={onStartChange}>Open change conversation & dossier</button>}
     <div className="companion-heading"><div className="companion-icon"><Sparkles size={19} /></div><div><h2>Companion</h2></div><small>{contextDomain === 'ALL' ? 'All domains' : contextDomain}</small></div>
     <div className="companion-tabs"><button className={tab === 'ask' ? 'active' : ''} onClick={() => setTab('ask')}><Sparkles size={13} />Ask companion</button><button className={tab === 'inspect' ? 'active' : ''} onClick={() => setTab('inspect')}><Code2 size={13} />Inspect resource</button></div>
     <label className="agent-selector">Agent<select aria-label="Graph agent" value={agentId} disabled={busy} onChange={event => setAgentId(event.target.value)}>{(profile?.agents || [{ id: 'trace-explorer', label: 'Trace explorer' }]).map(agent => <option key={agent.id} value={agent.id}>{agent.label}</option>)}</select></label>

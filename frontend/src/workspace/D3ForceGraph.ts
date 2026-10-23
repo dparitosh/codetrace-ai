@@ -13,6 +13,7 @@ export interface ForceGraphOptions {
   selected: string | null; paused: boolean; pinOnDrag: boolean; allLabels: boolean
   highlighted?: string[]
   colorMode?: NodeColorMode
+  labelSize?: number
 }
 export interface ForceGraphActions { fit: () => void; zoomBy: (factor: number) => void; reheat: () => void; releasePins: () => void }
 type Group = Selection<SVGGElement, unknown, null, undefined>
@@ -158,7 +159,8 @@ export class D3ForceGraph implements ForceGraphActions {
       .style('fill', node => node.resource.properties.deleted ? 'var(--ct-text, #203643)' : nodeGlyphColor(node.resource, this.options?.colorMode))
     this.nodeElements.select<SVGCircleElement>('circle.d3-pin').attr('cx', node => node.radius * .7).attr('cy', node => -node.radius * .7)
     this.nodeElements.select('title').text(node => `${node.resource.label}\n${classifyNode(node.resource).label} · ${domainOf(node.resource)}${node.resource.properties.deleted ? ' · Deleted resource' : ''}\n${node.resource.properties.path || node.id}\nDouble-click or Shift+Enter to expand context.`)
-    this.nodeElements.select<SVGTextElement>('text.d3-node-label').each(function (node) {
+    const labelSize = this.options?.labelSize || 11
+    this.nodeElements.select<SVGTextElement>('text.d3-node-label').style('font-size', `${labelSize}px`).each(function (node) {
       const label = node.resource.type === 'file' ? String(node.resource.properties.path || node.resource.label.replace(/^file:/, '')).split(/[\\/]/).pop()! : node.resource.label
       const lines = label.length <= 19 ? [label] : [label.slice(0, 19), label.slice(19, 36) + (label.length > 36 ? '…' : '')]
       select(this).selectAll('tspan').data(lines).join('tspan').attr('x', 0).attr('dy', (_line, index) => index ? '1.15em' : 0).text(line => line)

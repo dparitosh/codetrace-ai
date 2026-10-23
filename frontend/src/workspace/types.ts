@@ -8,7 +8,7 @@ export interface TraceGraph {
   source_assessments?: {
     source_digest: string
     summary: { total_files: number; total_lines: number }
-    quality: { overall_score: number | null; grade: string; metrics: { name: string; value: number | null; status: string; description: string }[]; recommendations: string[] }
+    quality: { overall_score: number | null; grade: string; scoring_basis?: string; metrics: { name: string; value: number | null; status: string; description: string }[]; recommendations: string[] }
     security: { total_findings: number; files_scanned: number; truncated: boolean; findings: { file: string; line: number; severity: string; description: string; rule: string }[] }
   }
   trs_events?: { id: string; resource_uri: string; action: string; order: number; at: string; provider_id: string }[]

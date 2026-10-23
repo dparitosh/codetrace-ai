@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     MAX_SESSIONS: int = Field(default=DEFAULTS['MAX_SESSIONS'], ge=1)
     SESSION_STORE: Literal['memory', 'sqlite'] = 'memory'
     SESSION_DB_PATH: Path = PROJECT_ROOT / 'data/reviews.sqlite3'
+    CHANGE_DB_PATH: Path = PROJECT_ROOT / 'data/changes.sqlite3'
+    CHANGE_MAX_CASES: int = Field(default=128, ge=1)
+    CHANGE_MAX_BYTES: int = Field(default=50000000, ge=10000)
     MAX_REVIEWS_PER_SESSION: int = Field(default=DEFAULTS['MAX_REVIEWS_PER_SESSION'], ge=1)
     MAX_REVIEW_STORAGE_BYTES: int = Field(default=DEFAULTS['MAX_REVIEW_STORAGE_BYTES'], ge=1)
     MAX_CONCURRENT_ANALYSES: int = Field(default=DEFAULTS['MAX_CONCURRENT_ANALYSES'], ge=1)
@@ -185,7 +188,7 @@ class Settings(BaseSettings):
                 self.frontend_url, f'http://localhost:{self.FRONTEND_PORT}',
                 f'http://127.0.0.1:{self.FRONTEND_PORT}',
             ]))
-        for name in ('UPLOAD_DIR', 'TEMP_DIR', 'LOG_DIR', 'OSLC_DB_PATH', 'SESSION_DB_PATH', 'TRS_CACHE_PATH'):
+        for name in ('UPLOAD_DIR', 'TEMP_DIR', 'LOG_DIR', 'OSLC_DB_PATH', 'SESSION_DB_PATH', 'TRS_CACHE_PATH', 'CHANGE_DB_PATH'):
             value = getattr(self, name)
             if not value.is_absolute():
                 setattr(self, name, PROJECT_ROOT / value)

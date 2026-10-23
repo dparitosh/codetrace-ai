@@ -1,0 +1,106 @@
+CHANGE WORKBENCH AUDIT — 2026-10-23
+
+REMEDIATION UPDATE — 2026-10-23
+CW-01, CW-02 and CW-03 are corrected. The original findings and reproducers below
+describe the pre-fix implementation and are retained as the audit record.
+
+CW-01: new submitted versions embed the complete selected turn contents in their
+digest. Exports use that immutable payload, not live turn rows. Later retries and
+store restarts preserve prior-version history. Legacy versions retain their existing
+digest and disclose that conversation contents were not frozen; no history is invented.
+CW-02: automation refreshes agent-owned scope. Human scopes are preserved and a
+context warning persists until scope is revised for the new context.
+CW-03: recovery refresh updates saved state without replacing dirty local fields.
+The editor offers saved-field comparison and an explicit discard action.
+
+Validation after fixes: 288 backend tests passed (14 workbench tests); 50 frontend
+tests passed; build and lint passed. New backend regressions cover frozen history,
+restart, export independence from live rows, legacy compatibility and scope ownership.
+Browser regression: a synthetic 507 save failure was forced under a 30KB fixture
+storage limit. After recovery refresh, title, 9,900-character proposal, 10,200-character
+impact and 10,080-character validation text were retained exactly. Explicit discard
+restored saved values. Screenshot: .runtime/audit/draft-recovery-fixed.jpg.
+No live Ollama, external writes or production database migration was performed.
+
+Scope: the recently added change workbench, its durable store/API, frontend state,
+agent conversation context and local review/export integration. This is not a claim
+that every repository file or every external integration was audited in this pass.
+No application corrections were applied during this audit.
+
+RESULT: three P2 findings. Two have executed backend reproducers; one is confirmed
+by tracing the frontend state handlers but has not been reproduced in a browser.
+No critical/high defect was established in this focused pass.
+
+CW-01 | P2 / Medium | Backend / Data integrity | Confirmed by execution
+Location: backend/services/change_store.py:230,294; backend/api/change_routes.py:193.
+Problem: submitted versions retain conversation IDs, not immutable turn contents.
+Failed turns can be retried in a later draft by updating the same turn row.
+Root cause: retry reuses the ID and overwrites body/state, while the submitted-version
+digest covers only the dossier and those IDs. The referenced conversation is mutable.
+Impact: an earlier version's references can resolve to later analysis, without its
+submitted digest changing; historic conversation evidence cannot be recovered solely
+from that frozen version. Previously downloaded exports remain unchanged.
+Reproduction: fail a conversation; complete the dossier manually; submit and approve
+v1; export it; create draft v2; retry the failed v1 turn. Its state changes from failed
+to completed under the ID retained by v1, while v1 and its digest remain identical.
+Fix: freeze the selected conversation payload (or immutable content-addressed turn
+versions) in the submitted version and digest. Later retries must create distinct
+attempt records; exports/history must read the frozen conversation payload.
+Validation needed: submit/export v1, retry an old failed turn in v2, then verify v1's
+conversation contents and digest remain exactly reproducible, including after restart.
+Priority: first; estimated effort 2–4 hours plus migration/backward-compatibility review.
+
+CW-02 | P2 / Medium | Agent / Dossier correctness | Confirmed by execution
+Location: backend/services/change_store.py:251,260.
+Problem: automatic scope remains stale after changing the investigation context.
+Root cause: automation generates a new scope but only replaces nonempty agent-owned
+proposal and impact fields; agent-owned scope is excluded from refresh.
+Impact: selected context and current proposal can describe B while the untouched
+scope still explicitly identifies A. The dossier can be submitted in this state after
+acknowledgement, leaving inconsistent change boundaries for reviewers.
+Reproduction: automate for function A, switch to function B and automate again.
+selected_id becomes B; scope still contains A, not B; scope remains agent-owned.
+Fix: refresh agent-owned contextual fields when their inputs change, preserving
+human-edited fields. If a human-owned scope conflicts, surface a review warning.
+Validation needed: switch A->B with an agent-owned scope (refresh), then with a
+human-owned scope (preserve and identify the changed context).
+Priority: second; estimated effort 1–2 hours including regressions.
+
+CW-03 | P2 / Medium | Frontend / Draft loss | Confirmed by source trace
+Location: frontend/src/workspace/ChangeWorkbench.tsx:54,58,71,134.
+Problem: the error-recovery refresh can discard unsaved dossier edits silently.
+Root cause: Refresh saved state is disabled only while busy. It calls open(), whose
+accepted server response replaces all fields and clears dirty; no dirty check or
+explicit discard step protects this path. Ordinary queue navigation does check dirty.
+Impact: after a failed save, e.g. 507 storage capacity or a network error, a user can
+click the suggested refresh and lose the only in-memory copy of their corrections.
+Reproduction path: edit a dossier -> fail Save -> click Refresh saved state -> server
+fields replace local edits through accept(). This path was traced, not browser-run.
+Fix: preserve the local field buffer while refreshing server state, or require an
+explicit discard/reconcile action; show stale-revision conflicts without clearing edits.
+Validation needed: a component/browser test forces failed Save and then recovery;
+all entered text must remain available until saved or explicitly discarded.
+Priority: third; estimated effort 1–2 hours including a UI regression test.
+
+EXECUTED VALIDATION
+Backend suite: 285 passed, one upstream Starlette/httpx deprecation warning.
+Frontend suite: 50 passed.
+Native graph/installation/session regressions: 23 passed. Lint and production build
+passed. Build retains its AG Grid chunk-size advisory; no build error was observed.
+Three additional isolated audit probes: two reproduce CW-01/CW-02; one control proves
+an expired deadline is rejected before the final agent's tools, leaving a failed turn.
+The probes assert observed behavior; their passing does not mean the defects are fixed.
+Probe file: .runtime/audit/test_workbench_review_probe.py (ignored local artifact).
+Probe command: .venv/Scripts/python.exe -m pytest -q -s
+  .runtime/audit/test_workbench_review_probe.py
+  --basetemp=.runtime/audit/workbench-probe-temp-2
+
+BOUNDARIES / KNOWN LIMITATIONS
+External change-ticket creation is unavailable by explicit design: disabled UI, 501
+after local approval, and 409 before approval. This was already disclosed and is not
+counted as a newly discovered defect. No external ticket destination was supplied.
+The durable queue is shared by active local reviewer sessions, not enterprise RBAC or
+independent reviewer identity. Do not infer those properties from a recorded actor label.
+Live Ollama and external ALM write operations were not exercised. No software source
+was changed by agents. No production data, current review sessions or Git history was
+altered during this audit. Remediation remains pending.

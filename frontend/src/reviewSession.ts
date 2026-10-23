@@ -133,6 +133,28 @@ export async function decideReview(record: ReviewRecord, action: 'approved' | 'r
   return updated
 }
 
+export async function approvedSnapshot(record: ReviewRecord) {
+  const current = activeSession()
+  if (current.token !== record.sessionToken) throw new Error('This graph belongs to a previous session.')
+  const data = await requestJson(`${base}/reviews/${encodeURIComponent(record.id)}/export`, { headers: headers(current.token) })
+  if (session?.token !== current.token || current.deadline <= Date.now()) throw new Error('Session expired or changed during export.')
+  if (data.result_digest !== record.result_digest) throw new Error('The approved snapshot does not match this view. Refresh the review.')
+  return data
+}
+
+export async function changeRequest<T>(path = '', body?: unknown, timeout = __APP_CONFIG__.controlTimeout, expectedSession?: string): Promise<T> {
+  const current = await startSession()
+  if (expectedSession && expectedSession !== current.token) throw new Error('The source snapshot belongs to a previous session. Synchronize again.')
+  const result = await requestJson('/api/v1/workspace/changes' + path, {
+    method: body === undefined ? 'GET' : 'POST', headers: headers(current.token),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  }, timeout)
+  if (session?.token !== current.token) throw new Error('Session changed. Start a session and reopen the durable dossier.')
+  await refreshSession().catch(() => undefined)
+  if (session?.token !== current.token || (session?.deadline || 0) <= Date.now()) throw new Error('Session changed or expired. Reopen the durable dossier.')
+  return result
+}
+
 export async function exportReview(id: string) {
   const current = activeSession()
   const data = await requestJson(`${base}/reviews/${encodeURIComponent(id)}/export`, { headers: headers(current.token) })

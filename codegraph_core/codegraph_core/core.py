@@ -112,7 +112,7 @@ class CodeGraph:
                     continue
                 file_id = "file:" + path.as_posix()
                 self.g.upsert_node(file_id, "file", path=path.as_posix(), extension=path.suffix.lower(),
-                                   loc=source.count("\n") + 1)
+                                   loc=source.count("\n") + 1, nonempty=bool(source.lstrip('\ufeff').strip()))
                 self._scanners.get(path.suffix.lower(), self._scan_generic_file)(path, source, file_id)
                 files_scanned += 1
         self.last_scan_time = time.time()
@@ -141,7 +141,7 @@ class CodeGraph:
                 raise ValueError(f'Source file exceeds {self.config.max_file_size} bytes: {name}')
             file_id = "file:" + path.as_posix()
             self.g.upsert_node(file_id, "file", path=path.as_posix(), extension=extension,
-                               loc=content.count("\n") + 1)
+                               loc=content.count("\n") + 1, nonempty=bool(content.lstrip('\ufeff').strip()))
             self._scanners.get(extension, self._scan_generic_file)(path, content, file_id)
             files_scanned += 1
         self.last_scan_time = time.time()
@@ -179,8 +179,10 @@ class CodeGraph:
             tree = ast.parse(source)
             symbol_table = symtable.symtable(source, str(p), 'exec')
         except (SyntaxError, ValueError):
+            self.g.nodes[file_id].attrs['parse_status'] = 'failed'
             self._scan_generic_file(p, source, file_id)
             return
+        self.g.nodes[file_id].attrs['parse_status'] = 'parsed'
         module_id = self._module_id(p)
         self.g.upsert_node(module_id, "module", name=p.stem, path=p.as_posix(), language="python")
         self.g.add_edge(file_id, module_id, "defines")
@@ -264,15 +266,20 @@ class CodeGraph:
 
     def _scan_generic_file(self, p: Path, source: str, file_id: str):
         """Best-effort scanner for languages without an installed parser."""
+        self.g.nodes[file_id].attrs.setdefault('parse_status', 'heuristic')
+        source, code = _mask_source_comments(source, p.suffix.lower())
         module_id = self._module_id(p)
         self.g.upsert_node(module_id, "module", name=p.stem, path=p.as_posix(), language=p.suffix.lstrip("."))
         self.g.add_edge(file_id, module_id, "defines")
-        for pattern in (r"(?:import|include|require|from)\s+[\"']?([A-Za-z0-9_./@:-]+)",
+        for pattern in (r"\b(?:import|include|require|from)\s+[\"']?([A-Za-z0-9_./@:-]+)",
                         r"#include\s*[<\"]([^>\"]+)"):
-            for name in re.findall(pattern, source):
+            for match in re.finditer(pattern, source):
+                if not code[match.start():match.start() + 1].strip():
+                    continue
+                name = match.group(1)
                 self.g.add_edge(module_id, "module:" + name, "imports", name=name)
         definition = re.compile(r"\b(?:class|interface|struct|enum|function|func|def)\s+([A-Za-z_][A-Za-z0-9_]*)")
-        for match in definition.finditer(source):
+        for match in definition.finditer(code):
             name = match.group(1)
             symbol_id = f"symbol:{p.as_posix()}::{name}"
             self.g.upsert_node(symbol_id, "symbol", name=name, path=p.as_posix(),
@@ -292,6 +299,30 @@ class CodeGraph:
                     "code": "\n".join(lines[start - 1:end])}
         except (OSError, ValueError):
             return None
+
+
+def _mask_source_comments(source, extension):
+    """Mask comments for evidence extraction; keep literals only for import targets.
+
+    This is a lexical guard for the heuristic scanner, not a language parser.
+    Preserve offsets/newlines so symbol source locations remain accurate.
+    """
+    strings = r'''"""[\s\S]*?(?:"""|$)|\x27\x27\x27[\s\S]*?(?:\x27\x27\x27|$)|"(?:\\[\s\S]|[^"\\])*"|\x27(?:\\[\s\S]|[^\x27\\])*\x27|`(?:\\[\s\S]|[^`\\])*`'''
+    comments = r'/\*[\s\S]*?(?:\*/|$)|//[^\n]*|<!--[\s\S]*?(?:-->|$)'
+    if extension in {'.py', '.rb', '.sh', '.php'}:
+        comments += r'|\#[^\n]*'
+    if extension == '.sql':
+        comments = r'/\*[\s\S]*?(?:\*/|$)|--[^\n]*'
+    if extension in {'.py', '.rb', '.sh'}:
+        comments = r'\#[^\n]*'
+    evidence, code = list(source), list(source)
+    for match in re.finditer(f'(?P<literal>{strings})|(?P<comment>{comments})', source):
+        for index in range(match.start(), match.end()):
+            if source[index] not in '\r\n':
+                code[index] = ' '
+                if match.lastgroup == 'comment':
+                    evidence[index] = ' '
+    return ''.join(evidence), ''.join(code)
 
 
 def _scope_statements(body):

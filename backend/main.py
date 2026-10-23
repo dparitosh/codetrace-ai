@@ -27,6 +27,7 @@ from api.security_routes import security_router
 from api.review_routes import review_router, store as review_store
 from api.workspace_routes import workspace_router
 from api.oslc_routes import oslc_router, collaboration_router
+from api.change_routes import change_router
 from core.config import settings
 
 logger = logging.getLogger("codetrace")
@@ -142,6 +143,7 @@ app.include_router(review_router, prefix='/api/v1/review', tags=['Review and App
 app.include_router(workspace_router, prefix='/api/v1/workspace', tags=['Managed Intelligence Workspace'])
 app.include_router(oslc_router, prefix='/oslc', tags=['OSLC Server'])
 app.include_router(collaboration_router, prefix='/api/v1/oslc', tags=['OSLC Collaboration'])
+app.include_router(change_router, prefix='/api/v1/workspace/changes', tags=['Change dossiers'])
 
 
 if __name__ == "__main__":

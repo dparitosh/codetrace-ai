@@ -6,6 +6,56 @@ const timing = { expires_in_seconds: 60, absolute_remaining_seconds: 120 }
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); vi.resetModules() })
 
 describe('review session client', () => {
+  it('refreshes the browser idle deadline after dossier activity', async () => {
+    vi.useFakeTimers()
+    const fetch = vi.fn(async url => String(url).includes('/workspace/changes')
+      ? json({ id: 'case' }) : json({ token: 'session', ...timing }))
+    vi.stubGlobal('fetch', fetch)
+    const api = await import('./reviewSession')
+    await api.startSession()
+    await vi.advanceTimersByTimeAsync(50000)
+    await expect(api.changeRequest('/case', undefined, 15)).resolves.toMatchObject({ id: 'case' })
+    await vi.advanceTimersByTimeAsync(20000)
+    await expect(api.changeRequest('/case', undefined, 15)).resolves.toMatchObject({ id: 'case' })
+    expect(fetch.mock.calls.filter(([url]) => String(url).endsWith('/session'))).toHaveLength(3)
+  })
+  it('rejects dossier creation from an older source session', async () => {
+    const fetch = vi.fn(async () => json({ token: 'new-session', ...timing }))
+    vi.stubGlobal('fetch', fetch)
+    const api = await import('./reviewSession')
+    await api.startSession()
+    await expect(api.changeRequest('', { review_id: 'old' }, 15, 'old-session')).rejects.toThrow('previous session')
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+  it('rejects a late dossier response after the session ends', async () => {
+    let resolve: (response: Response) => void = () => undefined
+    vi.stubGlobal('fetch', vi.fn(async (url, options) => {
+      if (String(url).includes('/workspace/changes')) return new Promise<Response>(done => { resolve = done })
+      return json(options?.method === 'DELETE' ? {} : { token: 'session', ...timing })
+    }))
+    const api = await import('./reviewSession')
+    await api.startSession()
+    const pending = api.changeRequest('/case', undefined, 15)
+    await Promise.resolve()
+    await api.endSession()
+    resolve(json({ id: 'case' }))
+    await expect(pending).rejects.toThrow('session')
+  })
+  it('checks server approval, session ownership and digest before lineage export', async () => {
+    let approved = false, digest = 'digest'
+    vi.stubGlobal('fetch', vi.fn(async url => String(url).endsWith('/export')
+      ? json(approved ? { result_digest: digest, result: { nodes: [], edges: [] } } : { error: 'Approve before export' }, approved ? 200 : 409)
+      : json({ token: 'session', ...timing })))
+    const api = await import('./reviewSession')
+    await api.startSession()
+    const record = { id: 'graph', sessionToken: 'session', result_digest: 'digest' } as any
+    await expect(api.approvedSnapshot({ ...record, sessionToken: 'old' })).rejects.toThrow('previous session')
+    await expect(api.approvedSnapshot(record)).rejects.toThrow('Approve before export')
+    approved = true; digest = 'different'
+    await expect(api.approvedSnapshot(record)).rejects.toThrow('does not match')
+    digest = 'digest'
+    await expect(api.approvedSnapshot(record)).resolves.toMatchObject({ result_digest: 'digest' })
+  })
   it('publishes decisions so history and the active graph share review state', async () => {
     const updated = { id: 'graph', kind: 'graph', status: 'approved', result_digest: 'digest', revision: 1 }
     vi.stubGlobal('fetch', vi.fn(async (url, options) => {

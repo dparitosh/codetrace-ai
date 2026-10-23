@@ -20,11 +20,13 @@ const ReviewPanel = lazy(() => import('../components/ReviewPanel'))
 const AnalysisPage = lazy(() => import('../components/AnalysisPage'))
 const QualityPage = lazy(() => import('../components/QualityPage'))
 const SecurityPage = lazy(() => import('../components/SecurityPage'))
+const SupplyChainPanel = lazy(() => import('./SupplyChainPanel'))
+const ChangeWorkbench = lazy(() => import('./ChangeWorkbench'))
 import './workspace.css'
 import './siemens-ui.css'
 import './graphContext.css'
 
-type View = 'graph' | 'resources' | 'activity' | 'review' | 'connections' | 'admin' | 'analysis' | 'quality' | 'security'
+type View = 'graph' | 'resources' | 'activity' | 'review' | 'connections' | 'admin' | 'analysis' | 'quality' | 'security' | 'supplychain' | 'changes'
 export default function Workspace() {
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [source, setSource] = useState('')
@@ -39,6 +41,7 @@ export default function Workspace() {
   const [explorerMode, setExplorerMode] = useState<'overview' | 'graph' | 'table'>('graph')
   const [companionOpen, setCompanionOpen] = useState(false)
   const [tableActivated, setTableActivated] = useState(false)
+  const [changesActivated, setChangesActivated] = useState(false)
   useEffect(() => { if (explorerMode === 'table') setTableActivated(true) }, [explorerMode])
   const [uploadLabel, setUploadLabel] = useState('')
   const [notice, setNotice] = useState('')
@@ -100,12 +103,13 @@ export default function Workspace() {
   const explorerActive = ['graph', 'resources', 'analysis', 'quality', 'security'].includes(view)
   const hasOverview = ['analysis', 'quality', 'security'].includes(view) || (view === 'resources' && resourceDomain !== 'ALL')
   const selectResource = (node: TraceNode | null) => { setSelected(node); if (node) setCompanionOpen(true) }
-  const heading = view === 'analysis' ? 'Source analysis' : view === 'quality' ? 'Quality assessment'
+  const heading = view === 'changes' ? 'Change workbench' : view === 'supplychain' ? 'Supply-chain lineage' : view === 'analysis' ? 'Source analysis' : view === 'quality' ? 'Quality assessment'
     : view === 'security' ? 'Security patterns' : view === 'resources' ? (resourceDomain === 'ALL' ? 'Resource index' : `${resourceDomain} lifecycle context`)
       : view === 'review' ? 'Review center' : view === 'connections' ? 'Connections' : view === 'admin' ? 'Administration'
         : view === 'activity' ? 'Change & delivery' : 'Graph explorer'
   const navigate = (target: View) => {
     setView(target)
+    if (target === 'changes') setChangesActivated(true)
     if (target === 'resources' || target === 'graph') changeDomain('ALL')
     setCompanionOpen(false)
     if (target === 'graph') setExplorerMode('graph')
@@ -115,6 +119,7 @@ export default function Workspace() {
   const nav = [
     { id: 'graph', label: 'Graph explorer', icon: iconGraph }, { id: 'resources', label: 'Resource index', icon: iconTable },
     { id: 'activity', label: 'Change & delivery', icon: iconHistory }, { id: 'review', label: 'Review center', icon: iconCheck },
+    { id: 'changes', label: 'Change workbench', icon: iconCheck },
   ] as const
   return <WorkspaceGraphContext.Provider value={{ graph, review, sourceLabel, busy, uploaded: !!uploadLabel, notice,
     synchronize: sync, analyzeUpload, select: selectResource, openGraph: () => setExplorerMode('graph') }}><IxApplication className="ix-workspace">
@@ -125,8 +130,9 @@ export default function Workspace() {
     </IxApplicationHeader>
     <IxMenu pinned startExpanded enableToggleTheme aria-label="Workspace navigation">
       {nav.map(item => <IxMenuItem key={item.id} icon={item.icon} active={view === item.id && (item.id !== 'resources' || resourceDomain === 'ALL')} onClick={() => navigate(item.id)}>{item.label}</IxMenuItem>)}
+      <IxMenuItem icon={iconGraph} active={view === 'supplychain'} onClick={() => navigate('supplychain')}>Supply-chain lineage</IxMenuItem>
       <IxMenuCategory label="Lifecycle domains" icon={iconNetworkDevice}>
-        {[['AM', 'Architecture'], ['RM', 'Requirements'], ['CM', 'Change management'], ['QM', 'Quality management'], ['TRS', 'Tracked resources']].map(([id, label]) => <IxMenuItem key={id} active={view === 'resources' && resourceDomain === id} onClick={() => { navigate('resources'); changeDomain(id); setResourceQuery(''); setExplorerMode('overview') }}>{label} · {domainCounts[id] || 0}</IxMenuItem>)}
+        {[['AM', 'Architecture'], ['RM', 'Requirements'], ['CM', 'Change management'], ['QM', 'Quality management'], ['TRS', 'Tracked resources']].map(([id, label]) => <IxMenuItem key={id} active={(view === 'resources' && resourceDomain === id) || (id === 'CM' && view === 'changes')} onClick={() => { if (id === 'CM') { navigate('changes'); return } navigate('resources'); changeDomain(id); setResourceQuery(''); setExplorerMode('overview') }}>{label} · {domainCounts[id] || 0}</IxMenuItem>)}
       </IxMenuCategory>
       <IxMenuCategory label="Source analysis" icon={iconCode}>
         <IxMenuItem active={view === 'analysis'} onClick={() => navigate('analysis')}>Source overview</IxMenuItem>
@@ -146,6 +152,8 @@ export default function Workspace() {
         {error && <div className="workspace-alert" role="alert"><AlertCircle size={16} /><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError('')}><X size={14} /></button></div>}
         {graph && connectors.some((item: any) => item.status !== 'ready') && <div className="workspace-alert caution"><AlertCircle size={16} /><span>Some lifecycle connections are partial or unavailable. Review connection evidence before making impact claims.</span><button onClick={() => navigate('connections')}>View status</button></div>}
         <Suspense fallback={<p role="status">Loading workspace tools...</p>}>
+        {changesActivated && <div hidden={view !== 'changes'}><ChangeWorkbench graph={graph} review={review} catalog={catalog} selected={selected} active={view === 'changes'} /></div>}
+        {view === 'supplychain' && <SupplyChainPanel key={review ? `${review.sessionToken}:${review.id}:${graph?.metadata.snapshot_id}` : 'empty'} graph={graph} review={review} />}
         <div className={'explorer-grid' + (!companionOpen ? ' companion-closed' : '')} style={{ display: explorerActive ? undefined : 'none' }}><div className="explorer-left">
           <div className="evidence-tab-row"><EvidenceTabs value={explorerMode} onChange={setExplorerMode} overview={hasOverview ? view === 'security' ? 'Findings' : view === 'quality' ? 'Assessment' : 'Overview' : undefined} /><IxButton variant="tertiary" aria-pressed={companionOpen} onClick={() => setCompanionOpen(value => !value)}>{companionOpen ? 'Hide companion' : 'Agent & inspector'}</IxButton></div>
           {explorerMode === 'overview' && <div role="tabpanel" id="evidence-overview-panel" aria-labelledby="evidence-overview-tab">{view === 'analysis' && <AnalysisPage />}{view === 'quality' && <QualityPage />}{view === 'security' && <SecurityPage />}{view === 'resources' && <DomainOverview graph={graph} domain={resourceDomain} onSelect={selectResource} onConnections={() => navigate('connections')} />}</div>}
@@ -155,12 +163,12 @@ export default function Workspace() {
             <InteractiveGraph graph={graph} selected={selected?.id || null} onSelect={selectResource} busy={busy} highlighted={highlighted} active={explorerActive && explorerMode === 'graph'} domainFilter={resourceDomain} onDomainChange={changeDomain} /></div>
           {(tableActivated || explorerMode === 'table') && <section className="resource-panel" role="tabpanel" id="evidence-table-panel" aria-labelledby="evidence-table-tab" hidden={explorerMode !== 'table'}><div className="data-grid-toolbar"><span>{resourceDomain === 'ALL' ? 'All domains' : resourceDomain}</span><div className="index-search"><Search size={14} /><input aria-label="Filter resource index" placeholder="Filter resources…" value={resourceQuery} onChange={event => setResourceQuery(event.target.value)} /></div></div>
             <GraphDataTable graph={graph} resources={filteredResources} onSelect={selectResource} /></section>}
-        </div><div hidden={!companionOpen}><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={selectResource} onHighlight={setHighlighted} contextDomain={resourceDomain} /></div></div>
+        </div><div hidden={!companionOpen}><Companion graph={graph} review={review} selected={selected} catalog={catalog} onSelect={selectResource} onHighlight={setHighlighted} contextDomain={resourceDomain} onStartChange={() => navigate('changes')} /></div></div>
         {view === 'activity' && <div className="activity-grid"><section className="plain-panel"><div className="section-title"><div><h2>Lifecycle change feed</h2></div><Activity size={20} /></div>
           {graph?.trs_events?.length ? [...graph.trs_events].reverse().map(event => <div className="timeline-event" key={event.id}><div className={'event-dot ' + event.action.toLowerCase()} /><div><span className="event-label">{event.action} <small>#{event.order}</small></span><button onClick={() => { const node = graph.nodes.find(item => item.id === event.resource_uri); if (node) { selectResource(node); changeDomain('ALL'); setExplorerMode('table'); setView('resources') } }}>{graph.nodes.find(item => item.id === event.resource_uri)?.label || event.resource_uri}</button><p>{event.provider_id} · {event.at ? new Date(event.at).toLocaleString() : 'Time not supplied by provider'}</p></div></div>) : <div className="empty-section"><Activity size={25} /><h3>No imported TRS events yet.</h3><p>Configure a TRS endpoint or RDF export centrally. Change order, checkpoints, and deletion tombstones appear here after sync.</p></div>}
           <div className="checkpoint-list">{connectors.filter((item: any) => item.domain === 'TRS').map((item: any) => <div key={item.id}><strong>{item.label}</strong><span>Checkpoint {item.checkpoint?.latest_order ?? 'unavailable'} · {item.status}</span></div>)}</div></section>
           <section className="plain-panel"><div className="section-title"><div><h2>Build evidence</h2></div><Workflow size={20} /></div>{graph?.pipeline_runs?.length ? graph.pipeline_runs.map(run => <div className="pipeline-run" key={run.id}><CheckCircle2 size={18} /><div><strong>{run.label}</strong><p>{run.branch} · {run.revision?.slice(0, 8)}</p></div><span className={'pipeline-status ' + (run.matches_revision ? 'matched' : '')}>{run.status}</span><small>{run.matches_revision ? 'Matches indexed revision' : 'Different revision'}</small></div>) : <div className="empty-section"><Workflow size={25} /><h3>No build evidence imported</h3><p>Add GitHub Actions or GitLab CI connections to the central catalog. Build status is linked only when its revision matches the source.</p></div>}</section></div>}
-        {view === 'review' && <section className="review-center"><div className="section-title"><div><h2>Snapshot decision</h2></div><ShieldCheck size={22} /></div>{review ? <><div className="review-summary"><CircleDot size={18} /><div><strong>{graph?.metadata.source_label}</strong><p>{graph?.nodes.length} resources · {graph?.edges.length} relationships · revision {String(graph?.metadata.revision || 'unversioned').slice(0, 12)}</p></div><span className={'status-pill ' + review.status}>{review.status}</span></div><ReviewPanel key={review.id} review={review} onChange={updateReview} />{graph && <Suspense fallback={<p>Loading link collaboration...</p>}><CollaborationPanel key={review.id} review={review} graph={graph} catalog={catalog} selected={selected} /></Suspense>}<div className="review-caveat">Review covers this snapshot. Provider gaps and static-analysis limitations remain visible in its evidence.</div></> : <div className="empty-section">Synchronize a managed source to create a reviewable graph snapshot.</div>}</section>}
+        {view === 'review' && <section className="review-center"><div className="section-title"><div><h2>Snapshot decision</h2></div><ShieldCheck size={22} /></div>{review ? <><div className="review-summary"><CircleDot size={18} /><div><strong>{graph?.metadata.source_label}</strong><p>{graph?.nodes.length} resources · {graph?.edges.length} relationships · revision {String(graph?.metadata.revision || 'unversioned').slice(0, 12)}</p></div><span className={'status-pill ' + review.status}>{review.status}</span></div><ReviewPanel key={review.id} review={review} onChange={updateReview} />{graph && <details><summary>Advanced ALM relationship actions</summary><Suspense fallback={<p>Loading link collaboration...</p>}><CollaborationPanel key={review.id} review={review} graph={graph} catalog={catalog} selected={selected} /></Suspense></details>}<div className="review-caveat">Review covers this snapshot. Provider gaps and static-analysis limitations remain visible in its evidence.</div></> : <div className="empty-section">Synchronize a managed source to create a reviewable graph snapshot.</div>}</section>}
         {view === 'admin' && <AdminModule />}
         {view === 'connections' && <><Connections catalog={catalog} connectors={connectors} /></>}
         </Suspense>
