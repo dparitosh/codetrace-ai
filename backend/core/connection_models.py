@@ -10,7 +10,7 @@ class Connection(BaseModel):
     label: str = Field(min_length=1, max_length=160)
 
 
-def connection_url(value):
+def connection_url(value, require_https=True):
     if value is None:
         return value
     try:
@@ -22,10 +22,17 @@ def connection_url(value):
         raise ValueError('Use a valid HTTP(S) endpoint with a port between 1 and 65535')
     if parsed.scheme not in {'http', 'https'} or not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
         raise ValueError('Use an HTTP(S) endpoint without embedded credentials or fragment')
-    if parsed.scheme == 'http' and parsed.hostname not in {'localhost', '127.0.0.1', '::1'}:
+    if require_https and parsed.scheme == 'http' and parsed.hostname not in {'localhost', '127.0.0.1', '::1'}:
         raise ValueError('Remote endpoints must use HTTPS')
     if any(word in parsed.query.lower() for word in ('token=', 'password=', 'secret=')):
         raise ValueError('Credentials belong in a named server environment variable')
+    return value
+
+
+def ai_connection_url(value, require_https=False):
+    value = connection_url(value, require_https=False)
+    if value is not None and require_https and urlsplit(value).scheme != 'https':
+        raise ValueError('AI_REQUIRE_HTTPS=true requires an HTTPS AI endpoint; set false to allow HTTP')
     return value
 
 

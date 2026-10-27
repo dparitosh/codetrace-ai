@@ -232,6 +232,14 @@ def test_creation_retry_preserves_original_context_identity(workbench):
     assert error.value.status_code == 409
 
 
+def test_conversation_client_timeout_tracks_configured_agent_deadline(workbench, monkeypatch):
+    client, headers, _, _ = workbench
+    monkeypatch.setattr(settings, 'AI_AGENT_DEADLINE_SECONDS', 300)
+    monkeypatch.setattr(settings, 'CONTROL_REQUEST_TIMEOUT_SECONDS', 20)
+    case = client.get(BASE + '/case', headers=headers).json()
+    assert case['request_timeout_seconds'] == 320
+
+
 def test_context_change_refreshes_agent_scope_and_warns_for_retained_human_scope(workbench):
     client, headers, case, nodes = workbench
     case = ask(client, headers, case, nodes[0], 'scope-a', automate=True)

@@ -171,6 +171,69 @@ def test_forbidden_tools_and_invented_citations_fall_back():
         assert 'Invented result' not in result['answer']
 
 
+@pytest.mark.parametrize('status, expected', [(400, 'native tool calling'), (401, 'authentication failed'),
+    (403, 'access was denied'), (404, 'chat route was not found'), (429, 'rate limited'), (503, 'HTTP 503')])
+def test_agent_reports_safe_http_failure_reason(status, expected):
+    rest = OllamaREST(profile(embeddings_enabled=False))
+    request = httpx.Request('POST', 'https://secret.invalid/api/chat?key=PRIVATE_SENTINEL', headers={'api-key': 'PRIVATE_SENTINEL'})
+    error = httpx.HTTPStatusError('PRIVATE_SENTINEL', request=request,
+        response=httpx.Response(status, text='PRIVATE_SENTINEL', request=request))
+    with patch.object(rest, 'chat', side_effect=error):
+        result = GraphAgent(snapshot(), rest).run('Explain', 'urn:test:rm')
+    assert result['mode'] == 'evidence' and expected in result['warning']
+    assert 'PRIVATE_SENTINEL' not in json.dumps(result) and 'secret.invalid' not in json.dumps(result)
+
+
+@pytest.mark.parametrize('error, expected', [
+    (httpx.ReadTimeout('PRIVATE_SENTINEL'), 'timed out'),
+    (httpx.ConnectError('PRIVATE_SENTINEL'), 'Could not communicate'),
+    (ValueError('AI request exceeded the configured context byte budget'), 'AI_CONTEXT_MAX_BYTES'),
+    (ValueError('AI operation reached its total deadline'), 'AI_AGENT_DEADLINE_SECONDS'),
+    (ValueError('PRIVATE_SENTINEL'), 'arguments were invalid'),
+])
+def test_agent_reports_safe_transport_and_budget_reason(error, expected):
+    rest = OllamaREST(profile(embeddings_enabled=False))
+    with patch.object(rest, 'chat', side_effect=error):
+        result = GraphAgent(snapshot(), rest).run('Explain', 'urn:test:rm')
+    assert result['mode'] == 'evidence' and expected in result['warning']
+    assert 'PRIVATE_SENTINEL' not in json.dumps(result)
+
+
+def test_agent_distinguishes_malformed_json_citations_and_unfinished_loop():
+    for message, expected in [({'content': 'PRIVATE_SENTINEL'}, 'not valid JSON'),
+        ({'content': json.dumps({'answer': 'Unknown [E999]', 'citation_ids': ['E999']})}, 'citation validation'),
+        ({'tool_calls': [{'function': {'name': 'inspect_resource', 'arguments': {'node_id': 'urn:test:fn'}}}]}, 'AI_AGENT_MAX_STEPS')]:
+        rest = OllamaREST(profile(embeddings_enabled=False))
+        with patch.object(rest, 'chat', return_value=message):
+            result = GraphAgent(snapshot(), rest).run('Explain', 'urn:test:rm')
+        assert result['mode'] == 'evidence' and expected in result['warning']
+        assert 'PRIVATE_SENTINEL' not in json.dumps(result)
+
+
+def test_configured_ollama_port_alias_and_embedding_default(monkeypatch):
+    monkeypatch.setattr(settings, 'AI_BASE_URL', 'http://127.0.0.1:1434/ollama')
+    monkeypatch.setattr(settings, 'AI_EMBEDDING_MODEL', 'custom-embed:local')
+    profile = AIConnection(base_url='http://localhost:1434/ollama/api/chat')
+    assert profile.base_url == 'http://localhost:1434/ollama'
+    assert profile.embedding_model == 'custom-embed:local'
+    with pytest.raises(ValueError):
+        AIConnection(base_url='http://localhost:11434/ollama')
+
+
+def test_http_ai_policy_applies_to_session_profiles_without_relaxing_allowlist(monkeypatch):
+    monkeypatch.setattr(settings, 'AI_REQUIRE_HTTPS', False)
+    monkeypatch.setattr(settings, 'AI_BASE_URL', 'http://models.example/ollama')
+    monkeypatch.setattr(settings, 'AI_ALLOWED_BASE_URLS', [])
+    assert AIConnection(base_url='http://models.example/ollama/api/chat').base_url == 'http://models.example/ollama'
+    with pytest.raises(ValueError):
+        AIConnection(base_url='http://unregistered.example')
+    with pytest.raises(ValueError):
+        AIConnection(base_url='http://user:secret@models.example/ollama')
+    monkeypatch.setattr(settings, 'AI_REQUIRE_HTTPS', True)
+    with pytest.raises(ValueError, match='AI_REQUIRE_HTTPS=true'):
+        AIConnection(base_url='http://models.example/ollama')
+
+
 def test_agent_session_guard_rechecked_between_tools():
     allowed = [True]
     def guard():

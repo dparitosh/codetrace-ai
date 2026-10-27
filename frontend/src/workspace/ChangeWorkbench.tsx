@@ -14,6 +14,7 @@ interface Evidence { id: string; node: TraceNode; captured_at: string; snapshot_
 interface Dossier extends Fields { id: string; revision: number; version: number; state: string; snapshot_id: string; snapshot_digest: string;
   selected_id: string | null; evidence: Evidence[]; turns: Turn[]; automation_review_required: boolean;
   context_warnings?: string[];
+  request_timeout_seconds: number;
   audit: { action: string; at: string; note: string }[]; versions: { version: number; digest: string; dossier: Record<string, unknown> }[]; graph?: TraceGraph }
 type QueueItem = Pick<Dossier, 'id' | 'revision' | 'version' | 'state' | 'title'>
 type Tab = 'conversation' | 'dossier' | 'graph' | 'table' | 'imported'
@@ -106,7 +107,7 @@ export default function ChangeWorkbench({ graph, review, catalog, selected, acti
     const requestId = retry?.request_id || pendingRequest.current.id
     run(async () => {
       const result = await changeRequest<Dossier>(`/${dossier.id}/conversation`, { revision: dossier.revision, request_id: requestId,
-        question: value, selected_id: selectedId, agent_id: retry?.agent_id || agent, automate: retry?.automate ?? automate }, 150)
+        question: value, selected_id: selectedId, agent_id: retry?.agent_id || agent, automate: retry?.automate ?? automate }, dossier.request_timeout_seconds)
       pendingRequest.current = null
       return result
     }, false, true)

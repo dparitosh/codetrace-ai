@@ -175,6 +175,8 @@ def test_ollama_answer_requires_real_evidence_citations(managed, monkeypatch):
     assert result['mode'] == 'evidence' and result['warning']
 
 
-def test_local_ollama_cannot_be_redirected_to_a_cloud_host():
-    with pytest.raises(ValueError):
-        Settings(_env_file=None, AI_PROVIDER='ollama', AI_MODEL='test', AI_BASE_URL='https://cloud.example')
+def test_explicit_native_ollama_endpoint_preserves_configured_scheme():
+    for scheme in ('http', 'https'):
+        configured = Settings(_env_file=None, AI_PROVIDER='ollama', AI_MODEL='test',
+                              AI_BASE_URL=f'{scheme}://models.example/ollama', AI_ALLOWED_BASE_URLS=[])
+        assert configured.AI_BASE_URL == f'{scheme}://models.example/ollama'

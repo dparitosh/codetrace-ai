@@ -9,11 +9,13 @@ from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from typing import Literal
 from core.config import settings
+from core.connection_models import ai_connection_url
 from services.oslc_service import server_secret
 from services.agent_configuration import AgentConfiguration, AgentId, ToolConfiguration, ToolId
 
 
 def normalize_base(value):
+    ai_connection_url(value, settings.AI_REQUIRE_HTTPS)
     url = urlsplit(value.strip())
     if (url.scheme not in {'http', 'https'} or not url.hostname or url.username or url.password
             or url.query or url.fragment or url.port == 0 or '\\' in value
@@ -31,8 +33,10 @@ def normalize_base(value):
 
 def allowed_bases():
     values = [settings.AI_BASE_URL, *settings.AI_ALLOWED_BASE_URLS]
-    if normalize_base(settings.AI_BASE_URL) == 'http://127.0.0.1:11434':
-        values.append('http://localhost:11434')
+    local = urlsplit(normalize_base(settings.AI_BASE_URL))
+    if local.hostname in {'127.0.0.1', 'localhost'}:
+        alias = 'localhost' if local.hostname == '127.0.0.1' else '127.0.0.1'
+        values.append(urlunsplit((local.scheme, alias + (f':{local.port}' if local.port else ''), local.path, '', '')))
     return sorted({normalize_base(value) for value in values})
 
 
@@ -41,7 +45,7 @@ class AIConnection(BaseModel):
     enabled: bool = True
     base_url: str = Field(max_length=2048)
     model: str = Field(default='', max_length=160)
-    embedding_model: str = Field(default='nomic-embed-text', max_length=160)
+    embedding_model: str = Field(default_factory=lambda: settings.AI_EMBEDDING_MODEL, max_length=160)
     api_key: SecretStr = Field(default=SecretStr(''), max_length=4096)
     key_header: Literal['Authorization', 'api-key', 'Ocp-Apim-Subscription-Key'] = 'Authorization'
     embeddings_enabled: bool = True

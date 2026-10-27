@@ -69,3 +69,27 @@ def test_valid_launcher_configuration_preserves_public_json_contract():
     assert set(data) == {'frontend', 'backend', 'logs', 'ports', 'startupTimeout'}
     assert data['backend'].startswith('http://127.0.0.1:')
     assert not result.stderr
+
+
+@pytest.mark.parametrize('endpoint', ['http://127.0.0.1:1434', 'http://models.example/ollama', 'https://models.example/ollama'])
+def test_ai_allows_http_by_default_without_rewriting_scheme(endpoint):
+    configured = Settings(_env_file=None, AI_PROVIDER='ollama', AI_MODEL='installed',
+                          AI_BASE_URL=endpoint, AI_ALLOWED_BASE_URLS=[])
+    assert configured.AI_REQUIRE_HTTPS is False and configured.AI_BASE_URL == endpoint
+
+
+@pytest.mark.parametrize('endpoint', ['http://127.0.0.1:1434', 'http://models.example/ollama'])
+def test_ai_https_policy_is_explicit_and_names_configuration(endpoint):
+    with pytest.raises(ValidationError, match='AI_REQUIRE_HTTPS=true'):
+        Settings(_env_file=None, AI_REQUIRE_HTTPS=True, AI_BASE_URL=endpoint, AI_ALLOWED_BASE_URLS=[])
+    configured = Settings(_env_file=None, AI_REQUIRE_HTTPS=True, AI_BASE_URL='https://models.example/ollama', AI_ALLOWED_BASE_URLS=[])
+    assert configured.AI_BASE_URL.startswith('https://')
+
+
+def test_https_policy_checks_additional_ai_bases_without_affecting_other_integrations():
+    with pytest.raises(ValidationError) as error:
+        Settings(_env_file=None, AI_REQUIRE_HTTPS=True, AI_BASE_URL='https://models.example',
+                 AI_ALLOWED_BASE_URLS=['http://other.example'])
+    assert error.value.errors()[0]['loc'][0] == 'AI_ALLOWED_BASE_URLS'
+    with pytest.raises(ValidationError, match='Remote endpoints must use HTTPS'):
+        Settings(_env_file=None, AI_REQUIRE_HTTPS=False, OSLC_PUBLIC_BASE_URL='http://alm.example')

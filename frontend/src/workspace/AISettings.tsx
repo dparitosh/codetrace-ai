@@ -51,12 +51,12 @@ export default function AISettings() {
     {!profile ? <IxButton disabled={busy} onClick={() => run(load)}>Start session and load AI settings</IxButton> : <>
       <label><input type="checkbox" checked={profile.enabled} onChange={event => setProfile({ ...profile, enabled: event.target.checked })} />Enable Ollama agent execution</label>
       <div className="ai-settings-grid">
-        <label>Ollama REST URL<input aria-label="Ollama REST URL" value={profile.base_url} maxLength={2048} onChange={event => setProfile({ ...profile, base_url: event.target.value })} placeholder="http://127.0.0.1:11434" /></label>
+        <label>Ollama REST URL<input aria-label="Ollama REST URL" value={profile.base_url} maxLength={2048} onChange={event => setProfile({ ...profile, base_url: event.target.value })} placeholder="Configured AI_BASE_URL" /></label>
         <label>Key header<select aria-label="Ollama key header" value={profile.key_header} onChange={event => setProfile({ ...profile, key_header: event.target.value })}><option>Authorization</option><option>api-key</option><option>Ocp-Apim-Subscription-Key</option></select></label>
         <label>API key<input aria-label="Ollama API key" type="password" autoComplete="off" value={key} maxLength={4096} onChange={event => setKey(event.target.value)} placeholder={profile.key_configured ? 'Saved key retained when blank' : 'Optional for local Ollama'} /></label>
         <label><input type="checkbox" checked={clearKey} onChange={event => setClearKey(event.target.checked)} />Remove saved key when saving</label>
         <label>Chat model<input aria-label="Ollama chat model" list="ollama-models" value={profile.model} maxLength={160} onChange={event => setProfile({ ...profile, model: event.target.value })} placeholder="Select an installed tool-capable model" /></label>
-        <label>Embedding model<input aria-label="Ollama embedding model" list="ollama-models" value={profile.embedding_model} maxLength={160} onChange={event => setProfile({ ...profile, embedding_model: event.target.value })} placeholder="nomic-embed-text" /></label>
+        <label>Embedding model<input aria-label="Ollama embedding model" list="ollama-models" value={profile.embedding_model} maxLength={160} onChange={event => setProfile({ ...profile, embedding_model: event.target.value })} placeholder="Configured AI_EMBEDDING_MODEL" /></label>
       </div>
       <datalist id="ollama-models">{models.map(model => <option key={model} value={model} />)}</datalist>
       <label><input type="checkbox" checked={profile.embeddings_enabled} onChange={event => setProfile({ ...profile, embeddings_enabled: event.target.checked })} />Use contextual embeddings in graph search</label>

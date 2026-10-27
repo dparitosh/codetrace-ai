@@ -35,13 +35,17 @@ def test_managed_snapshot_retains_bound_assessments(tmp_path, monkeypatch):
     assert findings and any(node['type'] == 'file' and node['properties']['path'] == findings[0]['file'] for node in graph['nodes'])
 
 
-def test_agent_domain_and_source_evidence_share_snapshot():
+def test_agent_domain_and_source_evidence_share_snapshot(monkeypatch):
+    from core.config import settings
+    monkeypatch.setattr(settings, 'AI_REQUIRE_HTTPS', False)
+    monkeypatch.setattr(settings, 'AI_BASE_URL', 'http://127.0.0.1:1434')
+    monkeypatch.setattr(settings, 'AI_ALLOWED_BASE_URLS', [])
     graph = {'nodes': [
         {'id': 'urn:test:code', 'label': 'Brake code', 'type': 'file', 'properties': {'domain': 'CODE', 'path': 'brake.py'}},
         {'id': 'urn:test:req', 'label': 'Brake requirement', 'type': 'requirement', 'properties': {'domain': 'RM'}},
     ], 'edges': [], 'metadata': {'snapshot_id': 'fixture'}, 'source_assessments': {
         'summary': {'total_files': 1}, 'security': {'findings': [{'file': 'brake.py', 'rule': 'dynamic-execution', 'line': 1}]}}}
-    rest = OllamaREST(AIConnection(base_url='http://127.0.0.1:11434', model='offline', enabled=False))
+    rest = OllamaREST(AIConnection(base_url=settings.AI_BASE_URL, model='offline', enabled=False))
     result = GraphAgent(graph, rest).run('Brake', domain='RM')
     assert result['trace'][0]['arguments']['domain'] == 'RM'
     assert result['highlight_ids'] == ['urn:test:req']

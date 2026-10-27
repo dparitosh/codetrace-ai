@@ -137,6 +137,7 @@ class ChangeStore:
             self.pending(db, case_id)
             result = {key: row[key] for key in ('id', 'revision', 'state', 'snapshot_digest', 'updated_at')}
             result.update(json.loads(row['body']))
+            result['request_timeout_seconds'] = settings.AI_AGENT_DEADLINE_SECONDS + settings.CONTROL_REQUEST_TIMEOUT_SECONDS
             result['turns'] = [dict(json.loads(turn['body']), id=turn['id'], state=turn['state'], request_id=turn['request_id'])
                                for turn in db.execute('SELECT * FROM turns WHERE case_id=? ORDER BY created_at,id', (case_id,))]
             result['versions'] = [{'version': v['version'], 'digest': v['digest'], 'dossier': json.loads(v['body'])}

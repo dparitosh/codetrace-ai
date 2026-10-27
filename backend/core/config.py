@@ -4,8 +4,8 @@ import json
 import ipaddress
 from pathlib import Path
 from typing import List, Optional, Literal
-from urllib.parse import urlsplit, quote
-from core.connection_models import ManagedRepository, OSLCProvider, PipelineProvider, connection_url
+from urllib.parse import quote
+from core.connection_models import ManagedRepository, OSLCProvider, PipelineProvider, connection_url, ai_connection_url
 
 from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -82,6 +82,7 @@ class Settings(BaseSettings):
     TRS_CACHE_EVENTS: int = Field(default=1000, ge=1, le=10000)
     TRS_CACHE_MAX_BYTES: int = Field(default=20000000, ge=1)
     AI_PROVIDER: Literal['disabled', 'ollama', 'openai-compatible'] = 'disabled'
+    AI_REQUIRE_HTTPS: bool = False
     AI_BASE_URL: str = 'http://127.0.0.1:11434'
     AI_MODEL: str = ''
     AI_TOKEN_ENV: str = 'CODETRACE_AI_TOKEN'
@@ -133,14 +134,15 @@ class Settings(BaseSettings):
     def named_endpoint(cls, value, info):
         if info.field_name == 'OSLC_PUBLIC_BASE_URL' and value == '':
             return None
-        return connection_url(value)
+        return (ai_connection_url(value, info.data.get('AI_REQUIRE_HTTPS', False))
+                if info.field_name == 'AI_BASE_URL' else connection_url(value))
 
     @field_validator('AI_ALLOWED_BASE_URLS')
     @classmethod
-    def named_allowed_endpoints(cls, values):
+    def named_allowed_endpoints(cls, values, info):
         for index, value in enumerate(values):
             try:
-                connection_url(value)
+                ai_connection_url(value, info.data.get('AI_REQUIRE_HTTPS', False))
             except ValueError as error:
                 raise ValueError(f'Entry {index}: {error}') from None
         return values
@@ -167,8 +169,6 @@ class Settings(BaseSettings):
                 id='workspace', label='Configured source folder', kind='local', path=str(self.SOURCE_FOLDER))]
         self.OSLC_PUBLIC_BASE_URL = self.OSLC_PUBLIC_BASE_URL or f'http://{self.browser_host}:{self.PORT}/oslc'
         connection_url(self.OSLC_PUBLIC_BASE_URL)
-        if self.AI_PROVIDER == 'ollama' and urlsplit(self.AI_BASE_URL).hostname not in {'localhost', '127.0.0.1', '::1'}:
-            raise ValueError('Local Ollama must use a loopback endpoint; use openai-compatible for a managed remote service')
         repository_ids = {item.id for item in self.MANAGED_REPOSITORIES}
         for values in (self.MANAGED_REPOSITORIES, self.OSLC_PROVIDERS, self.CI_PROVIDERS):
             if len({item.id for item in values}) != len(values):
