@@ -13,7 +13,7 @@ from api.workspace_routes import ManagedSync
 from core.config import settings
 from main import app
 from services.ai_connection import AIConnection, OllamaREST, normalize_base
-from services.agent_workspace import GraphAgent, GraphSearch, coverage_gaps
+from services.agent_workspace import GraphAgent, GraphSearch, coverage_gaps, tool_schema
 from services.shared_reviews import SQLiteReviewStore
 
 
@@ -121,6 +121,140 @@ def test_embedding_validation():
     for vectors in [[[1, 2]], [[0, 0], [1, 2]], [[1, float('nan')], [1, 2]], [[1, 2], [1]]]:
         with patch.object(rest, 'request', return_value={'embeddings': vectors}), pytest.raises(ValueError):
             rest.embed(['one','two'])
+
+
+@pytest.mark.parametrize('vector', [[10 ** 400, 1], [1e308, 1e308], [True, 1], [float('inf'), 1], [float('nan'), 1], [0, 0]])
+def test_embedding_invalid_numeric_values_raise_controlled_error(vector):
+    with patch.object(OllamaREST, 'request', return_value={'embeddings': [vector]}):
+        with pytest.raises(ValueError):
+            OllamaREST(profile()).embed(['fixture'])
+
+
+@pytest.mark.parametrize('name', ['inspect_resource', 'traverse_graph', 'similar_resources'])
+def test_tool_identity_required_in_both_schema_and_runtime(name):
+    schema = tool_schema(name)['function']['parameters']
+    assert schema['required'] == ['node_id']
+    assert schema['additionalProperties'] is False
+    assert 'query' not in schema['properties']
+    agent = GraphAgent(snapshot(), OllamaREST(profile()), 'change-analyst')
+    with pytest.raises(ValueError):
+        agent.tool(name, {})
+    assert not agent.trace and not agent.evidence
+    assert agent.tool(name, {'node_id': 'urn:test:rm'})['evidence']
+
+
+def test_tool_schemas_expose_only_relevant_parameters():
+    search = tool_schema('search_graph')['function']['parameters']
+    assert search['required'] == ['query']
+    assert set(search['properties']) == {'query', 'domain'}
+    assert not tool_schema('coverage_gaps')['function']['parameters']['properties']
+    agent = GraphAgent(snapshot(), OllamaREST(profile()), 'coverage-reviewer')
+    with pytest.raises(ValueError):
+        agent.tool('coverage_gaps', {'node_id': 'urn:test:rm'})
+
+
+def test_model_failure_retains_observed_links_but_does_not_infer_unseen_links():
+    rest = OllamaREST(profile(embeddings_enabled=False))
+    calls = [{'tool_calls': [{'function': {'name': 'traverse_graph', 'arguments': {
+        'node_id': 'urn:test:rm', 'direction': 'outgoing', 'depth': 1}}}]}, ValueError('fixture failure')]
+    with patch.object(rest, 'chat', side_effect=calls):
+        answer = GraphAgent(snapshot(), rest).run('Explain links', 'urn:test:rm')
+    assert answer['mode'] == 'evidence' and answer['relations']
+    assert 'explicit relationships' in answer['answer']
+    assert 'No non-containment relationship was found' not in answer['answer']
+    ids = {c['citation_id'] for c in answer['citations']}
+    assert all(e['source'] in ids and e['target'] in ids for e in answer['relations'])
+    # A search observes resource identity/context text, not explicit edge assertions.
+    with patch.object(rest, 'chat', side_effect=ValueError('fixture failure')):
+        searched = GraphAgent(snapshot(), rest).run('Brake')
+    assert not searched['relations']
+    isolated = snapshot(); isolated['edges'] = []
+    with patch.object(rest, 'chat', side_effect=ValueError('fixture failure')):
+        answer = GraphAgent(isolated, rest).run('Explain', 'urn:test:rm')
+    assert not answer['relations'] and 'No non-containment relationship was found' in answer['answer']
+
+
+def test_inspected_relationships_remain_bounded_and_disclose_truncation(monkeypatch):
+    monkeypatch.setattr(settings, 'AI_CONTEXT_RELATIONS', 1)
+    agent = GraphAgent(snapshot(), OllamaREST(profile()))
+    observed = agent.tool('inspect_resource', {'node_id': 'urn:test:rm'})
+    assert len(observed['relationships']) == 1
+    assert observed['relationship_count'] == 2 and observed['relationships_truncated']
+
+
+@pytest.mark.parametrize('status', [404, 405])
+def test_chat_readiness_survives_unavailable_discovery(session_store, status):
+    store, token, client = session_store
+    store.ai_profile(token, profile(embeddings_enabled=False).private())
+    calls = []
+    factory = httpx.Client
+    def reply(request):
+        calls.append(request.url.path)
+        return (httpx.Response(status) if request.url.path.endswith('/tags') else
+                httpx.Response(200, json={'message': {'content': '{"ready":true}'}}))
+    with patch('services.ai_connection.httpx.Client', side_effect=lambda **kwargs: factory(transport=httpx.MockTransport(reply), **kwargs)):
+        response = client.post('/api/v1/workspace/ai/test', headers={'X-CodeTrace-Session': token})
+    assert response.status_code == 200, response.text
+    assert response.json()['chat'] == 'ready'
+    assert response.json()['discovery']['status'] == 'unavailable'
+    assert response.json()['tool_calling'] == 'not_tested'
+    assert calls == ['/api/tags', '/api/chat']
+
+
+def test_disabled_discovery_is_preserved_and_never_requested(session_store):
+    store, token, client = session_store
+    headers = {'X-CodeTrace-Session': token}
+    saved = client.put('/api/v1/workspace/ai/config', headers=headers,
+        json=profile(discovery_enabled=False, embeddings_enabled=False).private())
+    assert saved.status_code == 200 and saved.json()['discovery_enabled'] is False
+    assert client.get('/api/v1/workspace/ai/config', headers=headers).json()['discovery_enabled'] is False
+    calls = []
+    factory = httpx.Client
+    def reply(request):
+        calls.append(request.url.path)
+        assert request.url.path == '/api/chat'
+        return httpx.Response(200, json={'message': {'content': '{"ready":true}'}})
+    with patch('services.ai_connection.httpx.Client', side_effect=lambda **kwargs: factory(transport=httpx.MockTransport(reply), **kwargs)):
+        result = client.post('/api/v1/workspace/ai/test', headers=headers)
+        assert client.post('/api/v1/workspace/ai/models', headers=headers).status_code == 409
+    assert result.status_code == 200 and result.json()['discovery']['status'] == 'disabled'
+    assert calls == ['/api/chat']
+
+
+@pytest.mark.parametrize('status', [401, 403])
+def test_discovery_authentication_failure_is_not_a_success(session_store, status):
+    store, token, client = session_store
+    store.ai_profile(token, profile().private())
+    calls = []
+    factory = httpx.Client
+    def reply(request):
+        calls.append(request.url.path)
+        return httpx.Response(status, text='SECRET_PROVIDER_BODY')
+    with patch('services.ai_connection.httpx.Client', side_effect=lambda **kwargs: factory(transport=httpx.MockTransport(reply), **kwargs)):
+        result = client.post('/api/v1/workspace/ai/test', headers={'X-CodeTrace-Session': token})
+    assert result.status_code == 502 and 'discovery test failed' in result.json()['error']
+    assert f'HTTP {status}' in result.json()['error'] and 'SECRET_PROVIDER_BODY' not in result.text
+    assert calls == ['/api/tags']
+
+
+def test_embedding_overflow_returns_lexical_search_and_specific_connectivity_failure(session_store):
+    store, token, client = session_store
+    store.ai_profile(token, profile(discovery_enabled=False).private())
+    headers = {'X-CodeTrace-Session': token}
+    factory = httpx.Client
+    def reply(request):
+        body = json.loads(request.content)
+        return (httpx.Response(200, json={'embeddings': [[10 ** 400, 1] for _ in body['input']]})
+                if request.url.path.endswith('/embed') else
+                httpx.Response(200, json={'message': {'content': '{"ready":true}'}}))
+    with patch('services.ai_connection.httpx.Client', side_effect=lambda **kwargs: factory(transport=httpx.MockTransport(reply), **kwargs)):
+        result = client.post('/api/v1/workspace/search', headers=headers,
+                             json={'review_id': 'graph', 'query': 'Brake', 'semantic': True})
+        tested = client.post('/api/v1/workspace/ai/test', headers=headers)
+    assert result.status_code == 200 and result.json()['mode'] == 'lexical'
+    assert result.json()['warning'] and result.json()['results']
+    assert tested.status_code == 502 and 'embeddings test failed' in tested.json()['error']
+    assert 'chat: ready' in tested.json()['error']
 
 
 def test_hybrid_search_and_disclosed_fallback():

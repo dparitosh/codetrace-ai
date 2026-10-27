@@ -28,7 +28,7 @@ def test_readiness_rejects_non_ready_json_without_server_errors(monkeypatch, con
     store = review_routes.ReviewStore()
     monkeypatch.setattr(review_routes, 'store', store)
     fake = SimpleNamespace(models=lambda: [], chat=lambda *args: {'content': content},
-                           connection=SimpleNamespace(embeddings_enabled=False))
+                           connection=SimpleNamespace(embeddings_enabled=False, discovery_enabled=True))
     monkeypatch.setattr(workspace_routes, 'OllamaREST', lambda *args: fake)
     client = TestClient(app)
     token = client.post('/api/v1/review/session').json()['token']

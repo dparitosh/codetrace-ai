@@ -123,6 +123,8 @@ If startup reports an invalid configuration, run `.venv\Scripts\python.exe backe
 
 Configure local Ollama with, for example, `AI_BASE_URL=http://127.0.0.1:1434` and the exact installed `AI_MODEL`. No model is downloaded automatically. Loopback hostname aliases retain the configured port and proxy path. The embedding-model default comes from `AI_EMBEDDING_MODEL`; the change workbench's request timeout follows `AI_AGENT_DEADLINE_SECONDS` plus `CONTROL_REQUEST_TIMEOUT_SECONDS`, rather than a fixed browser timeout. Restart services after changing root settings; existing session overrides remain separate.
 
+For gateways without `GET /api/tags`, set `AI_DISCOVERY_ENABLED=false` or disable **Discover installed models** in the session's AI settings. Enter exact model names directly. **Save and test chat + embeddings** reports discovery separately; a missing discovery route (404/405) does not prevent testing chat. Authentication failures remain errors. Connectivity success does not verify native tool support: the UI preserves this warning, and agent execution validates tool calls and citations. Failed model execution retains observed relationship evidence; malformed embedding numbers fall back to lexical search.
+
 | Setting | Default | Purpose |
 | --- | --- | --- |
 | `HOST` | `127.0.0.1` | Backend and frontend bind address; keep loopback for local use |

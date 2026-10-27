@@ -83,6 +83,7 @@ class Settings(BaseSettings):
     TRS_CACHE_MAX_BYTES: int = Field(default=20000000, ge=1)
     AI_PROVIDER: Literal['disabled', 'ollama', 'openai-compatible'] = 'disabled'
     AI_REQUIRE_HTTPS: bool = False
+    AI_DISCOVERY_ENABLED: bool = True
     AI_BASE_URL: str = 'http://127.0.0.1:11434'
     AI_MODEL: str = ''
     AI_TOKEN_ENV: str = 'CODETRACE_AI_TOKEN'

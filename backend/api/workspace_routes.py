@@ -14,7 +14,7 @@ from services.companion_service import answer_question
 from services.oslc_service import server_secret
 from services.oslc_store import LINK_PREDICATES
 from services.ai_connection import AIConnection, OllamaREST, connection_for, allowed_bases
-from services.agent_workspace import AGENTS, GraphAgent, GraphSearch
+from services.agent_workspace import AGENTS, GraphAgent, GraphSearch, model_failure_warning
 from services.agent_configuration import TOOL_DESCRIPTIONS, configured_agent
 import httpx
 
@@ -95,6 +95,8 @@ def ai_models(x_codetrace_session: Optional[str] = Header(default=None)):
         raise HTTPException(429, 'AI capacity is busy')
     try:
         rest = OllamaREST(connection_for(store, x_codetrace_session), ai_guard(x_codetrace_session))
+        if not rest.connection.discovery_enabled:
+            raise HTTPException(409, 'Model discovery is disabled for this connection. Enter installed model names directly.')
         return {'models': rest.models()}
     except (httpx.HTTPError, ValueError, TypeError, KeyError):
         raise HTTPException(502, 'Ollama discovery failed. Check the URL, key/header and REST availability.') from None
@@ -107,20 +109,38 @@ def test_ai(x_codetrace_session: Optional[str] = Header(default=None)):
     store = review_routes.store
     if not store.workers.acquire(blocking=False):
         raise HTTPException(429, 'AI capacity is busy')
+    stage = 'discovery'
+    discovery = {'status': 'disabled'}
+    chat_ready = False
     try:
         rest = OllamaREST(connection_for(store, x_codetrace_session), ai_guard(x_codetrace_session))
-        names = rest.models()
+        names = []
+        if rest.connection.discovery_enabled:
+            discovery = {'status': 'failed'}
+            try:
+                names = rest.models()
+                discovery = {'status': 'ready'}
+            except httpx.HTTPStatusError as error:
+                if error.response.status_code not in {404, 405}:
+                    raise
+                discovery = {'status': 'unavailable', 'warning': 'Model discovery route is unavailable; testing the explicitly selected models.'}
+        stage = 'chat'
         message = rest.chat([{'role': 'user', 'content': 'Return JSON {"ready":true}.'}])
         import json
         readiness = json.loads(message.get('content', ''))
         if not isinstance(readiness, dict) or readiness.get('ready') is not True:
             raise ValueError('Chat readiness response was invalid')
+        chat_ready = True
+        stage = 'embeddings'
         dimensions = len(rest.embed(['CodeTrace connection test'])[0]) if rest.connection.embeddings_enabled else None
         return {'chat': 'ready' if isinstance(message.get('content'), str) else 'invalid',
-                'embedding_dimensions': dimensions, 'available_models': names,
-                'warning': 'Connectivity is verified; tool-calling quality is checked during agent execution.'}
-    except (httpx.HTTPError, ValueError, TypeError, KeyError):
-        raise HTTPException(502, 'Ollama chat or embedding test failed. Ensure both selected models are installed and the key/header is correct.') from None
+                'embedding_dimensions': dimensions, 'available_models': names, 'discovery': discovery,
+                'tool_calling': 'not_tested',
+                'warning': ((discovery.get('warning', '') + ' ') if discovery.get('warning') else '') +
+                           'Connectivity is verified; native tool calling is not tested by this check and is validated during agent execution.'}
+    except (httpx.HTTPError, ValueError, TypeError, KeyError) as error:
+        raise HTTPException(502, f'Ollama {stage} test failed (discovery: {discovery["status"]}; chat: {"ready" if chat_ready else "not verified"}). '
+                            + model_failure_warning(error)) from None
     finally:
         store.workers.release()
 

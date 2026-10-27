@@ -49,6 +49,7 @@ class AIConnection(BaseModel):
     api_key: SecretStr = Field(default=SecretStr(''), max_length=4096)
     key_header: Literal['Authorization', 'api-key', 'Ocp-Apim-Subscription-Key'] = 'Authorization'
     embeddings_enabled: bool = True
+    discovery_enabled: bool = Field(default_factory=lambda: settings.AI_DISCOVERY_ENABLED)
     keep_key: bool = True
     companion_system_prompt: str = Field(default='Answer lifecycle questions from the supplied graph evidence. Explain uncertainty and provider limitations.', min_length=1, max_length=12000)
     agent_configuration: dict[AgentId, AgentConfiguration] = Field(default_factory=dict)
@@ -169,9 +170,12 @@ class OllamaREST:
             if dimension is not None and len(vector) != dimension:
                 raise ValueError('Inconsistent embedding dimensions')
             dimension = len(vector)
-            if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in vector):
-                raise ValueError('Embedding contains invalid values')
-            norm = math.sqrt(sum(value * value for value in vector))
+            try:
+                if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in vector):
+                    raise ValueError('Embedding contains invalid values')
+                norm = math.sqrt(sum(float(value) * float(value) for value in vector))
+            except OverflowError:
+                raise ValueError('Embedding contains values outside the supported numeric range') from None
             if not math.isfinite(norm) or not norm:
                 raise ValueError('Embedding has zero or invalid magnitude')
         return vectors

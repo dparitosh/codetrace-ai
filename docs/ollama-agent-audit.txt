@@ -1,0 +1,149 @@
+OLLAMA / AGENTIC AI AUDIT — 2026-10-28
+REMEDIATION UPDATE
+OA-01 through OA-04 are corrected in the working tree. The findings below record
+the original audit, before remediation. Tool schemas/runtime now share tool-specific
+models; required identities cannot be omitted. Inspection/traversal retain bounded
+explicit relationships for fallback with valid citation endpoints and truncation metadata.
+Embedding conversion overflow is rejected as ValueError, preserving lexical fallback.
+AI_DISCOVERY_ENABLED and the session discovery_enabled setting permit chat-only
+gateways. Connectivity tests distinguish disabled/unavailable/ready discovery; 404/405
+discovery routes permit chat testing, while authentication failures remain failures.
+The UI displays these outcomes and the explicit native-tool-support-not-tested warning.
+Runtime compatibility with the user's installed model remains unverified.
+Post-fix validation: 333 backend tests, 50 frontend tests, production build and lint
+passed. Regression tests include both memory/SQLite profiles, missing discovery
+routes, disabled discovery, 401/403 rejection, required tool identities, retained
+relationships, bounded/truncated evidence and numeric-overflow lexical fallback.
+No live Ollama calls or model downloads were used.
+
+Revision examined: 145f6f9. Application code was not modified during this audit.
+
+SUMMARY
+Four confirmed P2 defects were reproduced offline. A separate, disclosed capability
+gap means a successful chat connectivity test does not establish native tool support.
+No critical/high vulnerability was established by this scoped audit. These findings
+can contribute to agent fallback, but do not establish why the other machine failed.
+Its installed model capabilities and new diagnostic message remain unverified.
+
+OA-01 | Medium / P2 | Agent / Tool contract | Confirmed
+Location: backend/services/agent_workspace.py:59-70, tool_schema / ToolInput / tool.
+Description: inspect_resource, traverse_graph and similar_resources use a shared schema
+in which node_id defaults to an empty string and is not required. Runtime requires
+a node present in the snapshot. Empty arguments conform to the advertised schema
+but fail execution and can terminate the model run into evidence fallback.
+Evidence: probe validates ToolInput({}), confirms node_id absent from schema.required,
+then reproduces ValueError from inspect_resource({}).
+Root cause: one generic input model supplies optional fields to every tool.
+Impact: preventable invalid calls and reduced tool reliability even for a model that
+obeys the provided JSON schema; not a shell or authorization bypass.
+Fix: tool-specific schemas with required node_id for resource tools and corresponding
+runtime validation. Advertise only relevant parameters for each tool.
+Validation: validate omitted identity against each schema; valid identifiers must
+execute; missing/foreign identities must fail without executing a tool.
+
+OA-02 | Medium / P2 | Agent / Evidence correctness | Confirmed
+Location: backend/services/agent_workspace.py:296, GraphAgent.run fallback.
+Description: fallback passes an empty edge list to evidence_answer even after an
+executed traversal observed explicit relationships. It then says no non-containment
+relationship was found in the retrieved context.
+Evidence: a mocked model first requests a successful directed traversal, then fails.
+The trace includes related nodes but the resulting fallback says no relationship found.
+Root cause: accumulated node citations are retained; observed relationship evidence
+is not carried into deterministic answer generation.
+Impact: misleading explanation during exactly the outage/invalid-response scenario
+where the user must rely on retained graph facts.
+Fix: retain bounded observed relationships with citation endpoints and pass them into
+fallback generation. Do not infer unseen links from the entire graph.
+Validation: traverse -> model failure must still report the observed relationships;
+an isolated resource must continue to report absence only within the retrieved context.
+
+OA-03 | Medium / P2 | Backend / Malformed response handling | Confirmed
+Location: backend/services/ai_connection.py:172-174, OllamaREST.embed.
+Description: valid JSON may contain an integer too large to convert to a floating
+point number. math.isfinite(value) raises OverflowError for 10**400. The embedding
+validator and lexical fallback exception handlers do not handle this exception.
+Evidence: a mocked /api/embed response containing [[10**400,1]] raises OverflowError;
+the same response escapes /workspace/search rather than returning lexical results.
+Root cause: numeric type checking precedes an unchecked float conversion inside the
+finite-value test; finite JSON integer is not necessarily representable as float.
+Impact: malformed/provider-generated numeric data can cause a server error instead
+of the intended controlled rejection and fallback. The endpoint remains allowlisted.
+Fix: reject nonrepresentable/magnitude-invalid numbers as ValueError; validate the
+normalization calculation without unchecked integer-to-float conversion.
+Validation: huge integers, infinity, NaN, booleans, zero vectors and mixed dimensions
+must fail predictably; search should retain explicit lexical evidence on failure.
+
+OA-04 | Medium / P2 | Integration / Diagnostics | Confirmed
+Location: backend/api/workspace_routes.py:112-113, test_ai.
+Description: Save and test chat + embeddings first calls GET /api/tags. A gateway
+with working POST /api/chat but no discovery route fails before chat is exercised.
+Evidence: mock returns 404 for /api/tags and a valid ready response for /api/chat;
+the endpoint returns 502 and only /api/tags is called (memory and SQLite sessions).
+Root cause: discovery is an unconditional prerequisite of the connectivity test.
+Impact: usable restricted REST gateways appear completely broken; the returned
+message incorrectly frames this as a chat/embedding/model/key failure.
+Fix: separate discovery results from chat/embedding readiness; support explicit
+discovery policy and preserve honest per-operation outcomes. Do not claim discovery
+succeeded when unavailable or swallow authentication failures as successful tests.
+Validation: missing tags + working chat must report the separate outcomes; missing
+chat, failed authentication and failed embeddings must remain actionable failures.
+
+DISCLOSED CAPABILITY LIMITATION — NOT COUNTED AS A NEW DEFECT
+Location: backend/api/workspace_routes.py:113,121; services/ai_connection.py:179.
+The connectivity test sends no tools. A mocked model that accepts plain chat but
+rejects every tools request still returns chat=ready. The API explicitly warns that
+tool quality is checked during agent execution, so this is not a false promise of
+verified tool support. The UI flow nevertheless offers no tool-capability preflight.
+Native tool support and grounded JSON output are both needed for model-led agents.
+Proposed improvement: separate model connectivity and a harmless read-only tool
+round-trip status; keep connectivity success distinct from agent readiness.
+Actual compatibility of the user's installed model was not tested or inferred.
+
+COMPATIBILITY RISK — UNVERIFIED RUNTIME IMPACT
+At services/agent_workspace.py:276, the assistant tool-call message is reconstructed
+with only role, truncated content and tool_calls. Other returned fields, including
+thinking, are discarded. Ollama's official agent-loop examples retain response.message.
+Some model/template combinations may depend on retaining that context. Omission is
+visible in code, but a model-specific failure was not reproduced; do not count it as
+a confirmed production failure. Preserve protocol fields only within byte budgets
+and avoid adding private reasoning to user-facing logs or exports.
+Reference: https://docs.ollama.com/capabilities/tool-calling
+
+SCOPE / EXECUTION MAP
+Frontend AISettings -> /workspace/ai/config -> session AIConnection -> OllamaREST.
+Companion -> /workspace/agent/run -> GraphAgent -> registered read-only tools ->
+OllamaREST.chat -> grounded output validation or deterministic evidence fallback.
+ChangeWorkbench -> /workspace/changes/{id}/conversation -> shared-deadline trace,
+coverage and change agents -> ChangeStore -> frozen dossier/local approval/export.
+Legacy /workspace/companion -> companion_service.answer_question -> native Ollama
+session transport or central OpenAI-compatible HTTP path, with separate validation.
+Search -> GraphSearch -> bounded ephemeral embedding index -> lexical fallback.
+AI profiles -> in-memory session or token-derived encrypted SQLite profile storage.
+
+FILES INSPECTED
+backend/services/{ai_connection,agent_workspace,agent_configuration,companion_service,
+change_store,shared_reviews}.py; backend/api/{workspace_routes,change_routes,
+review_routes}.py; backend/core/{config,connection_models}.py; backend/main.py;
+frontend/src/workspace/{AISettings,Companion,ChangeWorkbench}.tsx;
+relevant existing agent/managed-workspace/startup/dossier regression tests.
+This is an AI-path audit, not a renewed audit of every application file or dependency.
+
+VERIFICATION / LIMITATIONS
+Existing backend suite: 309 passed; frontend suite: 50 passed. One upstream
+Starlette/httpx deprecation warning remains. Existing tests did not detect these gaps.
+Nine offline probe cases passed by reproducing observed behavior (parameterized
+memory/SQLite sessions included). Passing these probes does NOT mean defects are fixed.
+Probe: .runtime/audit/test_ollama_agent_audit.py, ignored local diagnostic artifact.
+No live Ollama generation, discovery, embedding, downloads or external writes occurred.
+Endpoint registration, URL credential rejection, no-redirect/no-proxy transport,
+response/context bounds, citation rejection and session guards remain present.
+These controls do not prove semantic truth of every claim or prompt-injection immunity.
+Source facts can be proposed for review; agents do not execute shell/source changes
+or approve/external-submit dossiers. External ticket creation remains unconfigured.
+
+REMEDIATION ORDER
+1. OA-03: contain malformed numeric responses and preserve lexical fallback.
+2. OA-01: align advertised schemas and tool execution contracts.
+3. OA-02: retain relationship evidence through deterministic fallback.
+4. OA-04: split discovery/connectivity outcomes; separately assess tool capability.
+All four corrections remain pending. No application changes, commit or push in this pass.

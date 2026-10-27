@@ -58,16 +58,29 @@ def model_failure_warning(error):
 
 class ToolInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    query: str = Field(default='', max_length=1500)
-    node_id: str = Field(default='', max_length=4096)
+
+
+class SearchInput(ToolInput):
+    query: str = Field(min_length=1, max_length=1500)
     domain: str = Field(default='ALL', max_length=40)
+
+
+class ResourceInput(ToolInput):
+    node_id: str = Field(min_length=1, max_length=4096)
+
+
+class TraverseInput(ResourceInput):
     direction: Literal['both', 'incoming', 'outgoing'] = 'both'
     depth: int = Field(default=2, ge=0, le=6)
 
 
+TOOL_INPUTS = {'search_graph': SearchInput, 'inspect_resource': ResourceInput,
+               'traverse_graph': TraverseInput, 'similar_resources': ResourceInput, 'coverage_gaps': ToolInput}
+
+
 def tool_schema(name, connection=None):
     override = getattr(connection, 'tool_configuration', {}).get(name)
-    return {'type': 'function', 'function': {'name': name, 'description': override.description if override else TOOL_DESCRIPTIONS[name], 'parameters': ToolInput.model_json_schema()}}
+    return {'type': 'function', 'function': {'name': name, 'description': override.description if override else TOOL_DESCRIPTIONS[name], 'parameters': TOOL_INPUTS[name].model_json_schema()}}
 
 
 def coverage_gaps(graph):
@@ -176,6 +189,7 @@ class GraphAgent:
         self.agent = configured_agent(self.agent, rest.connection)
         self.search = GraphSearch(graph, rest)
         self.trace, self.evidence = [], {}
+        self.observed_edges = {}
 
     def observe(self, ids):
         for key in ids:
@@ -191,10 +205,12 @@ class GraphAgent:
         self.rest.check()
         if name not in self.agent['tools']:
             raise ValueError('Tool is not permitted for this agent')
-        args = ToolInput.model_validate(raw)
+        args = TOOL_INPUTS[name].model_validate(raw)
         if name in {'inspect_resource', 'traverse_graph', 'similar_resources'} and args.node_id not in self.search.nodes:
             raise ValueError('Select a resource from this snapshot')
         ids = []
+        edges = []
+        edge_count = 0
         if name == 'search_graph':
             output = self.search.search(args.query, args.domain, limit=12)
             ids = [item['node_id'] for item in output['results']]
@@ -209,15 +225,38 @@ class GraphAgent:
             predicates = sorted({edge['type'] for edge in self.graph['edges']} - HIERARCHY - METADATA)
             context = neighborhood(self.graph, args.node_id, args.direction, args.depth, 20, predicates or ['urn:codetrace:noRelations'])
             ids = [node['id'] for node in context['nodes']]
+            edges = context['edges']
+            edge_count = len(edges)
             output = {'node_ids': ids, 'truncated': context['metadata']['truncated'], 'witness_paths': context['metadata']['witness_paths']}
         else:
             ids = [args.node_id]
+            edges = [edge for edge in self.graph['edges'] if args.node_id in (edge['source'], edge['target'])
+                     and edge['type'] not in HIERARCHY | METADATA]
+            edge_count = len(edges)
+            edges = edges[:settings.AI_CONTEXT_RELATIONS]
+            ids.extend(key for edge in edges for key in (edge['source'], edge['target']) if key not in ids)
             output = {'resource': self.search.text(self.search.nodes[args.node_id]), 'node_id': args.node_id}
             path = self.search.nodes[args.node_id]['properties'].get('path')
             findings = self.graph.get('source_assessments') or {}
             findings = findings.get('security', {}).get('findings', [])
             output['source_findings'] = [item for item in findings if path and item.get('file') == path][:12]
         self.observe(ids)
+        relationships = []
+        for edge in edges:
+            if edge['source'] not in self.evidence or edge['target'] not in self.evidence:
+                continue
+            relation = {'source': self.evidence[edge['source']]['citation_id'],
+                        'target': self.evidence[edge['target']]['citation_id'], 'predicate': edge['type'],
+                        'origin': edge['properties'].get('origin')}
+            key = (relation['source'], relation['target'], relation['predicate'])
+            if key in self.observed_edges or len(self.observed_edges) < settings.AI_CONTEXT_RELATIONS:
+                self.observed_edges[key] = relation
+                if len(relationships) < settings.AI_CONTEXT_RELATIONS:
+                    relationships.append(relation)
+        if name in {'inspect_resource', 'traverse_graph'}:
+            output['relationships'] = relationships
+            output['relationship_count'] = edge_count
+            output['relationships_truncated'] = len(relationships) < edge_count
         output['evidence'] = [self.evidence[key] for key in ids if key in self.evidence]
         self.trace.append({'step': len(self.trace) + 1, 'tool': name, 'arguments': args.model_dump(), 'status': 'completed',
                            'resource_ids': ids[:20], 'elapsed_ms': round((time.monotonic() - started) * 1000)})
@@ -293,11 +332,12 @@ class GraphAgent:
         if not answer:
             warnings.append('No verified model answer was accepted; this is a deterministic evidence summary.')
             citations = list(self.evidence.values())
-            answer = evidence_answer(self.graph, citations, [], selected_id, question).replace('That is a trace gap, not proof of no impact.', 'This bounded context does not establish a graph-wide gap or absence of impact.')
+            answer = evidence_answer(self.graph, citations, list(self.observed_edges.values()), selected_id, question).replace('That is a trace gap, not proof of no impact.', 'This bounded context does not establish a graph-wide gap or absence of impact.')
             if not citations and self.search.nodes:
                 answer = 'No resources matched this bounded query. Try a resource identifier or refine the search.'
         self.rest.guard()
         return {'answer': answer, 'mode': 'agent' if not warnings else 'evidence', 'agent_id': self.agent['id'],
                 'model': self.rest.connection.model or None, 'citations': list(self.evidence.values()), 'trace': self.trace,
                 'warning': ' '.join(warnings) or None, 'snapshot_id': self.graph['metadata'].get('snapshot_id'),
+                'relations': list(self.observed_edges.values()),
                 'highlight_ids': list(self.evidence), 'similar_resources': [], 'recommendations': []}
