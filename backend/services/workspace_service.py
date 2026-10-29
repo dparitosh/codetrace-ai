@@ -89,10 +89,7 @@ def pipeline_context(source_id, repository_uri, revision):
                 statuses.append({'id': provider.id, 'label': provider.label, 'domain': 'CI', 'status': 'unavailable'})
                 continue
             if token:
-                if provider.platform == 'github':
-                    headers['Authorization'] = 'Bearer ' + token
-                else:
-                    headers['PRIVATE-TOKEN'] = token
+                headers['PRIVATE-TOKEN'] = token
             try:
                 provider_runs, seen, seen_runs = [], set(), set()
                 url = provider.endpoint
@@ -107,7 +104,7 @@ def pipeline_context(source_id, repository_uri, revision):
                     data, _, next_url = read_response(client, url, headers, with_next=True)
                     pages += 1
                     payload = json.loads(data)
-                    entries = payload.get('workflow_runs', []) if provider.platform == 'github' else payload
+                    entries = payload
                     if not isinstance(entries, list):
                         raise ValueError('Unexpected pipeline response')
                     remaining = settings.CI_MAX_RUNS - len(provider_runs)
@@ -118,16 +115,14 @@ def pipeline_context(source_id, repository_uri, revision):
                         if str(item['id']) in seen_runs:
                             continue
                         seen_runs.add(str(item['id']))
-                        sha = item.get('head_sha') or item.get('sha')
+                        sha = item.get('sha')
                         provider_runs.append({'id': f'urn:codetrace:build:{provider.id}:{item["id"]}',
                             'label': item.get('name') or f'Pipeline {item["id"]}', 'provider_id': provider.id,
-                            'status': item.get('conclusion') or item.get('status', 'unknown'),
-                            'revision': sha, 'branch': item.get('head_branch') or item.get('ref'),
+                            'status': item.get('status', 'unknown'),
+                            'revision': sha, 'branch': item.get('ref'),
                             'at': item.get('updated_at') or item.get('created_at'), 'matches_revision': sha == revision and revision is not None,
                             'repository_uri': repository_uri})
                     url = urljoin(url, next_url) if next_url else None
-                    if provider.platform == 'github' and isinstance(payload.get('total_count'), int):
-                        partial = partial or payload['total_count'] > len(provider_runs)
                     if len(provider_runs) >= settings.CI_MAX_RUNS:
                         partial = partial or bool(url)
                         break

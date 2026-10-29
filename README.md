@@ -231,7 +231,7 @@ GitLab sources accept HTTPS project URLs; self-hosted instances require adding t
 
 Python uses AST-based extraction with limited intra-module call resolution. C, C++ and C# use Tree-sitter syntax parsers to extract namespaces, types, callable declarations, parameters, local variables, includes/usings and inheritance. Unique lexical calls, including supported cross-file calls, become graph evidence; ambiguous overloads and unknown receivers remain unresolved. The source-analysis page reports language and parser coverage, and the graph distinguishes native type classifications. Re-run the installer for parser dependencies, restart and synchronize the source to refresh existing snapshots.
 
-Native analysis does not compile projects or evaluate macros, build conditions, type aliases, virtual dispatch or project/build metadata. Deferred lambda calls are omitted. Syntax recovery produces a partial result and suppresses the overall quality grade. If a grammar is unavailable, the structural fallback reports a warning. Other languages retain heuristic symbol extraction. The typed Python architecture audit remains Python-only. Cross-module resolution and complete package-cycle detection remain incomplete. Security checks are limited static patterns, not a complete vulnerability/SBOM scanner. The legacy `cli/` repository-host commands are not compatible with the local-first API and are not installed by these scripts.
+Native analysis does not compile projects or evaluate macros, build conditions, type aliases, virtual dispatch or project/build metadata. Deferred lambda calls are omitted. Syntax recovery produces a partial result and suppresses the overall quality grade. If a grammar is unavailable, the structural fallback reports a warning. Other languages retain heuristic symbol extraction. The typed Python architecture audit remains Python-only. Cross-module resolution and complete package-cycle detection remain incomplete. Security checks are limited static patterns, not a complete vulnerability/SBOM scanner.
 
 ## Verification and cleanup
 
@@ -243,7 +243,7 @@ npm test -- --run
 npm run build
 ```
 
-On macOS/Linux use `.venv/bin/python` and the same npm commands. CI runs the core/API and frontend checks on Windows and Linux. The obsolete MCP workflow is now a manual local-source audit, without calls to removed endpoints.
+On macOS/Linux use `.venv/bin/python` and the same npm commands. Run the core/API and frontend checks locally on each supported operating system. Hosted Actions workflows and the obsolete remote-analysis CLI have been removed.
 
 To uninstall development dependencies, stop the services and remove only this checkout's `.venv` and `frontend/node_modules` directories. Generated `frontend/dist`, `.runtime`, and log directories may also be removed. Keep `.env.local` if you want to preserve your settings; deleting these folders does not uninstall system Python or Node.js.
 

@@ -17,7 +17,7 @@ rather than entering provider URLs or credentials.
   stable repository-scoped code identities; preserve full predicate URIs.
 - Consume bounded RDF exports/network providers and TRS changes. Incremental replay
   requires a matching base and exact event checkpoint; otherwise rebuild.
-- Import CI results from configured GitHub/GitLab endpoints. Only matching revisions
+- Import CI results from configured GitLab endpoints. Only matching revisions
   link builds to source; partial windows remain explicit.
 - Import supported CycloneDX/SPDX JSON or generate an npm lockfile inventory.
   Display SBOM components/dependencies and export an approved inventory.

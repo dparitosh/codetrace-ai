@@ -96,7 +96,7 @@ class OSLCProvider(Connection):
 
 
 class PipelineProvider(Connection):
-    platform: Literal['github', 'gitlab']
+    platform: Literal['gitlab']
     endpoint: str
     token_env: Optional[str] = Field(default=None, pattern=r'^[A-Za-z_][A-Za-z0-9_]*$')
     repository_id: str
