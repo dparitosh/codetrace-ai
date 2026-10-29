@@ -1,0 +1,765 @@
+{
+  "title": "Repository SBOM and hierarchy cross-validation audit",
+  "generated_at": "2026-10-29T07:57:34.433631+00:00",
+  "scope": "Current checkout; generated npm SBOM and source hierarchy, not a user-supplied artifact or built binary",
+  "changes": "Audit artifacts only; no application source, dependency installations or production data changed in this turn.",
+  "coverage": {
+    "source_files_parsed": 134,
+    "manual_review": [
+      "backend/services/sbom_service.py",
+      "backend/services/workspace_service.py",
+      "backend/core/connection_models.py",
+      "backend/api/workspace_routes.py",
+      "backend/graph/traceability.py",
+      "frontend/src/workspace/supplyChainModel.ts",
+      "frontend/src/workspace/SupplyChainPanel.tsx",
+      "backend/tests/test_supply_chain_lineage.py",
+      "backend/tests/test_pending_capabilities.py",
+      "frontend/package.json",
+      "frontend/package-lock.json",
+      "backend/requirements-local.txt",
+      "backend/requirements-dev.txt",
+      "backend/requirements-postgres.txt",
+      "codegraph_core/pyproject.toml",
+      "install.ps1",
+      ".github/workflows/ci.yml",
+      "LICENSE"
+    ],
+    "limitations": [
+      "Not a manual review of every repository source file.",
+      "No supplied external SBOM, compiled artifact or deployed hierarchy was provided.",
+      "No dynamic execution, exploit proof, binary hash verification, complete license text/notice review or live model calls.",
+      "XML SBOM import is not supported by current code."
+    ]
+  },
+  "cross_validation": {
+    "scope": "Current checkout; generated npm SBOM and source hierarchy, not a user-supplied artifact or built binary",
+    "source_files": 134,
+    "graph_nodes": 6120,
+    "graph_edges": 9142,
+    "sbom_components": 529,
+    "npm_lock_components": 529,
+    "missing_lock_components": [],
+    "manifest_mismatches": {},
+    "direct_npm_dependencies": 38,
+    "unresolved": [],
+    "license_counts": {
+      "[{\"license\": {\"name\": \"MIT\"}}]": 438,
+      "[{\"license\": {\"name\": \"ISC\"}}]": 40,
+      "[{\"license\": {\"name\": \"Apache-2.0\"}}]": 12,
+      "[{\"license\": {\"name\": \"BSD-3-Clause\"}}]": 6,
+      "[{\"license\": {\"name\": \"0BSD\"}}]": 2,
+      "[{\"license\": {\"name\": \"Python-2.0\"}}]": 1,
+      "[{\"license\": {\"name\": \"MPL-2.0\"}}]": 13,
+      "[{\"license\": {\"name\": \"CC-BY-4.0\"}}]": 1,
+      "[{\"license\": {\"name\": \"BSD-2-Clause\"}}]": 13,
+      "[{\"license\": {\"name\": \"(MIT OR CC0-1.0)\"}}]": 1,
+      "[{\"license\": {\"name\": \"CC0-1.0\"}}]": 1,
+      "[{\"license\": {\"name\": \"BlueOak-1.0.0\"}}]": 1
+    },
+    "generated_purls": 0,
+    "lock_integrity_entries": 523,
+    "generated_hashes": 0,
+    "code_to_component_edges": 0,
+    "source_external_package_names": [
+      "@siemens/ix",
+      "@siemens/ix-icons",
+      "@siemens/ix-react",
+      "ag-grid-community",
+      "ag-grid-react",
+      "d3-drag",
+      "d3-force",
+      "d3-selection",
+      "d3-zoom",
+      "lucide-react",
+      "node:path",
+      "react",
+      "react-dom",
+      "vite",
+      "vitest"
+    ],
+    "source_imports_not_declared": [
+      "node:path"
+    ],
+    "python_runtime_direct_dependencies_omitted": [
+      {
+        "name": "fastapi",
+        "installed_version": "0.156.7"
+      },
+      {
+        "name": "uvicorn",
+        "installed_version": "0.54.0"
+      },
+      {
+        "name": "pydantic",
+        "installed_version": "2.14.1"
+      },
+      {
+        "name": "pydantic-settings",
+        "installed_version": "2.16.1"
+      },
+      {
+        "name": "networkx",
+        "installed_version": "3.7"
+      },
+      {
+        "name": "httpx",
+        "installed_version": "0.28.1"
+      },
+      {
+        "name": "rdflib",
+        "installed_version": "7.6.0"
+      },
+      {
+        "name": "cryptography",
+        "installed_version": "48.0.1"
+      },
+      {
+        "name": "tree-sitter",
+        "installed_version": "0.25.2"
+      },
+      {
+        "name": "tree-sitter-c",
+        "installed_version": "0.24.2"
+      },
+      {
+        "name": "tree-sitter-cpp",
+        "installed_version": "0.23.4"
+      },
+      {
+        "name": "tree-sitter-c-sharp",
+        "installed_version": "0.23.5"
+      }
+    ],
+    "spdx_documentDescribes_roots": [],
+    "imported_cdx_hashes_retained": false,
+    "limitations": [
+      "npm lockfile inventory only; excludes unlisted ecosystems, vendored code and build artifacts.",
+      "Peer/workspace dependency resolution is not inferred; no vulnerability or license compliance verdict."
+    ]
+  },
+  "advisory_results": {
+    "npm": {
+      "auditReportVersion": 2,
+      "vulnerabilities": {},
+      "metadata": {
+        "vulnerabilities": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        },
+        "dependencies": {
+          "prod": 64,
+          "dev": 457,
+          "optional": 98,
+          "peer": 18,
+          "peerOptional": 0,
+          "total": 529
+        }
+      }
+    },
+    "python": {
+      "scope": "Installed local virtual environment, including development tools; editable local packages excluded",
+      "packages_checked": 45,
+      "packages": [
+        {
+          "name": "annotated-doc",
+          "version": "0.0.5"
+        },
+        {
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "name": "anyio",
+          "version": "4.15.1"
+        },
+        {
+          "name": "asyncpg",
+          "version": "0.32.0"
+        },
+        {
+          "name": "certifi",
+          "version": "2026.10.19"
+        },
+        {
+          "name": "cffi",
+          "version": "2.1.1"
+        },
+        {
+          "name": "click",
+          "version": "8.5.0"
+        },
+        {
+          "name": "colorama",
+          "version": "0.4.6"
+        },
+        {
+          "name": "cryptography",
+          "version": "48.0.1"
+        },
+        {
+          "name": "databases",
+          "version": "0.9.0"
+        },
+        {
+          "name": "fastapi",
+          "version": "0.156.7"
+        },
+        {
+          "name": "greenlet",
+          "version": "3.5.6"
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "name": "httpcore",
+          "version": "1.0.9"
+        },
+        {
+          "name": "httptools",
+          "version": "0.9.0"
+        },
+        {
+          "name": "httpx",
+          "version": "0.28.1"
+        },
+        {
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "name": "iniconfig",
+          "version": "2.3.1"
+        },
+        {
+          "name": "networkx",
+          "version": "3.7"
+        },
+        {
+          "name": "opentelemetry-api",
+          "version": "1.45.1"
+        },
+        {
+          "name": "packaging",
+          "version": "26.3"
+        },
+        {
+          "name": "pip",
+          "version": "26.2.2"
+        },
+        {
+          "name": "pluggy",
+          "version": "1.7.0"
+        },
+        {
+          "name": "psycopg2-binary",
+          "version": "2.9.13"
+        },
+        {
+          "name": "pycparser",
+          "version": "3.11"
+        },
+        {
+          "name": "pydantic",
+          "version": "2.14.1"
+        },
+        {
+          "name": "pydantic-settings",
+          "version": "2.16.1"
+        },
+        {
+          "name": "pydantic_core",
+          "version": "2.50.1"
+        },
+        {
+          "name": "Pygments",
+          "version": "2.21.0"
+        },
+        {
+          "name": "pyparsing",
+          "version": "3.3.3"
+        },
+        {
+          "name": "pytest",
+          "version": "8.4.2"
+        },
+        {
+          "name": "python-dotenv",
+          "version": "1.2.4"
+        },
+        {
+          "name": "PyYAML",
+          "version": "6.0.3"
+        },
+        {
+          "name": "rdflib",
+          "version": "7.6.0"
+        },
+        {
+          "name": "SQLAlchemy",
+          "version": "2.0.55"
+        },
+        {
+          "name": "starlette",
+          "version": "1.9.0"
+        },
+        {
+          "name": "tree-sitter",
+          "version": "0.25.2"
+        },
+        {
+          "name": "tree-sitter-c",
+          "version": "0.24.2"
+        },
+        {
+          "name": "tree-sitter-c-sharp",
+          "version": "0.23.5"
+        },
+        {
+          "name": "tree-sitter-cpp",
+          "version": "0.23.4"
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.4"
+        },
+        {
+          "name": "typing_extensions",
+          "version": "4.16.0"
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.54.0"
+        },
+        {
+          "name": "watchfiles",
+          "version": "1.3.0"
+        },
+        {
+          "name": "websockets",
+          "version": "17.3"
+        }
+      ],
+      "matches": [
+        {
+          "package": {
+            "name": "cryptography",
+            "version": "48.0.1"
+          },
+          "advisories": [
+            {
+              "id": "GHSA-g6cj-pr64-35w5",
+              "modified": "2026-09-10T03:50:53.610446Z"
+            },
+            {
+              "id": "GHSA-jwv3-5hgf-82ww",
+              "modified": "2026-09-24T14:45:10.238420Z"
+            },
+            {
+              "id": "GHSA-m2h6-j472-rp4c",
+              "modified": "2026-09-24T15:00:04.719975Z"
+            },
+            {
+              "id": "PYSEC-2026-3552",
+              "modified": "2026-08-04T14:30:15.036332Z"
+            },
+            {
+              "id": "PYSEC-2026-3553",
+              "modified": "2026-08-04T14:30:26.222821Z"
+            },
+            {
+              "id": "PYSEC-2026-3554",
+              "modified": "2026-08-04T14:30:26.230323Z"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "pytest",
+            "version": "8.4.2"
+          },
+          "advisories": [
+            {
+              "id": "GHSA-6w46-j5rx-g56g",
+              "modified": "2026-09-10T03:50:32.768043Z"
+            },
+            {
+              "id": "PYSEC-2026-1845",
+              "modified": "2026-07-07T17:47:51.848748Z"
+            }
+          ]
+        }
+      ]
+    },
+    "interpretation": "Advisory aliases can duplicate the same issue; package matches do not prove application exploitability."
+  },
+  "license_assessment": {
+    "status": "Not established; metadata inventory only",
+    "declared_metadata_present_components": 529,
+    "confirmed_legal_violations": null,
+    "review_candidates": [
+      "13 MPL-2.0 entries, including axe-core and lightningcss variants",
+      "1 CC-BY-4.0 entry: caniuse-lite",
+      "1 dual-license expression: type-fest"
+    ],
+    "not_checked": [
+      "distributed artifact contents",
+      "complete license/NOTICE text inclusion",
+      "modifications to third-party source",
+      "organizational license policy",
+      "Python/transitive package license obligations"
+    ],
+    "guidance": "Do not infer that repository MIT licensing applies to dependencies or that dev/platform entries ship in production."
+  },
+  "validation": {
+    "existing_backend_supply_and_capability_tests": {
+      "passed": 29
+    },
+    "new_audit_reproductions": {
+      "failed": 2,
+      "reason": "Confirmed unfixed SPDX root and license expression conversion defects"
+    },
+    "npm_audit_completed": true,
+    "python_osv_completed": true
+  },
+  "findings": [
+    {
+      "id": "SC-01",
+      "severity": "High",
+      "status": "confirmed_dependency_advisory; application exploitability unverified",
+      "category": "Security",
+      "location": {
+        "file": "backend/requirements-local.txt",
+        "line": 9,
+        "function": "dependency constraint"
+      },
+      "description": "Installed cryptography 48.0.1 matches three reviewed advisories; cryptography>=44,<49 excludes all their fixed releases.",
+      "evidence": {
+        "installed": "48.0.1",
+        "advisories": [
+          {
+            "id": "GHSA-g6cj-pr64-35w5",
+            "cve": "CVE-2026-69247",
+            "severity": "High",
+            "fixed": "50.0.0",
+            "url": "https://github.com/pyca/cryptography/security/advisories/GHSA-g6cj-pr64-35w5"
+          },
+          {
+            "id": "GHSA-jwv3-5hgf-82ww",
+            "cve": "CVE-2026-69249",
+            "severity": "High",
+            "fixed": "49.0.0",
+            "url": "https://github.com/pyca/cryptography/security/advisories/GHSA-jwv3-5hgf-82ww"
+          },
+          {
+            "id": "GHSA-m2h6-j472-rp4c",
+            "cve": "CVE-2026-69248",
+            "severity": "Moderate",
+            "fixed": "49.0.0",
+            "url": "https://github.com/pyca/cryptography/security/advisories/GHSA-m2h6-j472-rp4c"
+          }
+        ],
+        "code_use": "backend/services/shared_reviews.py:151 uses Fernet; no direct PKCS#7 or x509 verifier usage found in inspected services/core."
+      },
+      "root_cause": "Upper version cap excludes patched versions; no advisory scan in inspected CI workflow.",
+      "impact": "Vulnerable distribution installed, but affected API reachability through the application has not been established.",
+      "reproduction": "Run the approved OSV query script against the current environment and compare affected ranges with installed version.",
+      "recommended_fix": "Review cryptography 50+ compatibility, update the dependency range, reinstall, re-scan and test encrypted session profile round trips. Do not replace encryption with a workaround.",
+      "validation": "No remaining matching advisory for selected release; full backend suite and SQLite profile encryption/decryption tests pass.",
+      "estimated_effort": "0.5-1 day"
+    },
+    {
+      "id": "SC-02",
+      "severity": "Medium",
+      "status": "confirmed_dependency_advisory; Unix-specific applicability",
+      "category": "Security",
+      "location": {
+        "file": "backend/requirements-dev.txt",
+        "line": 2,
+        "function": "dependency constraint"
+      },
+      "description": "Installed pytest 8.4.2 matches CVE-2025-71176; pytest>=7.4,<9 excludes fixed 9.0.3.",
+      "evidence": {
+        "installed": "8.4.2",
+        "advisory": "GHSA-6w46-j5rx-g56g",
+        "fixed": "9.0.3",
+        "url": "https://github.com/advisories/GHSA-6w46-j5rx-g56g",
+        "vendor_release": "https://github.com/pytest-dev/pytest/releases/tag/9.0.3",
+        "platform": "This machine is Windows; advisory concerns Unix /tmp handling. CI also runs Ubuntu."
+      },
+      "root_cause": "Development tool cap excludes security release.",
+      "impact": "Risk to shared Unix development/CI environments; no Windows runtime exploit claimed.",
+      "reproduction": "Compare installed pytest version and development constraint with advisory range.",
+      "recommended_fix": "Allow a compatible patched pytest release and validate both CI platforms; use private test temporary directories as defense in depth.",
+      "validation": "Re-scan selected pytest release; all tests pass on Windows and Linux.",
+      "estimated_effort": "0.5 day"
+    },
+    {
+      "id": "SC-03",
+      "severity": "Medium",
+      "status": "confirmed_bug",
+      "category": "Backend",
+      "location": {
+        "file": "backend/services/sbom_service.py",
+        "line": 115,
+        "function": "root_dependencies"
+      },
+      "description": "SPDX JSON documentDescribes application roots are ignored.",
+      "evidence": {
+        "expected": [
+          "SPDXRef-App"
+        ],
+        "actual": [],
+        "reproduction_test": ".runtime/audit/test_supply_review.py::test_spdx_document_describes_roots_are_preserved",
+        "standard": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json"
+      },
+      "root_cause": "Only explicit DESCRIBES/DESCRIBED_BY relationship objects are processed.",
+      "impact": "A valid document can show unknown roots and no application-to-component lineage even though the root is recorded.",
+      "reproduction": "Import SPDX 2.3 with packages and documentDescribes=[SPDXRef-App], without redundant relationship objects.",
+      "recommended_fix": "Union validated documentDescribes references with supported root relationships; reject unknown endpoints.",
+      "validation": "Root import reproduction passes; approved export retains application-root path; duplicate roots remain idempotent.",
+      "estimated_effort": "2-4 hours"
+    },
+    {
+      "id": "SC-04",
+      "severity": "Medium",
+      "status": "confirmed_semantic_conversion_defect",
+      "category": "Backend",
+      "location": {
+        "file": "backend/services/sbom_service.py",
+        "line": 164,
+        "function": "_inventory"
+      },
+      "description": "npm SPDX license expressions are exported as arbitrary license names rather than expressions.",
+      "evidence": {
+        "actual_component": "frontend/package-lock.json#node_modules/globals/node_modules/type-fest",
+        "actual": {
+          "license": {
+            "name": "(MIT OR CC0-1.0)"
+          }
+        },
+        "expected": {
+          "expression": "(MIT OR CC0-1.0)"
+        },
+        "reproduction_test": ".runtime/audit/test_supply_review.py::test_npm_license_expression_retains_expression_semantics",
+        "standard": "https://cyclonedx.org/docs/1.5/json/"
+      },
+      "root_cause": "All npm license strings are unconditionally placed under license.name.",
+      "impact": "The original text survives, but downstream license consumers lose structured alternative/conjunction semantics.",
+      "reproduction": "Generate a BOM from npm package-lock with license=(MIT OR CC0-1.0).",
+      "recommended_fix": "Validate SPDX IDs/expressions and emit license.id or expression as appropriate; preserve unknown free-form names without claiming verified licensing.",
+      "validation": "Round-trip MIT, OR, AND, WITH and LicenseRef cases against CycloneDX schema; malformed declarations remain explicit.",
+      "estimated_effort": "0.5 day"
+    },
+    {
+      "id": "SC-05",
+      "severity": "Medium",
+      "status": "confirmed_capability_gap; documented inventory scope",
+      "category": "Traceability",
+      "location": {
+        "file": "backend/services/sbom_service.py",
+        "line": 141,
+        "function": "_inventory"
+      },
+      "description": "Generated BOM excludes Python runtime dependencies and their transitives.",
+      "evidence": {
+        "omitted_direct_runtime_packages": [
+          {
+            "name": "fastapi",
+            "installed_version": "0.156.7"
+          },
+          {
+            "name": "uvicorn",
+            "installed_version": "0.54.0"
+          },
+          {
+            "name": "pydantic",
+            "installed_version": "2.14.1"
+          },
+          {
+            "name": "pydantic-settings",
+            "installed_version": "2.16.1"
+          },
+          {
+            "name": "networkx",
+            "installed_version": "3.7"
+          },
+          {
+            "name": "httpx",
+            "installed_version": "0.28.1"
+          },
+          {
+            "name": "rdflib",
+            "installed_version": "7.6.0"
+          },
+          {
+            "name": "cryptography",
+            "installed_version": "48.0.1"
+          },
+          {
+            "name": "tree-sitter",
+            "installed_version": "0.25.2"
+          },
+          {
+            "name": "tree-sitter-c",
+            "installed_version": "0.24.2"
+          },
+          {
+            "name": "tree-sitter-cpp",
+            "installed_version": "0.23.4"
+          },
+          {
+            "name": "tree-sitter-c-sharp",
+            "installed_version": "0.23.5"
+          }
+        ],
+        "npm_components": 529
+      },
+      "root_cause": "Generation supports configured npm lockfiles only.",
+      "impact": "The application-wide supply-chain view omits its backend, including the cryptography advisory matches.",
+      "reproduction": "Generate current repository inventory and compare it with requirements-local.txt and installer inputs.",
+      "recommended_fix": "Import or generate an environment/build-specific Python BOM and merge with ecosystem-qualified identities; retain separate runtime/development/optional scopes.",
+      "validation": "Manifest and installed Python package sets reconcile without hiding unresolved version ranges.",
+      "estimated_effort": "1-2 days"
+    },
+    {
+      "id": "SC-06",
+      "severity": "Medium",
+      "status": "confirmed_capability_gap",
+      "category": "Traceability",
+      "location": {
+        "file": "backend/services/sbom_service.py",
+        "line": 199,
+        "function": "attach"
+      },
+      "description": "Package inventory and source hierarchy are colocated but lack source-import-to-component evidence links.",
+      "evidence": {
+        "source_files": 134,
+        "graph_nodes": 6120,
+        "graph_edges": 9142,
+        "source_to_component_edges": 0,
+        "source_imports": "Regex screening found no undeclared frontend external package names after excluding built-in node:path; not proof of whole-repository completeness."
+      },
+      "root_cause": "attach adds repository membership and SBOM depends_on edges, without binding source imports to package identities.",
+      "impact": "Ghost dependencies, per-function package usage and executable reachability cannot be established from the graph.",
+      "reproduction": "Inspect edges crossing from source-derived resources to sbom_component nodes in generated graph.",
+      "recommended_fix": "Correlate imports with ecosystem resolver evidence and explicit unresolved states; validate against build output before asserting unused or exploitable packages.",
+      "validation": "Controlled fixtures cover a declared used dependency, undeclared import, dynamic import and build-only package without false unused verdicts.",
+      "estimated_effort": "2-4 days"
+    },
+    {
+      "id": "SC-07",
+      "severity": "Medium",
+      "status": "confirmed_evidence_gap; hashes optional in format",
+      "category": "Supply-chain integrity",
+      "location": {
+        "file": "backend/services/sbom_service.py",
+        "line": 163,
+        "function": "_inventory and normalize"
+      },
+      "description": "Generated components omit package URLs and tarball hashes despite lockfile integrity evidence; imported hashes are absent from normalized graph properties.",
+      "evidence": {
+        "generated_purls": 0,
+        "generated_hashes": 0,
+        "lock_integrity_entries": 523,
+        "imported_cdx_graph_hashes_retained": false,
+        "qualification": "Imported original SBOM document is retained unchanged; evidence is unavailable in graph properties, not deleted from original export."
+      },
+      "root_cause": "Generated component and normalized component projections omit these fields.",
+      "impact": "Graph identity correlation and artifact comparison are weaker; this does not prove artifact tampering.",
+      "reproduction": "Compare generated BOM/normalized graph with lockfile integrity and a CycloneDX component containing SHA-256 hashes.",
+      "recommended_fix": "Preserve validated hashes and purls; convert supported SRI algorithms correctly and distinguish archive integrity from built-binary integrity.",
+      "validation": "Known SRI fixture yields exact expected hex hash; imported evidence round-trips to graph and export; no claim of installed-byte verification.",
+      "estimated_effort": "1 day"
+    },
+    {
+      "id": "SC-08",
+      "severity": "Low",
+      "status": "confirmed_scope_gap; documented peer limitation",
+      "category": "Traceability",
+      "location": {
+        "file": "backend/services/sbom_service.py",
+        "line": 167,
+        "function": "_inventory"
+      },
+      "description": "Peer relationships are omitted, leaving 18 recorded components unreachable from application roots.",
+      "evidence": {
+        "reachable_components": 511,
+        "unreachable_components": 18,
+        "example": "@stencil/react-output-target records required peer @stencil/core; the peer is in the inventory but its edge is omitted.",
+        "qualification": "Optional and platform package entries are not proof of unused or malicious dependencies. resolution_complete refers only to attempted dependencies."
+      },
+      "root_cause": "Dependency iteration includes dependencies and optionalDependencies but not peerDependencies.",
+      "impact": "Shortest paths and transitive impact are incomplete for peer relationships.",
+      "reproduction": "Traverse generated depends_on graph from roots; compare unreachable components with package-lock peerDependencies.",
+      "recommended_fix": "Retain explicit peer relationship types and resolved installation context; report each relationship class coverage separately.",
+      "validation": "Peer fixtures establish correct direction and nested resolution; unsupported/workspace cases are visibly partial.",
+      "estimated_effort": "1-2 days"
+    }
+  ],
+  "remediation_order": [
+    "SC-01 and SC-02: resolve dependency caps and validate compatibility",
+    "SC-03 and SC-04: repair root/license projections with regression tests",
+    "SC-07: retain package identity and integrity evidence",
+    "SC-05, SC-06 and SC-08: extend ecosystem coverage and correlation only as authorized"
+  ],
+  "artifacts": {
+    "bom": ".runtime/audit/supply-chain/generated-sbom.json",
+    "hierarchy": ".runtime/audit/supply-chain/hierarchy-graph.json",
+    "cross_validation": ".runtime/audit/supply-chain/cross-validation.json",
+    "npm_advisories": ".runtime/audit/npm-supply-audit.json",
+    "python_advisories": ".runtime/audit/supply-chain/python-advisories.json",
+    "reproductions": ".runtime/audit/test_supply_review.py"
+  },
+  "approval_history": "Initial all-environment Python metadata transmission rejected by automatic approval review; user explicitly approved complete environment lookup, which subsequently completed.",
+  "remediation": {
+    "validation": {
+      "components": 529,
+      "purls": 529,
+      "hashes": 523,
+      "reachable": 529,
+      "unresolved_dependencies": 0,
+      "advisory_lookup": {
+        "status": "disabled",
+        "provider": "disabled",
+        "checked_at": null,
+        "checked_components": 0,
+        "skipped_components": 0,
+        "matches": [],
+        "limitations": [
+          "Package advisory matches do not prove runtime exploitability or license compliance."
+        ]
+      },
+      "cryptography": "50.0.2",
+      "pytest": "9.2.0",
+      "validation": {
+        "backend_tests_passed": 374,
+        "frontend_tests_passed": 53,
+        "build": "passed",
+        "lint": "passed",
+        "customer_api": "mocked only; not configured"
+      },
+      "remaining_scope": [
+        "Python/other ecosystem inventory requires imported SBOM",
+        "Source imports are not bound to installed package/runtime identities",
+        "License compliance is not established by inventory"
+      ]
+    },
+    "status_by_finding": {
+      "SC-01": "Dependency range and local installed version updated; full backend suite passed. No new live advisory query.",
+      "SC-02": "Dependency range and local installed version updated; Windows suite passed; Linux execution remains CI validation.",
+      "SC-03": "Fixed with regression test.",
+      "SC-04": "Fixed with SPDX expression parser and regression tests.",
+      "SC-05": "Remaining scope: import externally generated Python/customer SBOM through managed sbom_path.",
+      "SC-06": "Remaining scope: source-to-package/runtime binding not implemented.",
+      "SC-07": "Generated purls/SRI hashes and imported checksum evidence retained; actual artifact bytes not verified.",
+      "SC-08": "Resolved installation-context peer relationships included; workspace links remain explicit limitation."
+    }
+  }
+}

@@ -6,7 +6,7 @@
 | --- | --- |
 | `frontend/src/workspace` | Siemens iX shell, D3 force graph, index, inspector, companion and ALM proposal UI |
 | `backend/api` | Bounded FastAPI contracts, sessions/reviews, managed sync, OSLC publication/collaboration |
-| `codegraph_core` | Python AST and configurable structural scanners; reusable graph/context core |
+| `codegraph_core` | Python AST, Tree-sitter C/C++/C# syntax parsers and configurable structural scanners; reusable graph/context core |
 | `services/workspace_service.py` | Assemble code, lifecycle, CI and SBOM into one fingerprinted snapshot |
 | `services/git_isolation.py` | Isolate Git configuration, templates, helpers and child environment |
 | `services/oslc_service.py`, `oslc_client.py` | Bounded RDF consumption, discovery and conditional remote links |

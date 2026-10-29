@@ -5,8 +5,39 @@ vulnerability scan. External references are retained as data and never fetched.
 """
 import hashlib
 import json
+import base64
 from pathlib import Path
+from urllib.parse import quote
+from packaging.licenses import canonicalize_license_expression, InvalidLicenseExpression
 from core.config import settings
+
+
+def license_choices(value):
+    if not value:
+        return []
+    if not isinstance(value, str):
+        raise ValueError('npm license must be a string')
+    try:
+        expression = str(canonicalize_license_expression(value))
+    except InvalidLicenseExpression:
+        return [{'license': {'name': value}}]
+    return [{'expression': expression}]
+
+
+def sri_hashes(value):
+    hashes = []
+    for part in str(value or '').split():
+        algorithm, separator, digest = part.partition('-')
+        if algorithm not in {'sha256', 'sha384', 'sha512'} or not separator:
+            continue
+        try:
+            raw = base64.b64decode(digest.split('?')[0], validate=True)
+        except ValueError as exc:
+            raise ValueError('Invalid lockfile integrity hash') from exc
+        if len(raw) != int(algorithm[3:]) // 8:
+            raise ValueError('Invalid lockfile integrity hash length')
+        hashes.append({'alg': 'SHA-' + algorithm[3:], 'content': raw.hex()})
+    return hashes
 
 
 def read_json(path):
@@ -45,7 +76,8 @@ def _normalize(document):
                     reference = 'urn:codetrace:anonymous-component:' + hashlib.sha256(
                         (str(len(components)) + '\n' + json.dumps(item, sort_keys=True)).encode()).hexdigest()
                 components.append({'ref': reference, 'name': item['name'], 'version': item.get('version'),
-                                   'purl': item.get('purl'), 'licenses': item.get('licenses', [])})
+                                   'purl': item.get('purl'), 'licenses': item.get('licenses', []),
+                                   'hashes': item.get('hashes', []), 'scope': item.get('scope')})
                 if len(components) > settings.SBOM_MAX_COMPONENTS:
                     raise ValueError('SBOM component limit exceeded')
                 visit(item.get('components', []))
@@ -66,6 +98,7 @@ def _normalize(document):
                                'purl': next((ref['referenceLocator'] for ref in item.get('externalRefs', []) if ref.get('referenceType') == 'purl'), None),
                                'license_declared': item.get('licenseDeclared', 'NOASSERTION'),
                                'license_concluded': item.get('licenseConcluded', 'NOASSERTION'),
+                               'hashes': [{'alg': c['algorithm'], 'content': c['checksumValue']} for c in item.get('checksums', [])],
                                'licenses': list(dict.fromkeys([item.get('licenseDeclared', 'NOASSERTION'),
                                                               item.get('licenseConcluded', 'NOASSERTION')]))})
         for item in document.get('relationships', []):
@@ -112,6 +145,10 @@ def root_dependencies(document, components):
             roots = [target for item in document.get('dependencies', []) if item['ref'] == root
                      for target in item.get('dependsOn', [])]
     else:
+        described = document.get('documentDescribes', [])
+        if not isinstance(described, list) or any(not isinstance(ref, str) for ref in described):
+            raise ValueError('Invalid SPDX documentDescribes')
+        roots.extend(described)
         for item in document.get('relationships', []):
             if item.get('relationshipType') == 'DESCRIBES' and item['spdxElementId'] == document.get('SPDXID'):
                 roots.append(item['relatedSpdxElement'])
@@ -160,18 +197,25 @@ def _inventory(root, repository):
                 missing(relative, '(application)', name, kind)
         for key, ref in refs.items():
             item = packages[key]
-            components.append({'type': 'library', 'bom-ref': ref, 'name': item.get('name') or key.rsplit('node_modules/', 1)[-1],
-                               'version': item['version'], 'licenses': [{'license': {'name': str(item['license'])}}] if item.get('license') else [],
+            name = item.get('name') or key.rsplit('node_modules/', 1)[-1]
+            components.append({'type': 'library', 'bom-ref': ref, 'name': name,
+                               'version': item['version'], 'licenses': license_choices(item.get('license')),
+                               'purl': 'pkg:npm/' + quote(name, safe='/') + '@' + quote(item['version'], safe=''),
+                               'hashes': sri_hashes(item.get('integrity')),
                                'properties': [{'name': 'codetrace:lockfile', 'value': relative}]})
             targets = []
-            for name in {**item.get('dependencies', {}), **item.get('optionalDependencies', {})}:
-                directory = key
+            for name in {**item.get('dependencies', {}), **item.get('optionalDependencies', {}), **item.get('peerDependencies', {})}:
+                peer_only = name in item.get('peerDependencies', {}) and name not in {**item.get('dependencies', {}), **item.get('optionalDependencies', {})}
+                # Peers resolve in the consumer's parent installation context.
+                directory = key.rsplit('/node_modules/', 1)[0] if peer_only and '/node_modules/' in key else '' if peer_only else key
                 while True:
                     candidate = directory + '/node_modules/' + name if directory else 'node_modules/' + name
                     if candidate in refs:
                         targets.append(refs[candidate]); break
                     if not directory:
-                        missing(relative, ref, name, 'optional' if name in item.get('optionalDependencies', {}) else 'required')
+                        optional_peer = peer_only and item.get('peerDependenciesMeta', {}).get(name, {}).get('optional')
+                        if not optional_peer:
+                            missing(relative, ref, name, 'peer' if peer_only else 'optional' if name in item.get('optionalDependencies', {}) else 'required')
                         break
                     directory = directory.rsplit('/', 1)[0] if '/' in directory else ''
             dependencies.append({'ref': ref, 'dependsOn': sorted(set(targets))})
@@ -187,7 +231,7 @@ def _inventory(root, repository):
         raise ValueError('Generated SBOM exceeds SBOM_MAX_BYTES')
     normalized, edges = normalize(document)
     limitations = ['npm lockfile inventory only; excludes unlisted ecosystems, vendored code and build artifacts.',
-                   'Peer/workspace dependency resolution is not inferred; no vulnerability or license compliance verdict.']
+                   'Peer links use lockfile installation locations; workspace links are not resolved. No runtime or license compliance verdict.']
     if unresolved:
         limitations.append(f'{len(unresolved)} declared npm dependencies could not be resolved from the lockfile inventory. '
                            'Lineage is incomplete; optional entries may be omitted for this platform or install scope.')
@@ -222,4 +266,6 @@ def attach(graph, sbom, repository_uri):
                                'root_dependencies': len(roots), 'root_known': bool(roots), 'limitations': sbom['limitations'],
                                'unresolved_dependencies': sbom.get('unresolved_dependencies', []),
                                'resolution_complete': not sbom.get('unresolved_dependencies')}
+    from services.advisory_service import advisory_evidence
+    graph['metadata']['sbom']['advisory_lookup'] = advisory_evidence(sbom)
     graph['metadata'].update(nodes=len(graph['nodes']), edges=len(graph['edges']))

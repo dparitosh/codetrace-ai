@@ -97,7 +97,7 @@ def materialize(code_graph, manifest, source_digest):
             props['owner'] = identities[props['owner']]
         add_node(identities[node['id']], label=node['label'], type=kind,
                        properties={**props, **provenance, 'code_id': node['id'],
-                                   'extraction': 'python_ast' if props.get('language') == 'python' else 'structural_or_heuristic'})
+                                   'extraction': props.get('extraction') or ('python_ast' if props.get('language') == 'python' else 'structural_or_heuristic')})
         if kind == 'file':
             parent = package(PurePosixPath(props['path']).parent.as_posix())
             edge(parent, identities[node['id']], CT + 'contains', provenance)
@@ -145,7 +145,8 @@ def materialize(code_graph, manifest, source_digest):
         'revision': repository.get('revision'), 'configuration_uri': manifest.get('configuration_uri'),
         'snapshot_id': snapshot, 'nodes': len(nodes), 'edges': len(edges),
         'retention': 'request-only', 'diagnostics': diagnostics,
-        'limitations': ['Directory-derived packages; non-Python semantics are heuristic.',
+        'limitations': ['Directory-derived packages. C/C++/C# use syntax parsing when grammars are installed; other non-Python extraction is heuristic.',
+                        'C-family call links are unique lexical matches, not compiler binding; macros, build conditions, virtual dispatch and receiver types are not evaluated.',
                         'Lifecycle assertions are supplied explicitly, not discovered or inferred.',
                         'Linked tests express traceability, not a passing test result.'],
     }}

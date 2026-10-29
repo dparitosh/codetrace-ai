@@ -8,6 +8,12 @@ const classes: Record<string, Omit<NodeClassification, 'key'>> = {
   module: { label: 'Module', color: '#7c3aed', glyph: 'M' },
   file: { label: 'Source file', color: '#2563eb', glyph: 'F' },
   class: { label: 'Class', color: '#be185d', glyph: 'C' },
+  namespace: { label: 'Namespace', color: '#92400e', glyph: 'N' },
+  struct: { label: 'Struct', color: '#b45309', glyph: 'St' },
+  interface: { label: 'Interface', color: '#a21caf', glyph: 'I' },
+  enum: { label: 'Enum', color: '#7c3aed', glyph: 'E' },
+  union: { label: 'Union', color: '#c2410c', glyph: 'U' },
+  record: { label: 'Record', color: '#9d174d', glyph: 'Rc' },
   function: { label: 'Function', color: '#047857', glyph: 'ƒ' },
   method: { label: 'Method', color: '#0f766e', glyph: 'm' },
   variable: { label: 'Variable', color: '#c2410c', glyph: 'v' },
@@ -34,7 +40,9 @@ const classes: Record<string, Omit<NodeClassification, 'key'>> = {
 }
 
 export function classifyNode(node: TraceNode): NodeClassification {
-  const key = node.type || 'unknown'
+  const declaration = String(node.properties.declaration_kind || '')
+  const nativeKind = ['struct', 'interface', 'enum', 'union', 'record'].find(kind => declaration.startsWith(kind + '_'))
+  const key = node.type === 'class' && nativeKind ? nativeKind : node.type === 'package' && node.properties.classification === 'namespace' ? 'namespace' : node.type || 'unknown'
   return { key, ...(classes[key] || { label: key.replace(/_/g, ' '), color: '#475569', glyph: '?' }) }
 }
 export function nodeFill(node: TraceNode, mode: NodeColorMode = 'classification') {

@@ -7,6 +7,15 @@ vi.mock('./ForceGraphCanvas', () => ({ default: () => <div>Dependency canvas</di
 afterEach(() => vi.unstubAllGlobals())
 
 describe('incomplete supply-chain evidence', () => {
+  it('shows disabled advisory lookup without implying a vulnerability-free inventory', () => {
+    vi.stubGlobal('window', { matchMedia: () => ({ matches: false }) })
+    const graph: TraceGraph = { nodes: [{ id: 'app', label: 'App', type: 'repository', properties: {} },
+      { id: 'a', label: 'A', type: 'sbom_component', properties: {} }], edges: [],
+      metadata: { sbom: { advisory_lookup: { status: 'disabled', checked_components: 0, matches: [] } } } }
+    const html = renderToStaticMarkup(<SupplyChainPanel graph={graph} review={null} />)
+    expect(html).toContain('Advisory lookup: disabled')
+    expect(html).toContain('does not establish that packages are vulnerability-free')
+  })
   it.each([false, true])('exposes unresolved dependencies when resolved components exist: %s', hasComponents => {
     vi.stubGlobal('window', { matchMedia: () => ({ matches: false }) })
     const graph: TraceGraph = {

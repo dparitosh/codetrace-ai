@@ -68,6 +68,7 @@ class ScanConfig:
 DEFAULT_EXTENSIONS = {
     ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".kt", ".go", ".rs",
     ".c", ".h", ".cc", ".cpp", ".hpp", ".cs", ".rb", ".php", ".swift",
+    ".cxx", ".c++", ".hh", ".hxx", ".ipp", ".inl", ".tpp", ".ixx",
     ".scala", ".sh", ".sql", ".vue", ".svelte",
 }
 
@@ -79,6 +80,9 @@ class CodeGraph:
         self.last_scan_time: Optional[float] = None
         self.index: Dict[str, Set[str]] = {}
         self._scanners: Dict[str, Callable[[Path, str, str], None]] = {".py": self._scan_python_file}
+        self._native_pending = []
+        from .native_scanner import LANGUAGES
+        self.register_scanner(list(LANGUAGES), self._scan_native_file)
 
     def register_scanner(self, extensions, scanner: Callable[[Path, str, str], None]):
         """Register a parser/scanner for one or more extensions."""
@@ -92,6 +96,7 @@ class CodeGraph:
         if reset:
             self.g = InMemoryGraph(self.config.max_nodes, self.config.max_edges)
             self.index.clear()
+            self._native_pending.clear()
         start = time.time()
         files_scanned = 0
         for base in paths:
@@ -115,6 +120,8 @@ class CodeGraph:
                                    loc=source.count("\n") + 1, nonempty=bool(source.lstrip('\ufeff').strip()))
                 self._scanners.get(path.suffix.lower(), self._scan_generic_file)(path, source, file_id)
                 files_scanned += 1
+        from .native_scanner import resolve_native
+        resolve_native(self)
         self.last_scan_time = time.time()
         return {"seconds": round(self.last_scan_time - start, 3), "files": files_scanned,
                 "nodes": len(self.g.nodes), "edges": sum(len(e) for e in self.g.edges.values())}
@@ -124,6 +131,7 @@ class CodeGraph:
         if reset:
             self.g = InMemoryGraph(self.config.max_nodes, self.config.max_edges)
             self.index.clear()
+            self._native_pending.clear()
         start = time.time()
         files_scanned = 0
         for source_file in sources:
@@ -144,6 +152,8 @@ class CodeGraph:
                                loc=content.count("\n") + 1, nonempty=bool(content.lstrip('\ufeff').strip()))
             self._scanners.get(extension, self._scan_generic_file)(path, content, file_id)
             files_scanned += 1
+        from .native_scanner import resolve_native
+        resolve_native(self)
         self.last_scan_time = time.time()
         return {"seconds": round(self.last_scan_time - start, 3), "files": files_scanned,
                 "nodes": len(self.g.nodes), "edges": sum(len(e) for e in self.g.edges.values())}
@@ -263,6 +273,11 @@ class CodeGraph:
                     self.g.add_edge(function_id, target, "calls", name=call.func.id)
 
 
+
+    def _scan_native_file(self, p: Path, source: str, file_id: str):
+        from .native_scanner import scan_native
+        if not scan_native(self, p, source, file_id):
+            self._scan_generic_file(p, source, file_id)
 
     def _scan_generic_file(self, p: Path, source: str, file_id: str):
         """Best-effort scanner for languages without an installed parser."""

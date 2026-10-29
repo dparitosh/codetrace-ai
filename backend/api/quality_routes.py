@@ -43,17 +43,18 @@ def assess_graph_quality(graph):
     functions = [node for node in nodes if node["type"] == "function"]
     classes = [node for node in nodes if node["type"] == "class"]
     assessable_files = [node for node in files if node['properties'].get('nonempty', True)]
-    failed_files = [node for node in files if node['properties'].get('parse_status') == 'failed']
+    failed_files = [node for node in files if node['properties'].get('parse_status') in {'failed', 'partial'}]
     function_count_available = bool(assessable_files) and all(
         node['properties'].get('parse_status') == 'parsed' for node in assessable_files)
     dependency_count = sum(edge['type'] in {'calls', 'imports', 'inherits_from'} for edge in edges)
     coupling = round(dependency_count / len(assessable_files), 2) if assessable_files else None
-    undocumented = sum(1 for node in functions + classes if not node["properties"].get("docstring"))
-    documentation = round(100 * (1 - undocumented / (len(functions) + len(classes))), 1) if functions or classes else None
+    documented_symbols = [node for node in functions + classes if node['properties'].get('language') == 'python']
+    undocumented = sum(1 for node in documented_symbols if not node["properties"].get("docstring"))
+    documentation = round(100 * (1 - undocumented / len(documented_symbols)), 1) if documented_symbols else None
     dependency_score = max(0.0, round(100 - coupling * 12, 1)) if coupling is not None else None
     has_structure = dependency_count > 0 or any(node['type'] in {'function', 'class', 'symbol', 'variable'} for node in nodes)
     overall = dependency_score if has_structure and not failed_files else None
-    scoring_basis = ('Not scored: Python parsing failed for one or more files. Correct the syntax and synchronize again.' if failed_files else
+    scoring_basis = ('Not scored: Source parsing failed or recovered syntax errors in one or more files. Correct the syntax and synchronize again.' if failed_files else
                      'Dependency score only: max(0, 100 - 12 × dependency edges per non-empty file). Documentation coverage is assessed separately and does not affect the score or grade.'
                      if has_structure else
                      'Not scored: no assessable symbols or dependencies were detected.')
@@ -67,11 +68,11 @@ def assess_graph_quality(graph):
                       description="Typed Python classes/functions with docstrings; heuristic symbols are excluded"),
         QualityMetric(name="Functions", value=float(len(functions)) if function_count_available else None, threshold=0.0,
                       status="pass" if function_count_available else "unavailable",
-                      description="Typed Python function count; unavailable when non-empty files lack successful typed parsing"),
+                      description="Parsed Python/C/C++/C# callable declarations; not runtime reachability. Unavailable when non-empty files lack successful syntax parsing"),
     ]
     recommendations = []
     if failed_files:
-        recommendations.append("Python parsing failed for one or more source files; heuristic symbols are retained for exploration, but no overall grade was assigned.")
+        recommendations.append("Source parsing failed or recovered syntax errors for one or more files; partial evidence is retained for exploration, but no overall grade was assigned.")
     if coupling is not None and coupling > 3: recommendations.append("Reduce highly coupled modules by extracting stable interfaces.")
     if documentation is None:
         recommendations.append("Documentation coverage is unavailable: the current parser exposes documentation for typed Python classes/functions only.")

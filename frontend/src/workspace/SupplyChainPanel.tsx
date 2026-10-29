@@ -75,6 +75,7 @@ export default function SupplyChainPanel({ graph, review }: { graph: TraceGraph 
       : 'No directed dependency path is recorded between these resources. This does not prove the package is unused.'}</p>}
     <div className="supply-summary" role="status">{mode === 'inventory' ? `${componentCount} components in inventory` : `${Math.max(0, analysis.ids.length - (analysis.ids.length ? 1 : 0))} ${mode === 'path' ? 'hops on selected path' : 'reachable resources, excluding start'}`} · {analysis.edges.length} recorded dependency edges</div>
     <details><summary>Evidence scope & limitations</summary><p>Reachability is evaluated across the complete retained snapshot, without the graph explorer’s hop cap. Results are only as complete as the imported SBOM or lockfiles. A dependency path does not prove runtime use, exploitability, or vulnerability.</p>
+      <p>Advisory lookup: {graph.metadata.sbom?.advisory_lookup?.status || 'not recorded'}. {graph.metadata.sbom?.advisory_lookup?.checked_components || 0} components checked; {graph.metadata.sbom?.advisory_lookup?.matches?.length || 0} recorded matches. Disabled, unavailable or partial lookup does not establish that packages are vulnerability-free.</p>
       {(graph.metadata.sbom?.limitations || []).map((item: string) => <p key={item}>{item}</p>)}
       {index.dangling > 0 && <p>{index.dangling} dependency edges with missing endpoints were excluded.</p>}
     </details>

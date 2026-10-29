@@ -4,6 +4,16 @@ import { domainColors, domainOf, type TraceNode } from './types'
 
 const node = (type: string, properties = {}): TraceNode => ({ id: type, type, label: type, properties })
 describe('graph node classification', () => {
+  it('classifies native declaration kinds and namespaces without changing lifecycle domain', () => {
+    for (const kind of ['struct', 'interface', 'enum', 'union', 'record']) {
+      const resource = node('class', { declaration_kind: kind + '_declaration' })
+      expect(classifyNode(resource).key).toBe(kind)
+      expect(classifyNode(resource).glyph).not.toBe('?')
+      expect(domainOf(resource)).toBe('CODE')
+    }
+    expect(classifyNode(node('package', { classification: 'namespace' })).label).toBe('Namespace')
+    expect(classifyNode(node('class', { declaration_kind: 'class_specifier' })).label).toBe('Class')
+  })
   it('distinguishes code artifact classes within the same domain', () => {
     const types = ['repository', 'package', 'file', 'module', 'class', 'function', 'method', 'variable', 'symbol']
     expect(new Set(types.map(type => nodeFill(node(type)))).size).toBe(types.length)

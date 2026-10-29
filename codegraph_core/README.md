@@ -4,7 +4,9 @@ A portable, dependency-light code knowledge graph core. In‑memory graph, AST s
 
 Highlights
 - Works standalone via CLI or as a library.
-- Python AST scanner plus a configurable, language-tolerant scanner for common source files.
+- Python AST scanner, optional Tree-sitter C/C++/C# syntax parsers, and a configurable structural scanner for other source files.
+
+The application installer includes the native parsers. Standalone core users can install the `native` extra (`pip install '.[native]'`, Python 3.10+). Native extraction includes namespaces, types, callable declarations, parameters, variables, include/using links and inheritance. Calls bind only when the supported lexical and arity rules select a unique target; unresolved and ambiguous calls remain explicit. This is syntax analysis, without compiler binding, macro/build-condition evaluation, project metadata, virtual dispatch or deferred lambda calls. Missing grammars fall back to structural extraction with a file warning; recovered syntax errors mark the file partial.
 - Pure stdlib core; optional extras (`networkx`, `matplotlib`, `squarify`) for graphs/treemaps.
 
 ## Quick start

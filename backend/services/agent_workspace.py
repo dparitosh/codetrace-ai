@@ -117,7 +117,8 @@ class GraphSearch:
 
     def text(self, node):
         props = node['properties']
-        fields = {key: str(props[key])[:1200] for key in ('path', 'code_id', 'identifier', 'description', 'status', 'outcome', 'domain', 'deleted') if key in props}
+        fields = {key: str(props[key])[:1200] for key in ('path', 'code_id', 'identifier', 'description', 'status', 'outcome', 'domain', 'deleted',
+                  'language', 'declaration_kind', 'qualified_name', 'parameter_types', 'parameter_count', 'has_body', 'extraction') if key in props}
         neighbors = [{'direction': direction, 'predicate': predicate, 'label': self.nodes[target]['label'][:200]}
                      for direction, predicate, target in self.adjacency[node['id']][:6]]
         return json.dumps({'label': node['label'][:512], 'type': node['type'], 'properties': fields, 'context': neighbors}, ensure_ascii=False)[:4000]
@@ -198,7 +199,8 @@ class GraphAgent:
                 self.evidence[key] = {'citation_id': 'E' + str(len(self.evidence) + 1), 'node_id': key,
                     'label': node['label'], 'type': node['type'], 'domain': node_domain(node),
                     'path': node['properties'].get('path'), 'line': node['properties'].get('start'),
-                    'properties': {name: str(node['properties'][name])[:1200] for name in ('status', 'outcome', 'deleted', 'description', 'provider_id') if name in node['properties']}}
+                    'properties': {name: str(node['properties'][name])[:1200] for name in ('status', 'outcome', 'deleted', 'description', 'provider_id',
+                        'language', 'qualified_name', 'declaration_kind', 'parameter_types', 'extraction') if name in node['properties']}}
 
     def tool(self, name, raw):
         started = time.monotonic()

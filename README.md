@@ -95,6 +95,22 @@ For architecture, limits and API contracts see [technical design](docs/TSD.md).
 
 ## Configuration
 
+Supply-chain advisory lookup is opt-in. Set these keys in root `.env.local`, then restart and synchronize:
+
+```dotenv
+VULNERABILITY_PROVIDER=disabled
+VULNERABILITY_API_URL=
+VULNERABILITY_REQUIRE_HTTPS=false
+VULNERABILITY_TOKEN_ENV=CODETRACE_VULNERABILITY_TOKEN
+VULNERABILITY_KEY_HEADER=Authorization
+```
+
+Leave the provider disabled until the customer service is configured and verified. For an OSV-compatible customer service, set `VULNERABILITY_PROVIDER=osv-compatible` and its exact batch-operation URL. Public OSV (`https://api.osv.dev/v1/querybatch`) is a testing option only; there is no default endpoint, redirect following or public fallback. Store an optional token in the named private environment variable or `.env.local`; `Authorization` uses Bearer authentication, and `api-key` / `Ocp-Apim-Subscription-Key` send the raw token.
+
+The adapter posts `{"queries":[{"package":{"purl":"pkg:npm/example@1.0.0"},"version":"1.0.0"}]}` and requires one ordered `results` entry per query, with optional `vulns:[{"id":"CUSTOM-123"}]`. Other API contracts require a separate adapter; changing the URL alone does not establish compatibility. `VULNERABILITY_TIMEOUT_SECONDS`, `VULNERABILITY_MAX_RESPONSE_BYTES` and `VULNERABILITY_BATCH_SIZE` bound execution. Disabled, skipped, partial and failed checks remain explicit in snapshot evidence and the supply-chain page. No advisory query runs when disabled. Enabling sends versioned component identities to the configured service; source files and credentials are excluded from snapshot results.
+
+Generated npm inventory preserves SPDX license expressions, package URLs, supported SRI archive hashes and resolved peer dependencies. Hashes are supplier/lockfile assertions, not verification of installed or built bytes. Python, other ecosystems and workspace links still require an externally generated SBOM through the managed source's `sbom_path`. Source-to-package runtime binding and a license compliance verdict remain outside this inventory's scope.
+
 One root `.env.local` configures the backend, frontend dev/preview server, launch URLs, review sessions, and source limits. It is ignored by Git. `.env.local.example` documents supported keys; `config/defaults.json` centralizes shared defaults.
 
 Set `SOURCE_FOLDER=D:/GenAI_Projects/Apps/PMem` in `.env.local` to analyze that
@@ -213,7 +229,9 @@ Live OpenAPI: `/docs`. Source endpoints remain available for programmatic analys
 
 GitLab sources accept HTTPS project URLs; self-hosted instances require adding their hostname to `GITLAB_ALLOWED_HOSTS`. Private projects use your existing noninteractive Git credential helper. [Lifecycle manifests](docs/trace-knowledge-graph.md) add explicit requirement/test/product links. [Agent integration](docs/vscode-agent.md) describes the source-context contract.
 
-Python uses AST-based extraction with limited intra-module call resolution. Non-Python symbols are heuristic and are included in agent context, but not in the typed Python architecture audit. Cross-module resolution and complete package-cycle detection remain incomplete. Security checks are limited static patterns, not a complete vulnerability/SBOM scanner. The legacy `cli/` repository-host commands are not compatible with the local-first API and are not installed by these scripts.
+Python uses AST-based extraction with limited intra-module call resolution. C, C++ and C# use Tree-sitter syntax parsers to extract namespaces, types, callable declarations, parameters, local variables, includes/usings and inheritance. Unique lexical calls, including supported cross-file calls, become graph evidence; ambiguous overloads and unknown receivers remain unresolved. The source-analysis page reports language and parser coverage, and the graph distinguishes native type classifications. Re-run the installer for parser dependencies, restart and synchronize the source to refresh existing snapshots.
+
+Native analysis does not compile projects or evaluate macros, build conditions, type aliases, virtual dispatch or project/build metadata. Deferred lambda calls are omitted. Syntax recovery produces a partial result and suppresses the overall quality grade. If a grammar is unavailable, the structural fallback reports a warning. Other languages retain heuristic symbol extraction. The typed Python architecture audit remains Python-only. Cross-module resolution and complete package-cycle detection remain incomplete. Security checks are limited static patterns, not a complete vulnerability/SBOM scanner. The legacy `cli/` repository-host commands are not compatible with the local-first API and are not installed by these scripts.
 
 ## Verification and cleanup
 

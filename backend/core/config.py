@@ -4,7 +4,7 @@ import json
 import ipaddress
 from pathlib import Path
 from typing import List, Optional, Literal
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from core.connection_models import ManagedRepository, OSLCProvider, PipelineProvider, connection_url, ai_connection_url
 
 from pydantic import AliasChoices, Field, field_validator, model_validator
@@ -77,6 +77,14 @@ class Settings(BaseSettings):
     OSLC_MAX_RESPONSE_BYTES: int = Field(default=2000000, ge=1)
     SBOM_MAX_BYTES: int = Field(default=10000000, ge=1)
     SBOM_MAX_COMPONENTS: int = Field(default=2000, ge=1, le=10000)
+    VULNERABILITY_PROVIDER: Literal['disabled', 'osv-compatible'] = 'disabled'
+    VULNERABILITY_REQUIRE_HTTPS: bool = False
+    VULNERABILITY_API_URL: str = ''
+    VULNERABILITY_TOKEN_ENV: str = Field(default='CODETRACE_VULNERABILITY_TOKEN', pattern=r'^[A-Za-z_][A-Za-z0-9_]*$')
+    VULNERABILITY_KEY_HEADER: Literal['Authorization', 'api-key', 'Ocp-Apim-Subscription-Key'] = 'Authorization'
+    VULNERABILITY_TIMEOUT_SECONDS: int = Field(default=20, ge=1, le=120)
+    VULNERABILITY_MAX_RESPONSE_BYTES: int = Field(default=2000000, ge=1000)
+    VULNERABILITY_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)
     TRS_INCREMENTAL: bool = True
     TRS_CACHE_PATH: Path = PROJECT_ROOT / 'data/trs.sqlite3'
     TRS_CACHE_EVENTS: int = Field(default=1000, ge=1, le=10000)
@@ -163,6 +171,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode='after')
     def resolve_local_settings(self):
+        if self.VULNERABILITY_API_URL:
+            connection_url(self.VULNERABILITY_API_URL, require_https=False)
+            parsed_advisory = urlsplit(self.VULNERABILITY_API_URL)
+            if parsed_advisory.query or any(ord(c) < 33 for c in self.VULNERABILITY_API_URL) or '\\' in self.VULNERABILITY_API_URL:
+                raise ValueError('VULNERABILITY_API_URL must not contain query parameters, whitespace or backslashes')
+            if self.VULNERABILITY_REQUIRE_HTTPS and parsed_advisory.scheme != 'https':
+                raise ValueError('VULNERABILITY_REQUIRE_HTTPS=true requires an HTTPS advisory endpoint')
+        if self.VULNERABILITY_PROVIDER != 'disabled' and not self.VULNERABILITY_API_URL:
+            raise ValueError('An enabled vulnerability provider requires VULNERABILITY_API_URL')
         self.SOURCE_FOLDER = (self.SOURCE_FOLDER if self.SOURCE_FOLDER.is_absolute()
                               else PROJECT_ROOT / self.SOURCE_FOLDER).resolve()
         if self.MANAGED_REPOSITORIES is None:
