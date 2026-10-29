@@ -1,5 +1,20 @@
 # Current audit status
 
+## Removed host integration verification (2026-10-29)
+
+The follow-up check found two leftover scripts under `.github/scripts` that
+called retired MCP endpoints. Those scripts and the remaining host-specific
+issue/pull-request templates are removed. Verification read all 189 remaining
+tracked files, including hidden paths, and classified each remaining host-name
+match. Matches remain only in negative regression tests, historical audit
+citations/inventories and third-party lockfile funding/homepage metadata.
+No dependency artifact is resolved from the removed host. Live OpenAPI contains
+56 paths and no removed-host or MCP route; local and GitLab analysis remain.
+Regression guards now cover every file under the hidden host directory, runtime
+source names/response contracts, manifests, launch scripts and registered routes.
+This is verification of integration removal, not a complete repository security
+or semantic correctness audit.
+
 ## Startup configuration diagnostics (2026-10-22)
 
 URL settings now validate at their named fields, with indexed diagnostics for

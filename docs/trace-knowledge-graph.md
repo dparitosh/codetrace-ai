@@ -1,6 +1,6 @@
 # Code index and lifecycle knowledge graph
 
-The NetworkX materializer combines two independent inputs: an analyzed source snapshot and explicitly supplied lifecycle assertions. No GitHub account or lifecycle server connection is required. Code hierarchy is repository → directory-derived package → file → class → method/function. Top-level functions belong directly to their file.
+The NetworkX materializer combines two independent inputs: an analyzed source snapshot and explicitly supplied lifecycle assertions. No repository-host account or lifecycle server connection is required. Code hierarchy is repository → directory-derived package → file → class → method/function. Top-level functions belong directly to their file.
 
 Code identifiers are repository-scoped stable URNs. The original scanner identifier remains in `properties.code_id`; use it when linking lifecycle artifacts to code. IDs remain stable while repository URI and scanner identity remain unchanged, not across renames. Snapshot fingerprints include source content and lifecycle assertions. A supplied revision is a caller assertion, not an independently verified Git commit.
 

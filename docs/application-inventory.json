@@ -12808,5 +12808,6 @@
     "native_frontend_tests": 23,
     "openapi_operations": 54,
     "operations_with_measured_function_execution": 36
-  }
+  },
+  "inventory_status": "Historical audit snapshot; retained as evidence, not the current file manifest. Listed paths may have since been removed."
 }
