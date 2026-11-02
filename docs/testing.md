@@ -14,13 +14,13 @@ Those tests use SQLite and do not mutate PostgreSQL.
 node --test frontend/graph-audit.test.mjs frontend/session-audit.test.mjs frontend/installation-audit.test.mjs
 node frontend/graph-performance.mjs
 Set-Location frontend
-npm ci
-npm run lint
-npm test -- --run
-npm run build
+npm.cmd ci
+npm.cmd run lint
+npm.cmd test -- --run
+npm.cmd run build
 ```
 
-On macOS/Linux use `.venv/bin/python`. The frontend build includes TypeScript
+On macOS/Linux use `.venv/bin/python` and `npm` instead of `npm.cmd`. The frontend build includes TypeScript
 checking. Node 24 is recommended. Dependency-free model/session contracts need a
 supported recent Node runtime with `stripTypeScriptTypes`.
 
@@ -28,6 +28,20 @@ Coverage includes source validation, traversal/projection, URI identity, session
 races, approval/export gates, shared storage/capacity, graph persistence, SBOM
 bounds, TRS replay and mocked ALM writes. A green suite is not proof of no bugs
 or live vendor conformance.
+
+## Answer reliability and launcher checks
+
+The normal suite includes deterministic model/transport fixtures; no live Ollama
+call or model download is required. `test_answer_reliability.py` checks bounded
+final synthesis, one formatting repair, invented/wrong-field citation rejection,
+expired execution versus session guards, token truncation and fallback limits.
+API/client cases verify total agent budgets while profile loading is delayed.
+
+Windows launcher regressions use disposable script copies and fake executables:
+unsupported Python must fail before environment creation, and foreground frontend
+startup must invoke Node/Vite without a PowerShell npm shim. These tests do not
+install packages or stop the active application. Shell scripts are kept as LF by
+`.gitattributes`; Windows-only fixture success is not Linux/macOS runtime validation.
 
 ## Browser checks
 

@@ -1,5 +1,35 @@
 # Current audit status
 
+## Answer reliability and installation review (2026-11-02)
+
+Optional embeddings now use a retrieval sub-budget, planning reserves time for
+one tool-free final/JSON-repair attempt, and the frontend uses the total agent
+budget while session AI configuration is loading. The parent execution deadline
+is never extended. Invalid or invented citation IDs remain rejected. Model-mode
+citations identify actual inline-used evidence; full observed context is retained
+separately. Deterministic summaries obey the configured answer-length limit and
+native output-token exhaustion has a specific diagnostic. See the
+[detailed audit and remediation record](model-answer-reliability-audit.txt).
+
+Windows setup now rejects unsupported Python before environment creation, and
+the foreground frontend launcher invokes Node/Vite directly instead of the npm
+PowerShell shim. Bash entrypoints have enforced LF endings for Windows checkouts.
+Maintained installation, configuration, native-parser and agent-contract docs
+were reconciled; removed hosted workflows remain removed. Historical audit counts
+below describe their dated runs rather than current totals.
+
+Validation: 408 backend/core tests, 55 frontend tests and 23 native contracts pass;
+TypeScript, ESLint, PowerShell parsing and production build pass. Four offline
+launcher regressions use disposable copies/fake executables. All ten tracked
+Markdown documents were checked for local file links, with none broken. This is
+not a fresh dependency installation or Linux/macOS runtime certification: Bash
+was unavailable in this environment. Existing AG Grid bundle-size advice remains.
+The local app passed a synthetic, AI-disabled API smoke check after activation;
+no live Ollama or customer model/gateway execution was performed. The 50k-node
+model benchmark completed, but overview/focus took 4.88/2.32 seconds in this run;
+large-graph performance needs separate review and browser frame rate was not tested. Synchronous
+network cancellation remains cooperative, not forced socket/CPU termination.
+
 ## Removed host integration verification (2026-10-29)
 
 The follow-up check found two leftover scripts under `.github/scripts` that

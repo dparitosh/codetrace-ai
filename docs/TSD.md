@@ -68,7 +68,7 @@ browser layout or frame performance. See [testing.md](testing.md).
 registered exact bases, supports the three configured proxy key headers and bounds
 request/response bytes and network timeouts. `/api/tags`, `/api/chat` and `/api/embed`
 are called server-side without redirects or inherited HTTP proxies. Users configure
-URL/key/chat/embedding models in Connections; no secret is sent to browser storage
+URL/key/chat/embedding models in Administration; no secret is sent to browser storage
 or returned by settings APIs. Additional bases require central configuration.
 
 `ReviewStore.ai_profile` stores memory-mode session overrides. SQLite mode uses a
@@ -94,8 +94,10 @@ uses Nomic task prefixes when appropriate, and combines bounded cosine similarit
 with lexical scores. Each request builds an ephemeral index of at most
 AI_EMBEDDING_MAX_NODES candidates, reused within its agent run; there is no persistent
 vector database or background full-corpus index yet. Results disclose candidate
-coverage and embedding failures. Model/tool traces and agent answers are response
-artifacts, not a durable workflow/job history; long-running durable workers,
+coverage and embedding failures. Ad-hoc model/tool traces and agent answers are
+response artifacts. Change-workbench conversations and submitted evidence versions
+are retained separately in its configured SQLite dossier store; this does not
+provide durable background agent execution. Long-running durable workers,
 streaming execution events and resumable agent memory remain future work.
 
 Endpoints under `/api/v1/workspace`:
@@ -119,9 +121,7 @@ unknown state. Raw-byte line-ending conversions may conservatively suppress revi
 matching. Before/after revision checks reduce concurrent-change misattribution;
 an immutable commit snapshot is still preferable for fully isolated ingestion.
 
-Reference patterns were reviewed in PMem's frontend CredentialSettings and backend
-ollama_auth/graph_embeddings modules; its service mesh and browser token persistence
-were not copied. Native REST contracts follow [Ollama chat](https://docs.ollama.com/api/chat),
+Native REST contracts follow [Ollama chat](https://docs.ollama.com/api/chat),
 [embeddings](https://docs.ollama.com/api/embed), and [model discovery](https://docs.ollama.com/api/tags).
 
 ### Editable agent configuration
@@ -129,3 +129,30 @@ were not copied. Native REST contracts follow [Ollama chat](https://docs.ollama.
 The session AI profile includes agent_configuration (registered agent IDs to system_prompt/tools), tool_configuration (registered tool IDs to descriptions), and companion_system_prompt. GET /ai/config exposes resolved defaults and registered tools; PUT validates nonblank bounded prompts and unique nonempty registered tool lists. Overrides share the existing encrypted session profile lifecycle. GraphAgent uses the resolved tool list both for model schemas and execution authorization, including automatic evidence collection. A separate runtime system message specifies the response contract; server citation/schema/budget checks remain authoritative. The legacy companion accepts its configured prompt without adding tools.
 
 Administration contains the editor. AG Grid Community provides virtualized resource and relationship tables, loaded lazily with client-side row-model, pagination and text-filter modules. All filtered resources are available; pagination replaces the former 150-row preview. Relationship eligibility uses a set lookup over resource IDs. This is a local session administration surface, not an RBAC or organization-wide policy store.
+
+
+### Answer completion and timeout budgets
+
+`AI_AGENT_DEADLINE_SECONDS` is the parent deadline. Optional retrieval runs under
+`AI_RETRIEVAL_TIMEOUT_SECONDS`; planning reserves `AI_FINAL_ANSWER_RESERVE_SECONDS`
+for one tool-free final/format-repair call. Sub-budgets restore their parent on
+failure and cannot extend it. There are at most `AI_AGENT_MAX_STEPS` planning calls
+plus one final call. No additional tools execute in the final phase. A pre-expired
+execution budget can return retained snapshot evidence, but an expired session
+still fails authorization. Multi-agent dossiers label individual deterministic
+fallbacks; completing a draft turn does not approve the dossier or prove inference.
+
+The public catalog's `ai.agent_timeout_seconds` and AI profile's
+`request_timeout_seconds` expose the total agent deadline plus response allowance.
+The browser uses the total value even if profile retrieval is pending or failed.
+Dossier requests use the total deadline plus their configured control allowance.
+
+`services/answer_contract.py` shares strict JSON, character-limit and observed-ID
+validation between agents and the companion. Native `done_reason=length` rejects
+partial content with explicit token-budget advice. `citation_ids` identifies
+inline-used IDs; `observed_resources` retains all observed resources for relation
+endpoints and highlighting. Model-mode `citations` contains only used references;
+evidence-mode resources are labeled observed context. Deterministic text bounds
+metadata, escapes imported citation-like labels, and truncates without splitting
+citation markers. These checks establish identifier grounding, not the semantic
+truth of arbitrary model claims. Live model/gateway verification remains separate.

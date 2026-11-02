@@ -1,6 +1,6 @@
 <#!
 .SYNOPSIS
-Installs CodeTrace AI prerequisites for a local Windows development environment.
+Installs CodeTrace AI dependencies using existing Python and Node.js runtimes.
 #>
 [CmdletBinding()]
 param([string]$PythonPath, [switch]$Dev)
@@ -13,6 +13,9 @@ $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
 if (-not $npm) { $npm = Get-Command npm -ErrorAction SilentlyContinue }
 if (-not $python) { throw 'Python 3.10+ is required. Install Python or pass -PythonPath with a working executable path.' }
 if (-not $npm) { throw 'Node.js 22.19+ (22.x), 24.x or 26+ with npm is required. Install it from https://nodejs.org/ and reopen PowerShell.' }
+
+& $python.Source -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else "Python 3.10+ required")'
+if ($LASTEXITCODE -ne 0) { throw 'Python 3.10+ is required. Pass -PythonPath with a supported executable.' }
 
 Push-Location $root
 try {

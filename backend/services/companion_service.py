@@ -8,6 +8,7 @@ from core.config import settings
 from graph.traceability import node_domain
 from services.oslc_service import server_secret
 from services.evidence_algorithms import similar_resources, recommendations
+from services.answer_contract import validate_answer, inline_citations, display_value, bounded_summary
 
 
 def context_evidence(graph, question, selected_id=None):
@@ -67,15 +68,15 @@ def context_evidence(graph, question, selected_id=None):
 
 def evidence_answer(graph, citations, edges, selected_id, question=''):
     if not citations:
-        return 'No indexed evidence is available. Synchronize a managed source to begin.'
+        return bounded_summary('No indexed evidence is available. Synchronize a managed source to begin.')
     selected = next((item for item in citations if item['node_id'] == selected_id), citations[0])
-    answer = f"{selected['label']} is indexed as {selected['type'].replace('_', ' ')} in the {selected['domain']} domain [{selected['citation_id']}]."
+    answer = f"[{selected['citation_id']}] {display_value(selected['label'])} is indexed as {display_value(selected['type'].replace('_', ' '), 80)} in the {display_value(selected['domain'], 40)} domain."
     if selected.get('path'):
-        answer += f" Its source location is {selected['path']}" + (f":{selected['line']}." if selected.get('line') else '.')
+        answer += f" Its source location is {display_value(selected['path'])}" + (f":{display_value(selected['line'], 20)}." if selected.get('line') else '.')
     if edges:
         answer += '\n\nThe retrieved context contains ' + str(len(edges)) + ' explicit relationships. '
         for edge in edges[:4]:
-            label = edge['predicate'].split('#')[-1].rsplit(':', 1)[-1]
+            label = display_value(edge['predicate'].split('#')[-1].rsplit(':', 1)[-1], 100)
             answer += f"[{edge['source']}] → {label} → [{edge['target']}]. "
     else:
         answer += '\n\nNo non-containment relationship was found in this retrieved context. This bounded context does not establish a graph-wide gap or absence of impact.'
@@ -88,11 +89,11 @@ def evidence_answer(graph, citations, edges, selected_id, question=''):
         unlinked = set(coverage.get('unlinked_requirements', []))
         gaps = [citation for citation in citations if citation['node_id'] in unlinked]
         if gaps:
-            answer += '\nUnlinked requirements in this context: ' + ', '.join(f"{item['label']} [{item['citation_id']}]" for item in gaps[:5]) + '.'
+            answer += '\nUnlinked requirements in this context: ' + ', '.join(f"{display_value(item['label'])} [{item['citation_id']}]" for item in gaps[:5]) + '.'
     elif any(word in question.lower() for word in ('gap', 'coverage', 'requirement', 'traceability')):
         answer += '\n\nNo requirement resources have been imported into this snapshot. Configure the lifecycle provider to evaluate coverage.'
     answer += '\n\nCall resolution and provider coverage are bounded. Review the cited resources before making a change.'
-    return answer
+    return bounded_summary(answer)
 
 
 def answer_question(graph, question, selected_id=None, system_prompt=None, connection=None, guard=lambda: None):
@@ -100,6 +101,7 @@ def answer_question(graph, question, selected_id=None, system_prompt=None, conne
     fallback = evidence_answer(graph, citations, edges, selected_id, question)
     result = {'answer': fallback, 'mode': 'evidence', 'citations': citations, 'relations': edges,
               'snapshot_id': graph['metadata'].get('snapshot_id'), 'model': None, 'warning': None,
+              'observed_resources': citations, 'citation_ids': sorted(inline_citations(fallback)),
               'similar_resources': similar_resources(graph, selected_id), 'recommendations': recommendations(graph)}
     if not citations:
         result['warning'] = 'No indexed evidence is available; synchronize a source before asking AI.'
@@ -151,21 +153,10 @@ def answer_question(graph, question, selected_id=None, system_prompt=None, conne
                         content.extend(chunk)
             body = json.loads(content)
             text = body['message']['content'] if settings.AI_PROVIDER == 'ollama' else body['choices'][0]['message']['content']
-        parsed = json.loads(text)
-        answer = parsed['answer']
-        if not isinstance(answer, str) or not answer.strip() or len(answer) > settings.AI_MAX_ANSWER_CHARACTERS:
-            raise ValueError('Invalid AI answer')
-        valid_ids = {citation['citation_id'] for citation in citations}
-        citation_ids = parsed.get('citation_ids', [])
-        if not isinstance(citation_ids, list) or any(not isinstance(value, str) for value in citation_ids):
-            raise ValueError('Invalid AI citation identifiers')
-        used = set(citation_ids)
-        inline = set(re.findall(r'\[(E\d+)\]', answer))
-        if not used or not inline or not used <= valid_ids or not inline <= used:
-            raise ValueError('AI returned ungrounded citation identifiers')
+        answer, used = validate_answer(text, citations)
         result.update(answer=answer, mode='ollama' if connection is not None else settings.AI_PROVIDER,
                       model=connection.model if connection is not None else settings.AI_MODEL,
-                      citations=[citation for citation in citations if citation['citation_id'] in used | inline])
+                      citation_ids=sorted(used), citations=[citation for citation in citations if citation['citation_id'] in used])
     except (httpx.HTTPError, ValueError, TypeError, KeyError, IndexError):
         result['warning'] = 'The configured AI service is unavailable or returned an invalid grounded answer. Showing graph evidence instead.'
     return result

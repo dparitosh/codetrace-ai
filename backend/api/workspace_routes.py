@@ -197,7 +197,8 @@ def workspace_catalog():
             'pipelines': [{'id': item.id, 'label': item.label, 'platform': item.platform, 'repository_id': item.repository_id}
                           for item in settings.CI_PROVIDERS],
             'ai': {'provider': settings.AI_PROVIDER, 'model': settings.AI_MODEL,
-                   'timeout_seconds': settings.AI_TIMEOUT_SECONDS},
+                   'timeout_seconds': settings.AI_TIMEOUT_SECONDS,
+                   'agent_timeout_seconds': settings.AI_AGENT_DEADLINE_SECONDS + 5},
             'settings': {'request_timeout_seconds': settings.REQUEST_TIMEOUT_SECONDS,
                          'collaboration_timeout_seconds': settings.OSLC_TIMEOUT_SECONDS * 3 + 15,
                          'render_nodes': settings.WORKSPACE_RENDER_NODES, 'render_edges': settings.WORKSPACE_RENDER_EDGES},

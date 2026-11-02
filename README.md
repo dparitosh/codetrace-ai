@@ -5,7 +5,7 @@ selected source snapshot. Run trace, coverage and change agents to capture evide
 fill missing draft sections and update agent-owned proposals. Your edited fields are
 preserved. Agents propose source-code corrections; they do not modify software files.
 Review automated content, save the dossier and submit it to the local review queue.
-Approval freezes an exact submitted version; further changes require a new draft revision.
+Submission freezes an exact dossier version; approval binds to it. Further changes require a new draft revision.
 Submitted conversation contents are included in the version digest. Older versions that
 did not retain them disclose that gap. Recovery refresh preserves unsaved dossier edits
 until you save or explicitly discard them.
@@ -23,11 +23,11 @@ Existing approved ALM relationship actions remain separate under advanced contro
 
 The application shell uses [Siemens Industrial Experience React](https://ix.siemens.io/docs/home/installation/react), with light/dark themes, managed-source selection, graph exploration and an evidence-grounded companion. Current verification and limitations are in [current audit status](docs/audit-status.md).
 
-Local-first source analysis, dependency graphs, quality checks, static security patterns, and explicit OSLC lifecycle links. The browser submits supported UTF-8 source files to a local FastAPI service. No database, cloud account, or access token is needed for local folders.
+Local-first source analysis, dependency graphs, quality checks, static security patterns, and explicit OSLC lifecycle links. The browser submits supported UTF-8 source files to a local FastAPI service. No external database server, cloud account, or access token is needed for local folders.
 
 ## Install on Windows
 
-Prerequisites: Python 3.10+ and Node.js 22.19+ (22.x), 24.x or 26+ with npm on PATH. Node 24 is used in CI. Git is required for remote Git/GitLab ingestion and local revision evidence. Use a real Python installation, not the Windows Store app-execution alias.
+Prerequisites: Python 3.10+ and Node.js 22.19+ (22.x), 24.x or 26+ with npm on PATH. Node 24 is recommended for development. Git is required for remote Git/GitLab ingestion and local revision evidence. Use a real Python installation, not the Windows Store app-execution alias.
 
 Frontend dependencies use npm and the committed `frontend/package-lock.json`. Run `npm ci` from the `frontend` directory. On Windows, use `npm.cmd ci` if PowerShell blocks `npm.ps1`. If npm reports `EUSAGE` with missing or invalid lock entries, update to this branch's repaired package manifest and lockfile together; avoid bypassing peer checks with `--force` or `--legacy-peer-deps`.
 
@@ -47,7 +47,7 @@ The installer creates `.venv`, installs the local backend/core and locked fronte
 .\stop.ps1
 ```
 
-For foreground debugging, run `start-backend.ps1` and `start-frontend.ps1` in separate terminals. Batch compatibility: `start.bat setup`, `start.bat`, and `start.bat stop`.
+For foreground debugging, run `start-backend.ps1` and `start-frontend.ps1` in separate terminals. The frontend launcher invokes Node/Vite directly so a blocked `npm.ps1` shim does not prevent startup. Batch compatibility: `start.bat setup`, `start.bat`, and `start.bat stop`.
 
 ## Install on macOS or Linux
 
@@ -91,6 +91,29 @@ highlight their evidence. Unsupported model calls/invalid citations/budget exhau
 fall back to explicit evidence. Agents cannot execute shell commands or modify ALM
 links; the existing reviewed approval flow remains responsible for writes.
 
+The total agent deadline is `AI_AGENT_DEADLINE_SECONDS` (default 120 seconds).
+`AI_TIMEOUT_SECONDS` (45) bounds individual network waits; it is not the browser's
+whole-agent deadline. Optional embeddings use `AI_RETRIEVAL_TIMEOUT_SECONDS` (15),
+and planning reserves `AI_FINAL_ANSWER_RESERVE_SECONDS` (15) for one final JSON
+answer attempt without tools. All phases share the original total deadline.
+The final attempt can also repair malformed answer formatting once; it cannot
+execute more tools or weaken citation checks. Native token truncation is reported
+as `AI_MAX_OUTPUT_TOKENS` exhaustion. Increasing a timeout does not establish that
+the configured model supports the required API or output contract.
+
+Model answers must contain `answer` with observed `[E#]` references and
+`citation_ids` (not `citations_ids`). Returned model citations identify references
+actually used inline; `observed_resources` retains the wider retrieved context.
+Unavailable/invalid models still produce an explicitly labeled, length-bounded
+observed-evidence summary. Synchronous cancellation remains cooperative; a browser
+timeout does not terminate a blocked backend operation or certify model success.
+
+After updating an existing installation, stop CodeTrace, run the installer to
+refresh dependencies while preserving `.env.local`, and start it again. Configure
+the URL and exact installed model on each machine. No model test runs during
+installation or startup. Read [testing.md](docs/testing.md) for offline checks and
+the separate, optional live-model validation.
+
 For architecture, limits and API contracts see [technical design](docs/TSD.md).
 
 ## Configuration
@@ -113,7 +136,7 @@ Generated npm inventory preserves SPDX license expressions, package URLs, suppor
 
 One root `.env.local` configures the backend, frontend dev/preview server, launch URLs, review sessions, and source limits. It is ignored by Git. `.env.local.example` documents supported keys; `config/defaults.json` centralizes shared defaults.
 
-Set `SOURCE_FOLDER=D:/GenAI_Projects/Apps/PMem` in `.env.local` to analyze that
+Set `SOURCE_FOLDER=D:/Projects/MySoftware` in `.env.local` to analyze that
 folder through the default managed workspace. Any readable local folder can be
 selected; it does not need to contain this application or be a Git checkout.
 Relative paths resolve from the application checkout. Restart both services
@@ -227,7 +250,7 @@ Live OpenAPI: `/docs`. Source endpoints remain available for programmatic analys
 - `POST /api/v1/trace/materialize`, `/trace/query`, `/trace/jsonld`
 - Session/review endpoints under `/api/v1/review` (see OpenAPI)
 
-GitLab sources accept HTTPS project URLs; self-hosted instances require adding their hostname to `GITLAB_ALLOWED_HOSTS`. Private projects use your existing noninteractive Git credential helper. [Lifecycle manifests](docs/trace-knowledge-graph.md) add explicit requirement/test/product links. [Agent integration](docs/vscode-agent.md) describes the source-context contract.
+GitLab sources accept HTTPS project URLs; self-hosted instances require adding their hostname to `GITLAB_ALLOWED_HOSTS`. Programmatic GitLab clones do not use host credential helpers. For private access, configure a managed Git source with `token_env` and synchronize that source; the plain GitLab URL endpoint has no credential-input contract. [Lifecycle manifests](docs/trace-knowledge-graph.md) add explicit requirement/test/product links. [Agent integration](docs/vscode-agent.md) describes the source-context contract.
 
 Python uses AST-based extraction with limited intra-module call resolution. C, C++ and C# use Tree-sitter syntax parsers to extract namespaces, types, callable declarations, parameters, local variables, includes/usings and inheritance. Unique lexical calls, including supported cross-file calls, become graph evidence; ambiguous overloads and unknown receivers remain unresolved. The source-analysis page reports language and parser coverage, and the graph distinguishes native type classifications. Re-run the installer for parser dependencies, restart and synchronize the source to refresh existing snapshots.
 

@@ -21,13 +21,16 @@ rather than entering provider URLs or credentials.
   link builds to source; partial windows remain explicit.
 - Import supported CycloneDX/SPDX JSON or generate an npm lockfile inventory.
   Display SBOM components/dependencies and export an approved inventory.
-- Explore circular nodes with hierarchical, circular, organic and other layouts;
+- Explore classification glyphs/domain rings with force, hierarchical, circular,
+  concentric and grid layouts;
   choose traversal direction, relationship scope and depth; expand/collapse
   containment, highlight context, and inspect identity/provenance.
 - Search labels, identifiers, URIs, domains and source paths. Additional results
   and inspector relationships remain reachable with visible counts.
 - Ask centrally configured Ollama or compatible AI for cited answers. Retain a
-  deterministic evidence summary when AI is disabled or unavailable/invalid.
+  length-bounded deterministic evidence summary when AI is disabled or unavailable/invalid.
+  Separate inline-used citations from wider observed context, and allow at most one
+  tool-free final/format-repair attempt inside the total execution deadline.
 - Bind decisions/exports to a result digest and session. Enforce idle, absolute,
   storage and concurrency limits. Support memory or shared SQLite sessions on one host.
 - Publish approved managed snapshots through a bounded OSLC server profile.

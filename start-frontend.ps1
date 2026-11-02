@@ -2,6 +2,11 @@
 param()
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
-if (-not (Test-Path (Join-Path $root 'frontend\node_modules'))) { throw 'Run install.ps1 first.' }
+$vite = Join-Path $root 'frontend\node_modules\vite\bin\vite.js'
+if (-not (Test-Path -LiteralPath $vite)) { throw 'Run install.ps1 first.' }
+$node = Get-Command node -ErrorAction Stop
 Push-Location (Join-Path $root 'frontend')
-try { & npm run dev } finally { Pop-Location }
+try {
+    & $node.Source $vite
+    if ($LASTEXITCODE -ne 0) { throw "Frontend exited with code $LASTEXITCODE." }
+} finally { Pop-Location }

@@ -1,5 +1,6 @@
 """Session-owned Ollama REST configuration and bounded, secret-free transport."""
 import json
+from contextlib import contextmanager
 import math
 import time
 from urllib.parse import urlsplit, urlunsplit
@@ -107,7 +108,7 @@ def connection_for(store, token):
 class OllamaREST:
     def __init__(self, connection, guard=lambda: None, deadline=None):
         self.connection, self.guard = connection, guard
-        self.deadline = deadline or time.monotonic() + settings.AI_AGENT_DEADLINE_SECONDS
+        self.deadline = deadline if deadline is not None else time.monotonic() + settings.AI_AGENT_DEADLINE_SECONDS
 
     def check(self):
         self.guard()
@@ -115,6 +116,18 @@ class OllamaREST:
         if remaining <= 0:
             raise ValueError('AI operation reached its total deadline')
         return remaining
+
+    @contextmanager
+    def budget(self, seconds, reserve=0):
+        """Sequential sub-budget; always restore the parent deadline, including on failure."""
+        parent = self.deadline
+        remaining = max(0, parent - time.monotonic())
+        reserve = min(reserve, remaining / 2)
+        self.deadline = min(parent - reserve, time.monotonic() + seconds)
+        try:
+            yield
+        finally:
+            self.deadline = parent
 
     def request(self, operation, payload=None):
         if operation not in {'tags', 'chat', 'embed'}:
@@ -192,6 +205,8 @@ class OllamaREST:
         result = self.request('chat', payload)
         if not isinstance(result, dict):
             raise ValueError('Invalid chat response')
+        if result.get('done_reason') == 'length':
+            raise ValueError('Model output reached AI_MAX_OUTPUT_TOKENS')
         message = result.get('message')
         if not isinstance(message, dict) or message.get('role', 'assistant') != 'assistant':
             raise ValueError('Invalid chat response')

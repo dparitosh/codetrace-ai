@@ -4,6 +4,7 @@ import { aiRequest, ReviewRecord, workspaceRequest } from '../reviewSession'
 import type { AIProfile } from './AISettings'
 import { Catalog, CompanionAnswer, domainColors, domainOf, relationLabel, TraceGraph, TraceNode } from './types'
 import NodeBadge from './NodeBadge'
+import { agentTimeoutSeconds } from './workspaceContext'
 
 interface Props { graph: TraceGraph | null; review: ReviewRecord | null; selected: TraceNode | null; catalog: Catalog | null; onSelect: (node: TraceNode) => void; onHighlight?: (ids: string[]) => void; contextDomain?: string; onStartChange?: () => void }
 export default function Companion({ graph, review, selected, catalog, onSelect, onHighlight, contextDomain = 'ALL', onStartChange }: Props) {
@@ -40,7 +41,7 @@ export default function Companion({ graph, review, selected, catalog, onSelect, 
     setTab('ask'); setBusy(true); setError(''); setQuestion(value)
     try {
       const result = await workspaceRequest<CompanionAnswer>('agent/run', { review_id: review.id, question: value,
-        selected_id: selected?.id, agent_id: chosenAgent, domain: contextDomain }, profile?.request_timeout_seconds || catalog.ai.timeout_seconds + 5, review.sessionToken)
+        selected_id: selected?.id, agent_id: chosenAgent, domain: contextDomain }, agentTimeoutSeconds(catalog, profile?.request_timeout_seconds), review.sessionToken)
       if (generation !== requestGeneration.current) return
       setAnswer(result)
       setAnswerDomain(contextDomain)
@@ -65,7 +66,7 @@ export default function Companion({ graph, review, selected, catalog, onSelect, 
           <p className="answer-body">{answer.answer}</p>
           {answer.trace && <details className="agent-execution"><summary>Agent execution · {answer.trace.length} tools</summary>{answer.trace.map(step => <div key={step.step}><strong>{step.step}. {step.tool.replace(/_/g, ' ')}</strong><small>{step.status} · {step.resource_ids.length} resources · {step.elapsed_ms} ms</small><button onClick={() => onHighlight?.(step.resource_ids)}>Highlight step evidence</button><details><summary>Parameters</summary><pre>{JSON.stringify(step.arguments, null, 2)}</pre></details></div>)}</details>}
           {answer.warning && <p className="answer-warning">{answer.warning}</p>}
-          <div className="evidence-heading"><Link2 size={12} />CITED RESOURCES</div>
+          <div className="evidence-heading"><Link2 size={12} />{answer.mode === 'evidence' ? 'OBSERVED RESOURCES' : 'CITED RESOURCES'}</div>
           <div className="citation-list">{answer.citations.map(citation => <button key={citation.citation_id} onClick={() => { const node = nodes.get(citation.node_id); if (node) onSelect(node) }}><b>{citation.citation_id}</b><span>{citation.label}<small>{citation.domain} · {citation.type.replace(/_/g, ' ')}</small></span><ChevronRight size={13} /></button>)}</div>
           {!!answer.similar_resources?.length && <><div className="evidence-heading">SIMILAR RESOURCES · FEATURE OVERLAP</div><div className="citation-list">{answer.similar_resources.map(item => <button key={item.node_id} onClick={() => { const node = nodes.get(item.node_id); if (node) onSelect(node) }}><span>{item.label}<small>Label {Math.round(item.lexical_overlap * 100)}% · structure {Math.round(item.structural_overlap * 100)}%</small></span></button>)}</div><p className="answer-warning">Overlap is a retrieval signal, not semantic equivalence or a safe substitution.</p></>}
           {answer.recommendations?.map((item, index) => <p className="answer-warning" key={index}>{item.message} {item.basis}</p>)}

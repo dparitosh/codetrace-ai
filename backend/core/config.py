@@ -105,6 +105,8 @@ class Settings(BaseSettings):
     AI_ALLOWED_BASE_URLS: List[str] = Field(default_factory=list)
     AI_KEY_HEADER: Literal['Authorization', 'api-key', 'Ocp-Apim-Subscription-Key'] = 'Authorization'
     AI_AGENT_MAX_STEPS: int = Field(default=5, ge=1, le=12)
+    AI_RETRIEVAL_TIMEOUT_SECONDS: int = Field(default=15, ge=1, le=300)
+    AI_FINAL_ANSWER_RESERVE_SECONDS: int = Field(default=15, ge=1, le=300)
     AI_AGENT_DEADLINE_SECONDS: int = Field(default=120, ge=5, le=600)
     AI_CONTEXT_MAX_BYTES: int = Field(default=120000, ge=4096, le=1000000)
     AI_EMBEDDING_MAX_NODES: int = Field(default=300, ge=1, le=2000)

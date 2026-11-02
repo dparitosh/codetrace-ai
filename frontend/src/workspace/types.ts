@@ -19,11 +19,13 @@ export interface Catalog {
   providers: { id: string; label: string; domain: string; transport: string; credential_configured: boolean | null; allow_writes?: boolean }[]
   link_predicates?: string[]
   pipelines: { id: string; label: string; platform: string; repository_id: string }[]
-  ai: { provider: string; model: string; timeout_seconds: number }
+  ai: { provider: string; model: string; timeout_seconds: number; agent_timeout_seconds?: number }
   settings: { request_timeout_seconds: number; render_nodes: number; render_edges: number; collaboration_timeout_seconds?: number }
   configuration: string
 }
 export interface CompanionAnswer {
+  citation_ids?: string[]
+  observed_resources?: CompanionAnswer['citations']
   agent_id?: string
   highlight_ids?: string[]
   trace?: { step: number; tool: string; status: string; resource_ids: string[]; elapsed_ms: number; arguments: Record<string, unknown> }[]

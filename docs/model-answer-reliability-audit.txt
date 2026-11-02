@@ -1,0 +1,274 @@
+CODETRACE MODEL ANSWER AND TIMEOUT RELIABILITY AUDIT
+Date: 2026-11-02
+Project: CodeTrace only
+Status: Scoped audit followed by local remediation on 2026-11-02.
+Findings and line references below describe the pre-fix implementation.
+See the remediation/validation addendum at the end for the current status.
+No credentials, active .env.local, PMem files or deferred UI work were changed.
+
+EXECUTIVE FINDING
+The reported warning is a rejection/fallback result, not proof that the model is
+offline. The app can reject a transport-successful model response for malformed
+JSON, missing/wrong citation_ids, unknown references, length or loop limits.
+Several orchestration issues can also prevent a usable final answer. The exact
+cause on the user's other machine cannot be identified without that run's safe
+failure category and redacted response shape. No live model was called here.
+
+INSPECTED EXECUTION MAP
+Companion.tsx -> reviewSession.ts workspaceRequest -> POST /workspace/agent/run
+-> session-owned OllamaREST -> GraphAgent.run -> initial inspect/search ->
+GraphSearch lexical/optional embeddings -> native tool chat loop -> JSON/citation
+validation -> model answer or deterministic evidence_answer -> browser rendering.
+Dossier automation: change_routes.conversation -> one shared OllamaREST -> trace,
+coverage and change agents -> versioned ChangeStore completion. A shared total
+deadline is intentional, but one agent/retrieval stage can consume it.
+Also reviewed standalone companion answer_question, transport request/embed/chat,
+configuration limits, diagnostics, existing tests, and frontend request budgets.
+This is not a complete-repository or live deployment audit.
+
+CONFIRMED FINDINGS AND RISKS
+
+MA-01 | Medium | Agent / performance | CONFIRMED DESIGN GAP, reproduced
+Location: backend/services/agent_workspace.py:153-160,291-301;
+backend/services/ai_connection.py:110-116.
+Description: optional embedding retrieval and chat share one total deadline with
+no answer reserve. Default maximum 300 indexed nodes and batches of 24 require
+up to 13 document embedding requests plus a query embedding before chat.
+Reproduction: fake 20-second deadline, batch size 1, embeddings consuming eight
+seconds each; third embedding exhausts the deadline; no chat execution begins.
+Evidence: test_embedding_work_can_consume_entire_chat_budget passed.
+Impact: responsive chat models can still yield only deterministic summaries.
+Fix: give optional retrieval a separately bounded sub-budget within the parent
+deadline; retain lexical results and reserve time for final synthesis. Do not
+merely increase every timeout or hide exhaustion.
+Validation needed after repair: same fake-clock workload must reach bounded chat
+or disclose the explicit remaining-budget reason, with parent/session guards kept.
+Effort: 0.5-1 day including multi-agent shared-deadline tests.
+
+MA-02 | Medium | Frontend / timeout | CONFIRMED SOURCE-TRACED CONTRACT MISMATCH
+Location: frontend/src/workspace/Companion.tsx:20,43;
+backend/api/workspace_routes.py:71,200.
+Description: until the AI profile loads, or after its load fails, frontend agent
+requests use catalog.ai.timeout_seconds + 5. The catalog value is per-request
+AI_TIMEOUT_SECONDS, not the total AI_AGENT_DEADLINE_SECONDS used by agent runs.
+With defaults this is 50 seconds versus the normal 125-second frontend budget.
+Reproduction: delay/reject AI configuration retrieval; start a question; a valid
+agent response arriving at 60 seconds is beyond this browser budget but within
+the server's default total deadline. This timing case is source-traced, not a
+live browser reproduction in this audit.
+Impact: premature cancellation can hide a later server answer and encourage
+retries while the worker is still occupied.
+Fix: expose the total agent timeout in the public catalog and use it consistently
+when profile retrieval is pending/unavailable; separate search/chat/agent budgets.
+Validation: fake timers with delayed config and a response after per-call timeout
+but before total deadline; no premature abort, stale-session rejection preserved.
+Effort: 2-4 hours including client contract regression.
+
+MA-03 | Medium | Agent / output bounds | CONFIRMED BUG, reproduced
+Location: backend/services/companion_service.py:69-95;
+backend/services/agent_workspace.py:334-337.
+Description: AI_MAX_ANSWER_CHARACTERS limits accepted model output, but the
+fallback renderer interpolates uncapped retained labels/paths/coverage labels.
+A selected label larger than the limit makes the deterministic answer larger
+than the same configured answer bound.
+Evidence: test_deterministic_answer_exceeds_configured_answer_limit passed.
+Root cause: model and deterministic rendering have different length policies.
+Impact: the fallback is not necessarily a bounded answer; oversized imported
+metadata can cause very large UI responses even after model rejection.
+Fix: budget fallback sections and source-display strings, preserving complete
+valid citation markers and an explicit truncation note. Do not slice through
+[E#] or make truncated evidence appear complete.
+Validation: extreme labels/paths/predicates, Unicode, tiny configured limits,
+empty evidence, and all returned inline IDs resolving to retained citations.
+Effort: 0.5 day.
+
+MA-04 | Medium | Agent / evidence presentation | CONFIRMED BUG, reproduced
+Location: backend/services/agent_workspace.py:307-317,342;
+frontend/src/workspace/Companion.tsx:68.
+Description: successful answer validation reads citation_ids, but the result
+returns every observed resource. The UI labels them all CITED RESOURCES.
+Reproduction: observe E1 and E2, accept answer using only E1, receive E1 and E2
+in citations. Evidence: test_valid_answer_returns_unreferenced_observations_as_citations.
+Root cause: observed context and used citations are not distinguished in output.
+Impact: reviewers/automatic dossier capture can mistake collected context for
+actual support explicitly used by the model. Existence of a valid citation also
+is not semantic verification of every claim in the answer.
+Fix: distinguish cited IDs from observed context, preserving relationship endpoint
+identity and graph highlighting. Do not blindly drop context nodes needed by
+relations or silently rebind turn-local E# IDs.
+Validation: only E1 is identified as used; E2 remains observable context if needed;
+all relationship endpoints still resolve; dossier provenance remains scoped.
+Effort: 0.5-1 day including response/client/dossier compatibility checks.
+
+MA-05 | Low | Agent / diagnostic | CONFIRMED BUG, reproduced
+Location: backend/services/ai_connection.py:183-198;
+backend/services/agent_workspace.py:306 and model_failure_warning.
+Description: chat() discards top-level done_reason. Token-limited native output
+can therefore be diagnosed as malformed JSON instead of output-token exhaustion.
+Evidence: test_chat_drops_token_exhaustion_reason passed with a mocked native
+response declaring done_reason=length and incomplete answer JSON.
+Impact: users troubleshoot citations or connectivity rather than output limits.
+Fix: retain safe completion metadata, classify truncated output explicitly, and
+reject partial answers. Do not return provider bodies, URLs or credentials.
+Validation: length, normal completion, missing optional completion metadata,
+reasoning-only/empty content, invalid shape, and secret-sentinel redaction cases.
+Effort: 2-4 hours.
+
+MA-06 | Medium | Agent / orchestration | CONFIRMED BEHAVIOR, ARCHITECTURAL RISK
+Location: backend/services/agent_workspace.py:300-330.
+Description: if the last allowed model turn requests a tool, that tool runs,
+but there is no final synthesis turn. Evidence can be valid and sufficient, yet
+the result necessarily falls back. The configured cap is enforced as coded; this
+is an answer-completion limitation, not proof of an unbounded-loop defect.
+Evidence: test_final_tool_step_has_no_synthesis_opportunity passed with one step;
+the prepared valid final answer was never requested.
+Fix: reserve an explicit no-tools final-answer phase within the total deadline
+and context/output limits; keep a bounded overall call cap. If no budget remains,
+report why. A format-repair attempt must also consume this explicit budget.
+Validation: final permitted tool, tools disabled, invalid final JSON, deadline
+exhaustion and malicious/unknown final citations; no new tool execution allowed
+in the final phase.
+Effort: 0.5-1 day.
+
+MA-07 | Low | Agent / error boundary | CONFIRMED BEHAVIOR, reproduced
+Location: backend/services/agent_workspace.py:290-296,299;
+backend/api/workspace_routes.py:185-186.
+Description: initial observation runs outside the model fallback try block. An
+already-expired budget raises directly instead of returning a bounded evidence
+result. The endpoint maps this to generic HTTP 422, conflating execution expiry
+with invalid request input. Dossier orchestration can similarly surface HTTP 502
+when the shared deadline expires before a later agent begins.
+Evidence: test_expired_initial_observation_escapes_model_fallback passed.
+Fix: distinguish request validation, expired execution and unavailable transport;
+handle safe initial retrieval failure consistently without bypassing session
+expiry/authorization. Preserve already observed evidence and completed agents
+where appropriate; never treat incomplete automation as completed.
+Validation: pre-expired deadline, expiry during initial retrieval, expired session,
+and shared-deadline exhaustion between dossier agents.
+Effort: 0.5 day, coordinated with MA-01/06.
+
+EXPECTED REJECTION — NOT A BUG
+The internal final model contract is exactly:
+  {"answer":"Observed result [E1]", "citation_ids":["E1"]}
+The spelling citations_ids is not the supported field. IDs must be observed in
+this run; earlier turn E1 can refer to a different resource. Unknown E999 must
+remain rejected. A prose answer or markdown-fenced JSON does not currently meet
+the raw JSON contract. There is no repair attempt; JSON format is not requested
+when native tools are offered. The latter is an interoperability limitation:
+test_native_tool_payload_has_no_final_answer_schema passed. A future final phase
+can request structured JSON, but must still validate observed IDs and bounds.
+Do not manufacture citation_ids from arbitrary prose or relabel fallback as AI.
+
+TIMEOUT LIMITATION NOT MEASURED AGAINST A LIVE PROVIDER
+OllamaREST checks a monotonic deadline before/after requests and between decoded
+response chunks. The synchronous HTTP transport receives a timeout value based
+on remaining time at request start. This does not forcibly interrupt all CPU or
+blocking socket work exactly at the deadline. No real slow-drip/blocked-socket
+wall-clock test was run here; hard real-time cancellation is not claimed.
+
+EXECUTED VALIDATION
+Baseline: backend/tests/test_agent_workspace.py, test_agent_contract.py,
+test_change_workbench.py: 74 passed, one upstream Starlette/httpx deprecation.
+Additional isolated audit probes: 9 passed. These assert existing behavior,
+including defects and expected security rejection; passing is not remediation.
+Probe: .runtime/audit/test_answer_reliability_probe.py (ignored local artifact).
+Command: .venv/Scripts/python.exe -m pytest -q
+ .runtime/audit/test_answer_reliability_probe.py
+ --basetemp .runtime/answer-probes-final
+No live Ollama, model downloads, customer external service, production data,
+PMem source, deferred dossier UI patch, commit, push or deployment was used.
+
+REMEDIATION ORDER
+1. Fix MA-02 public timeout contract independently.
+2. Implement MA-01/06/07 together as an explicitly budgeted retrieval/tool/final
+   state flow, preserving session guards and the overall execution deadline.
+3. Correct MA-05 diagnostics, then evaluate structured final generation and at
+   most one budgeted formatting repair. Never weaken grounding validation.
+4. Fix MA-03 fallback renderer and MA-04 used-vs-observed provenance contract.
+5. Execute deterministic regressions, API/client integration and production
+   build. Only then verify the customer's configured model contract with explicit
+   permission; this audit used no live model calls.
+
+
+REMEDIATION AND VALIDATION ADDENDUM — 2026-11-02
+Implemented locally after the user requested fixes. Not committed or pushed.
+MA-01: optional embedding work now has AI_RETRIEVAL_TIMEOUT_SECONDS (default 15)
+inside the original deadline. A restored parent budget leaves room for answer
+synthesis; retrieval failure retains explicit lexical evidence.
+MA-02: public catalog exposes agent_timeout_seconds; Companion uses the total
+agent budget when the profile is pending/unavailable instead of the per-call
+transport timeout. Fake timers verify a 60-second response is not aborted early.
+MA-03: deterministic answers now bound displayed metadata and overall character
+length, escape imported fake [E#] markers, retain whole valid citation markers
+where they fit, and disclose truncation. Sub-four-character limits cannot fit an
+[E1] marker and return an ellipsis rather than fabricate or cut a citation.
+MA-04: final JSON validation is shared by agent and companion; returned model
+citations are only actual inline-used observed IDs. New citation_ids and
+observed_resources fields distinguish used citations from full collected context.
+Relationships/highlights keep their original observed identities. Evidence-mode
+UI labels the full context as Observed resources, not Cited resources.
+MA-05: native done_reason=length is rejected explicitly with output-token budget
+advice. Partial content is never accepted as a verified answer.
+MA-06: planning reserves AI_FINAL_ANSWER_RESERVE_SECONDS (default 15) within the
+parent deadline. At most one additional no-tools JSON final/format-repair call
+runs. It cannot execute tools, extend the total deadline, invent citations or
+accept the unsupported citations_ids spelling.
+MA-07: initial budget expiry can return guarded retained snapshot evidence;
+session denial/expiry still propagates. Shared-deadline dossier automation can
+retain explicit deterministic results for later agents instead of discarding the
+whole turn as a generic transport failure. Human review remains mandatory.
+
+Configuration is documented in .env.local.example. Active settings and credentials
+were not changed. Restart the backend to load changed code/defaults; installations
+on other machines must receive these source changes too. No runtime service was
+restarted by this task and no live model compatibility was claimed.
+
+Validation executed:
+- Full backend/core suite: 404 passed; one existing Starlette/httpx deprecation.
+- Focused agent/dossier reliability/API suite: 98 passed.
+- Frontend suite: 55 passed, including delayed-profile/60-second-answer coverage.
+- Native graph/installation/session contracts: 23 passed.
+- TypeScript, ESLint and production Vite build passed. Existing AG Grid bundle
+  size advisory remains.
+- Final review: no change to deferred ChangeWorkbench UI or PMem; no live Ollama,
+  package download, external ticket write, deployment, commit or push.
+
+Remaining boundaries: synchronous transport cancellation is cooperative, with
+checks before/after requests and between decoded chunks. A blocked socket/CPU
+operation is not forcibly interrupted at an exact millisecond. Local mocked tests
+are not proof that a customer's installed model or gateway honors native tools
+and JSON. Malformed, ungrounded, over-budget or unavailable model output can still
+correctly yield an explicitly labeled bounded deterministic summary.
+
+
+LOCAL ACTIVATION FOLLOW-UP — 2026-11-02
+Following the next user request to proceed, CodeTrace was started through its
+managed stop/start scripts. Previous PID records were stale. Frontend readiness
+and backend /health passed at the configured local ports (3001 / 8009).
+A live synthetic API smoke workflow created its own review session, explicitly
+disabled AI for that session, analyzed a tiny in-memory source fixture and called
+the agent endpoint. Bounded deterministic output, valid citation_ids and
+observed_resources were verified. The public total agent budget is 125 seconds.
+The owned synthetic review/session was deleted afterward; frontend returned 200.
+No Ollama/model endpoint or PMem service was called. This supersedes the earlier
+statement that runtime activation had not yet been performed. No push or commit.
+
+
+INSTALLATION / DOCUMENTATION RELEASE REVIEW — 2026-11-02
+Windows setup now rejects unsupported Python before creating an environment.
+The foreground frontend uses Node/Vite directly and reports native exit failures.
+Bash entrypoints have LF checkout rules. Four offline launcher regressions passed
+using disposable script copies and fake executables; real dependencies were not
+reinstalled. All root PowerShell scripts parsed. Bash was not available, so no
+Linux/macOS install/start runtime success is claimed.
+Reviewed all ten tracked Markdown documents for local file references: zero broken
+links. Maintained docs now describe the answer budgets, strict citation schema,
+native-language coverage, private managed-source authentication and current local
+verification. Removed hosted workflows remain removed; PMem/backlog are excluded.
+Final validation: 408 backend/core tests, 55 frontend tests, 23 native contracts,
+TypeScript and ESLint passed. Production build previously passed with unchanged
+frontend implementation; existing deferred AG Grid bundle advisory remains.
+A 50k-node model benchmark completed (overview 4.88 s, focused projection 2.32 s,
+6-hop context 80 ms in this run). These figures are machine/load-specific and
+exclude browser frame rate; they do not establish fast interactive performance.
+Large-graph performance remains a separate review concern, not repaired here.

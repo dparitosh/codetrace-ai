@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { mergeSnapshotReview } from './workspaceContext'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { agentTimeoutSeconds, mergeSnapshotReview } from './workspaceContext'
 import type { ReviewRecord } from '../reviewSession'
 
 const record = (id = 'one', token = 'session', digest = 'digest'): ReviewRecord => ({
@@ -19,5 +19,32 @@ describe('shared snapshot review state', () => {
     for (const incoming of [record('two'), record('one', 'new-session'), record('one', 'session', 'different')]) {
       expect(mergeSnapshotReview(current, incoming)).toBe(incoming)
     }
+  })
+})
+
+
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
+
+describe('agent timeout before AI configuration arrives', () => {
+  const catalog = { ai: { timeout_seconds: 45, agent_timeout_seconds: 125 }, settings: { request_timeout_seconds: 120 } } as any
+  it('uses the total agent budget while the profile is loading or unavailable', () => {
+    expect(agentTimeoutSeconds(catalog)).toBe(125)
+    expect(agentTimeoutSeconds(catalog, 200)).toBe(200)
+    expect(agentTimeoutSeconds({ ...catalog, ai: { timeout_seconds: 45 } })).toBe(125)
+  })
+  it('does not abort a valid answer after the shorter per-call timeout', async () => {
+    vi.useFakeTimers()
+    let finish: (response: Response) => void = () => undefined
+    let signal: AbortSignal | undefined
+    vi.stubGlobal('fetch', vi.fn((_url, options) => new Promise<Response>((resolve, reject) => {
+      finish = resolve; signal = options.signal
+      options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+    })))
+    const { requestJson } = await import('../reviewSession')
+    const result = requestJson('/api/v1/workspace/agent/run', {}, agentTimeoutSeconds(catalog))
+    await vi.advanceTimersByTimeAsync(60000)
+    expect(signal?.aborted).toBe(false)
+    finish(new Response(JSON.stringify({ answer: 'Observed [E1]' }), { headers: { 'Content-Type': 'application/json' } }))
+    await expect(result).resolves.toMatchObject({ answer: 'Observed [E1]' })
   })
 })

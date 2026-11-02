@@ -305,3 +305,17 @@ def test_export_uses_frozen_turns_and_discloses_legacy_gap(workbench):
     assert 'Legacy version' in exported['conversation_integrity']
     assert exported['digest'] == digest(legacy)
     assert ChangeStore(settings.CHANGE_DB_PATH).get('case')['versions'][0]['dossier'] == legacy
+
+
+def test_shared_deadline_exhaustion_retains_explicit_agent_fallbacks(workbench):
+    from services.ai_connection import OllamaREST
+    client, headers, case, nodes = workbench
+    def expired(connection, guard):
+        return OllamaREST(connection, guard, deadline=-1)
+    with patch('api.change_routes.OllamaREST', side_effect=expired):
+        case = ask(client, headers, case, nodes[0], automate=True)
+    analyses = case['turns'][0]['analyses']
+    assert len(analyses) == 3 and case['turns'][0]['state'] == 'completed'
+    assert all(item['result']['mode'] == 'evidence' for item in analyses)
+    assert all('AI_AGENT_DEADLINE_SECONDS' in item['result']['warning'] for item in analyses)
+    assert case['automation_review_required'] is True and case['state'] == 'draft'

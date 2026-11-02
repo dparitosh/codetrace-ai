@@ -457,3 +457,23 @@ def test_configured_tools_enforced_and_prompts_forwarded():
                      {'system_prompt': 'Review', 'tools': ['search_graph', 'search_graph']}]:
         with pytest.raises(ValueError):
             profile(agent_configuration={'trace-explorer': override})
+
+
+def test_catalog_exposes_total_agent_timeout_before_profile_load(session_store):
+    _, token, client = session_store
+    catalog = client.get('/api/v1/workspace/catalog').json()
+    profile_data = client.get('/api/v1/workspace/ai/config', headers={'X-CodeTrace-Session': token}).json()
+    assert catalog['ai']['agent_timeout_seconds'] == profile_data['request_timeout_seconds']
+    assert catalog['ai']['agent_timeout_seconds'] == settings.AI_AGENT_DEADLINE_SECONDS + 5
+
+
+def test_expired_agent_budget_returns_guarded_retained_evidence(session_store):
+    _, token, client = session_store
+    def expired(connection, guard):
+        return OllamaREST(connection, guard, deadline=-1)
+    with patch('api.workspace_routes.OllamaREST', side_effect=expired):
+        response = client.post('/api/v1/workspace/agent/run', headers={'X-CodeTrace-Session': token},
+            json={'review_id':'graph','question':'Explain','selected_id':'urn:test:rm'})
+    assert response.status_code == 200, response.text
+    assert response.json()['mode'] == 'evidence'
+    assert response.json()['citation_ids'] == ['E1']

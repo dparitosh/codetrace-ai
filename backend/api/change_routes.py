@@ -157,7 +157,7 @@ def conversation(case_id: str, request: Ask, token=Depends(local_session)):
                          'evidence_ids': [{'id': item['id'], 'node_id': item['node']['id']} for item in case['evidence'][:20]],
                          'evidence_total': len(case['evidence'])}
         for agent_id in agents:
-            rest.check()
+            rest.guard()
             result = GraphAgent(case['graph'], rest, agent_id).run(request.question, selected, history=history, dossier_context=draft_context)
             analyses.append({'agent_id': agent_id, 'result': result})
         ai_guard(token)()
