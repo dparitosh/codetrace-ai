@@ -48,3 +48,19 @@ implementation. Vendor-specific validation remains necessary.
 
 Changes must pass applicable checks in [testing.md](testing.md). Current evidence
 and deployment limitations are recorded in [audit-status.md](audit-status.md).
+
+
+## Product-line optimization
+
+Source analysis includes a read-only custom group-technology and cellular assessment. Users can configure product/deployment entrypoints, feature labels and projection assumptions, inspect incidence matrices and candidate spans, and export approved snapshot evidence. Software Product Line Engineering recommendations cover domain analysis, core assets, variability, assembly, configuration testing and measured economics. They do not automatically define valid products or change analyzed software.
+
+
+The product assessment shall accept a repository-specific family/capability/feature
+model independently of deployment roots, map files and exact functions with visible
+evidence scope, check declared feature constraints, and ingest offline OpenAPI JSON
+as contract observations. Optional AI may propose a provisional taxonomy and
+mappings using bounded observed metadata. Suggestions require user review and
+rerun before becoming configured declarations; no semantic equivalence or source
+test success is implied. Unclassified files remain visible rather than unused.
+
+The product-line workspace provides an in-app visual report preview directly from a retained source snapshot. Preview is available for pending sources with a draft label; downloading report/evidence remains approval-gated. Changing assessment inputs invalidates the preview.

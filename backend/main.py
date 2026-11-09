@@ -146,6 +146,10 @@ app.include_router(collaboration_router, prefix='/api/v1/oslc', tags=['OSLC Coll
 app.include_router(change_router, prefix='/api/v1/workspace/changes', tags=['Change dossiers'])
 
 
+from api.optimization_routes import optimization_router
+app.include_router(optimization_router, prefix='/api/v1/workspace')
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)

@@ -304,3 +304,163 @@ Choose **Dependencies**, **Dependents**, **Shortest dependency path**, or **Full
 The **Lineage graph** provides hierarchical/force layouts, zoom, fit, pause and node inspection. **Data table · AG Grid** is separate and contains all matching resources and dependency relationships. The canvas and SVG diagram show at most 200 nodes and 500 edges; counts disclose any truncation. After approving the snapshot in **Review center**, export the diagram as SVG or the complete analysis as JSON. Exports recheck server approval and session ownership, then verify the returned snapshot digest.
 
 Arrows mean **consumer → dependency**. Repository inventory membership never creates a dependency shortcut. Application roots come only from declared npm root dependencies (including development/optional dependencies), CycloneDX metadata-root dependency assertions, or SPDX document `DESCRIBES`/`DESCRIBED_BY` relationships. CycloneDX references back to a metadata-only application root retain their direction and cycles. Without explicit root evidence, select a component as the starting point. Unresolved npm declarations produce a visible incomplete-lineage warning, with required/development/optional evidence retained in the snapshot, generated SBOM and JSON analysis export. Optional dependencies may be absent for the current platform or installation scope. Peer/workspace resolution and runtime reachability remain incomplete; these views do not assert vulnerabilities or exploitability.
+
+
+### Custom group technology, cellular grouping and product-line optimization
+
+Open **Source analysis → Product-line optimization** after analyzing any supported
+configured folder. The custom `CT-GT-CELL-1` algorithm builds a file/function × unit
+incidence matrix, alternates binary row/column ranks to a stable order (maximum
+20 passes), and suggests cells using complete-link dependency overlap. It uses
+its own deterministic traversal/clustering code; generic community detection and
+LLM-generated savings are not used. Cells are candidates for human domain review.
+
+Set `OPTIMIZATION_UNITS` in root `.env.local` or supply units in the page's JSON
+controls. Each unit has an ID, exact relative `entrypoints`, optional `features`,
+and a `kind` of `deployment` or `product_variant`. Explicit callable graph IDs can
+be used as roots for observed call membership. Without units, directory groups
+are disclosed as structural proxies. Unresolved entrypoints are reported instead
+of being interpreted as proof of zero dependencies. Feature labels are not a
+validated mandatory/optional/alternative/requires/excludes feature model.
+
+The separate Projection, Incidence matrices, Refactoring candidates and Product-line
+engineering views share the frozen source snapshot. Planning adoption and retained
+wrapper lines are editable assumptions. Reduction counts cover eligible duplicate
+fingerprints only; function consolidation does not imply file deletion. Tests and
+fixtures are excluded from estimates by default, configured entrypoint files and
+Python package initializers are protected, and overlapping declaration spans are
+not counted twice. Parser coverage, unresolved calls and preview limits remain
+visible. Python uses name-normalized AST fingerprints; C/C++/C# use exact parsed
+declaration fingerprints. Other supported text languages still contribute file
+incidence/exact-file evidence, but no unsupported callable-equivalence claim.
+
+Approve the exact source snapshot before exporting full CSV matrices, call evidence,
+analysis JSON and a receipt with artifact hashes. File-derived function incidence
+is separate from observed callable reachability. No code is rewritten or deleted;
+a projection is not measured performance, safe semantic equivalence, completed
+refactoring or actual savings. Every proposal needs contract/security/transaction
+review and a product-configuration test matrix.
+
+For a read-only assessment and detailed HTML report outside the source folder:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/product_line_analysis.py --source D:/Projects/App --output ../reports/app --exclude logs outputs
+# Optional: --units-manifest path/to/units.json
+# Optional authorized model advisory: --llm-env path/to/private/.env.local
+```
+
+A units file may be a ProductUnit JSON array, or a deployment manifest with
+`services`/`workers` records containing `id` and Python `module` entrypoints.
+Module file/package resolution must be unique; missing roots stay explicit.
+The optional LLM stage uses the selected dotenv file's `OPENAI_API_KEY`,
+`OPENAI_MODEL` and `OPENAI_BASE_URL` to review bounded metadata. Do not enable it
+without authorization for the payload/destination. It never receives the dotenv
+contents or determines numeric savings. Keys are not copied into source, logs or
+reports; the report distinguishes advisory/failed/not-requested status.
+
+Scan limits and exclusions are recorded in the receipt. Raw input digests are
+retained separately from Python BOM-normalized text fingerprints. Source files
+can change during a folder scan, so the report does not claim an atomic checkout.
+Changing parser/fingerprint extraction requires resynchronizing old snapshots.
+
+
+### Capability, feature and product classification
+
+The optimization assessment accepts a repository-specific `product_context` and
+OpenAPI JSON documents, with no built-in business domain or PMem service names.
+Define a family, capabilities (id, label, description, owner), features
+(capability_id, kind, requires/excludes, alternative_group, binding_time), and
+products with selected feature IDs. Features map to relative `paths` selectors,
+exact `function_ids`, and `operation_ids`. Path selectors use case-sensitive glob
+matching over the complete relative path (`*` may cross directories). A path
+mapping gives file-derived function evidence; an exact function mapping never
+classifies its siblings. These are supplied declarations, not verified behavior.
+Alternative groups require exactly one member per declared product. Constraint
+checks do not build or test that product.
+
+Open **Capabilities & features** after Run custom analysis. Upload at most eight
+OpenAPI 3.x / Swagger 2.0 JSON documents (1 MB each). YAML must first be converted
+to JSON. Paths, methods, operation IDs, summary and tags become contract evidence;
+external references and server URLs are never fetched. Use a qualified operation
+identity such as `contract-1:exportReport` when operation names overlap. Contract
+mappings do not prove source handlers or runtime behavior. Supplied documents
+may link text to feature IDs; text contributes to lexical proposals only.
+
+**Request AI classification proposals** is opt-in. It uses the existing session
+Ollama connection or centrally configured `AI_PROVIDER`, `AI_BASE_URL`, `AI_MODEL`,
+`AI_TOKEN_ENV` and authentication header. For OpenAI-compatible endpoints use the
+base through `/v1`; the operation is `/chat/completions`. No project credential is
+copied automatically. Only bounded source names/declaration metadata, selected
+operation metadata and feature definitions are sent, not full source, raw API
+contracts, document bodies or keys. Missing feature models can receive provisional
+AI taxonomy suggestions. Returned feature, artifact and evidence IDs are checked;
+semantic correctness still requires review. Provider failure/invalid output is
+reported explicitly and never becomes a verified mapping.
+
+Adding a suggestion to **draft product context** does not approve it. Review the
+JSON and rerun the assessment. The source approval gates export, not the truth of
+feature classifications. AI proposals are ephemeral and excluded from export;
+configured deterministic mappings, constraints and evidence are exported.
+`OPTIMIZATION_PRODUCT_CONTEXT={}` in root `.env.local` supplies an optional central
+model; empty context keeps classification unresolved. Restart after editing.
+
+The read-only CLI supports `--product-context context.json` and repeated
+`--openapi contract.json` options. Its optional `--llm-env` remains the separate
+metadata advisory report stage, not automatic promotion of feature mappings.
+
+Artifacts sharing the same configured feature set form explicit feature-profile groups with separate file/function counts. These groups and declared product-feature similarity are independent of deployment dependency cells.
+
+
+Approved optimization exports now include the same standalone `report.html` and
+`reduction-chart.svg` as the CLI, alongside complete matrices, call evidence,
+analysis JSON and the artifact-hash receipt. The API and CLI share
+`services/optimization_report.py`. When CLI context/units arguments are omitted,
+the CLI uses the same central optimization settings as the API. A capability-only
+model is supported for provisional feature discovery; existing capability IDs and
+feature ownership references are included in the bounded model context.
+
+
+The standalone HTML report is the business-facing assessment. It includes a
+current/projected comparison, dependency heatmap, separate code-overlap
+coefficients, before/after clustering matrix graphics, a cell-formation network and
+file-cluster summaries. CSVs are optional supporting data. The code coefficient
+measures shared declaration fingerprints, not semantic equivalence; bounded
+comparison coverage is disclosed in the report. Cells still use configured
+complete-link dependency overlap. No source modification is implied by ordering.
+
+
+### Open the visual report inside CodeTrace
+
+After loading a source snapshot, choose **Source analysis → Product-line
+optimization → Open visual report**. The full visual assessment opens in an
+in-app viewer with charts, similarity, clustering and cell-formation sections.
+A separate analysis run or file download is not required. Pending snapshots can be
+previewed with a draft label. **Export approved report & evidence** is available
+inside the viewer after source approval; the server still enforces that approval.
+Changing assumptions, product context or API contracts invalidates the cached
+preview. Closing the viewer returns focus to its opening button.
+
+The preview uses a session-owned POST endpoint and a sandboxed inline document
+with no script/same-origin privileges, restrictive CSP and no external asset
+requests. Supporting files are obtained through approved export, not iframe links.
+The preview validates source snapshot/result identity and remains separate from
+semantic approval of product classifications or realized savings.
+
+
+### Projected reductions with LLM recommendations
+
+Reports now show low/planning/upper removal charts and current, remaining,
+removed and percentage quantities for files and source lines. Small percentages
+retain four decimal places. Zero means no supported removal candidate; grouping
+alone does not establish savings. Similarity cards show the set formula and a
+worked measured example, or an explicitly labelled illustration if none exists.
+
+**Include LLM recommendations** is enabled by default for report preview/export.
+It uses the existing configured central/session AI provider and discloses the
+bounded metadata sent. A fresh generation/export requests advisory explanations
+of computed candidates; cached previews do not call the model again. Export can
+therefore contain a newer advisory than preview. Candidate/evidence IDs are
+validated, and the model cannot replace computed projection fields. A disabled,
+unavailable or invalid model is labelled explicitly; deterministic recommendations
+are never represented as a model answer. Uncheck the option for local-only output.
+No project key or model endpoint is hardcoded or copied into configuration.

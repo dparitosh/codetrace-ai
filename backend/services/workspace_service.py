@@ -179,6 +179,7 @@ def build_managed_snapshot(source_id, include_lifecycle=True):
         revision=revision, indexed_at=datetime.now(timezone.utc).isoformat(), files=code_graph['metadata']['files'],
         skipped=code_graph['metadata'].get('skipped', {}),
         source_digest=code_graph['metadata']['source_digest'],
+        source_file_digests=code_graph['metadata'].get('source_file_digests',{}),
         retention='shared local SQLite until expiry' if settings.SESSION_STORE == 'sqlite' else 'session memory', connectors=statuses, coverage={'requirements': len(requirement_ids),
         'linked_requirements': len(traced), 'unlinked_requirements': sorted(no_trace),
         'missing_implementation': sorted(item['node_id'] for item in gaps if item['missing_implementation']),

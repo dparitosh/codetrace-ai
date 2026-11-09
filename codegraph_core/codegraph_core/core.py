@@ -1,6 +1,8 @@
 """Configurable, language-tolerant software graph construction."""
 
 import ast
+import copy
+import hashlib
 import re
 import symtable
 import time
@@ -117,6 +119,7 @@ class CodeGraph:
                     continue
                 file_id = "file:" + path.as_posix()
                 self.g.upsert_node(file_id, "file", path=path.as_posix(), extension=path.suffix.lower(),
+                                   file_text_sha256=hashlib.sha256((source.removeprefix("\ufeff") if path.suffix.lower()==".py" else source).encode("utf-8")).hexdigest(),
                                    loc=source.count("\n") + 1, nonempty=bool(source.lstrip('\ufeff').strip()))
                 self._scanners.get(path.suffix.lower(), self._scan_generic_file)(path, source, file_id)
                 files_scanned += 1
@@ -149,6 +152,7 @@ class CodeGraph:
                 raise ValueError(f'Source file exceeds {self.config.max_file_size} bytes: {name}')
             file_id = "file:" + path.as_posix()
             self.g.upsert_node(file_id, "file", path=path.as_posix(), extension=extension,
+                               file_text_sha256=hashlib.sha256((content.removeprefix("\ufeff") if extension==".py" else content).encode("utf-8")).hexdigest(),
                                loc=content.count("\n") + 1, nonempty=bool(content.lstrip('\ufeff').strip()))
             self._scanners.get(extension, self._scan_generic_file)(path, content, file_id)
             files_scanned += 1
@@ -209,7 +213,12 @@ class CodeGraph:
             function_id = f"function:{p.as_posix()}::{scope}::{node.name}"
             if function_id in self.g.nodes:
                 function_id += f'@{node.lineno}'
+            normalized = copy.deepcopy(node)
+            normalized.name = '__operation__'
+            fingerprint = hashlib.sha256(ast.dump(normalized, include_attributes=False).encode()).hexdigest()
             self.g.upsert_node(function_id, "function", name=node.name, path=p.as_posix(), start=node.lineno,
+                               end=node.end_lineno, implementation_sha256=fingerprint, fingerprint_basis='python_ast_name_normalized',
+                               declaration_lines=node.end_lineno - node.lineno + 1,
                                language="python", owner=owner, scope=scope,
                                docstring=ast.get_docstring(node) or "")
             self.g.add_edge(owner, function_id, "defines")
@@ -232,8 +241,10 @@ class CodeGraph:
             if isinstance(node, ast.Import):
                 for item in node.names:
                     self.g.add_edge(module_id, "module:" + item.name, "imports", name=item.name)
-            elif isinstance(node, ast.ImportFrom) and node.module:
-                self.g.add_edge(module_id, "module:" + node.module, "imports", name=node.module)
+            elif isinstance(node, ast.ImportFrom):
+                name = node.module or ''
+                self.g.add_edge(module_id, "module:" + ('.' * node.level) + name, "imports",
+                                   name=name, relative_level=node.level, imported_names=[item.name for item in node.names])
             elif isinstance(node, ast.ClassDef):
                 class_id = f"class:{p.as_posix()}::{node.name}"
                 self.g.upsert_node(class_id, "class", name=node.name, path=p.as_posix(), start=node.lineno,

@@ -7,6 +7,7 @@ from typing import List, Optional, Literal
 from urllib.parse import quote, urlsplit
 from core.connection_models import ManagedRepository, OSLCProvider, PipelineProvider, connection_url, ai_connection_url
 
+from core.optimization_models import ProductUnit, ProductContext
 from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -65,6 +66,11 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = PROJECT_ROOT / 'data/uploads'
     TEMP_DIR: Path = PROJECT_ROOT / 'temp'
     LOG_DIR: Path = PROJECT_ROOT / 'logs'
+    OPTIMIZATION_UNITS: List[ProductUnit] = Field(default_factory=list, max_length=32)
+    OPTIMIZATION_MAX_EXPORT_BYTES: int = Field(default=20000000, ge=10000, le=100000000)
+    OPTIMIZATION_PRODUCT_CONTEXT: ProductContext = Field(default_factory=ProductContext)
+    OPTIMIZATION_MAX_FILES: int = Field(default=5000, ge=1, le=20000)
+    OPTIMIZATION_MAX_CANDIDATES: int = Field(default=500, ge=1, le=2000)
     SOURCE_FOLDER: Path = PROJECT_ROOT
     MANAGED_REPOSITORIES: Optional[List[ManagedRepository]] = None
     OSLC_PROVIDERS: List[OSLCProvider] = Field(default_factory=list)

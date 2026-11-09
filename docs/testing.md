@@ -115,3 +115,30 @@ removed after testing. Root .env.local is preserved.
 Backend tests: 141 passed, two optional tests skipped (optional ORM packages not installed). The 19 agent tests include session isolation/reset, custom prompt forwarding, tool descriptions, disabled automatic tools and rejection of unknown/duplicate/empty tool lists. Frontend: 20 Vitest and 23 native contracts passed; TypeScript, ESLint and production build passed. AG Grid is lazy-loaded; its vendor chunk still exceeds the 500 kB build advisory. This run does not supersede the earlier optional ORM validation.
 
 Browser verification: Administration prompt/tool edits saved and survived navigation; restoring defaults reset the prompt/tool list. A local scan populated 3,529 resources; filtering GraphDataTable produced three resources and eight incident relationships. Row selection populated contextual inspection. Session end emptied graph tables and inspection. No browser warning/error logs were recorded. No real model inference was invoked in this follow-up.
+
+
+## Product-line optimization checks
+
+Run `python -m pytest backend/tests/test_product_line_optimizer.py -q` for ROC determinism, protected entrypoints, span accounting, relative-import isolation, parser limits, feature-label disclosure, session ownership, approval-gated exports, CSV formula escaping, artifact hashes and mocked model boundary checks. Run frontend tests, TypeScript, ESLint and the production build after UI changes. Mocked provider tests do not establish live inference quality. Source-project tests and post-refactor measurements are separate from optimizer tests.
+
+
+### Capability and feature classification
+
+`backend/tests/test_product_classification.py` checks generic folder/language
+mapping, exact function scope, declared product constraints, sanitized offline
+OpenAPI evidence, ambiguous operations, documentation proposals, provisional AI
+taxonomy identity checks and configurable mocked inference. Optimizer API tests
+cover session isolation, explicit model invocation and retaining cited evidence.
+`ProductClassification.test.tsx` checks unresolved-model disclosure and stale draft
+protection. Provider mocks are not live-inference verification. A source approval
+does not certify the supplied feature model or inferred business purpose.
+
+
+In-app report validation covers unauthenticated/cross-session refusal, draft
+preview with approval-gated export, HTML receipt hashes, restrictive CSP, internal
+section URLs and configured size limits. Browser verification used synthetic
+source with the actual local API: direct open before separate analysis, in-frame
+section navigation, draft/approved export controls, close and opener focus,
+Escape from the toolbar, assumption invalidation and regeneration passed. Escape
+while focus is inside the isolated report document is browser-dependent; the
+visible Close report button remains available. Model calls were not involved.

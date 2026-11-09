@@ -4,6 +4,7 @@ Tree-sitter provides syntax, not compiler binding. Only unique lexical call targ
 are linked; receivers, ambiguous overloads and macro/build configuration stay unknown.
 """
 import importlib
+import hashlib
 import re
 from functools import lru_cache
 from pathlib import PurePosixPath
@@ -171,6 +172,9 @@ def scan_native(graph, path, source, file_id):
                            else scope + '.' + explicit_scope) if len(name_parts) > 1 else scope
             function_id, full = add('function', name_parts[-1], node, owner, owner_scope,
                 parameter_types=types, parameter_count=len(params), has_body=body is not None,
+                declaration_lines=node.end_point.row - node.start_point.row + 1,
+                implementation_sha256=hashlib.sha256(node.text).hexdigest() if body is not None and not root.has_error else None,
+                fingerprint_basis='native_exact_declaration',
                 generic_arity=sum(len(c.named_children) for c in node.named_children if c.type == 'type_parameter_list'),
                 qualifiers=' '.join(text(c) for c in decl.named_children if c.type in {'type_qualifier', 'ref_qualifier'}) if decl is not None else '',
                 internal_linkage=language != 'csharp' and bool(re.search(r'\bstatic\b', text(node)[:max(0, (body.start_byte - node.start_byte) if body else len(text(node)))])))

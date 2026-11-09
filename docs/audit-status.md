@@ -212,3 +212,149 @@ ESLint, production build and the disposable HTTP-fixture browser flow pass. No r
 Ollama model or live ALM/PostgreSQL integration was tested in this pass. Durable
 agent jobs, streaming/resume, long-term memory, distributed coordination and a
 persistent whole-corpus vector index are not implemented.
+
+
+## Product-line optimization assessment (2026-11-06)
+
+Custom GT/ROC cellular analysis and SPLE recommendations are implemented locally with configurable units, projection charts, incidence previews, candidate evidence and approved exports. No analyzed source files are rewritten. The PMem assessment is read-only and excludes generated/log/data folders explicitly; it is not a complete semantic audit of every artifact. Feature constraints and source-project regression results are not established. An explicitly approved live gpt-5-nano metadata review at api.openai.com completed on 2026-11-06. Candidate identifiers were validated; semantic advice remains unverified and source was not modified. Duplicate projections omit additional shared-module/import/configuration/test scaffolding; they are not realized reductions. Validation details and exact artifact hashes are in the external assessment receipt.
+
+Validation: 422 backend/core tests and 57 frontend tests passed; TypeScript, ESLint and production build passed. A synthetic browser flow against actual local APIs verified analysis, matrix filtering/selection, approval eligibility, stale assumptions, the six-stage SPLE plan and session cleanup. ZIP contents/hashes were verified by API tests; browser ZIP download was not independently verified. Existing large vendor-chunk and dependency deprecation/cache warnings remain. No PMem tests ran. A subsequent explicitly approved live metadata-only model review completed; it did not change projections or establish source equivalence.
+
+
+## Structured product context follow-up (2026-11-06)
+
+The optimizer now accepts repository-independent capabilities, features, owners,
+variation constraints, product variants, document evidence and explicit file or
+function mappings. Offline OpenAPI JSON adds sanitized operation evidence; raw
+contracts, remote references and server URLs are not executed/fetched or retained
+in output. Deployment membership remains distinct from product feature mapping.
+
+Optional AI classification uses the registered session Ollama or configured central
+OpenAI-compatible endpoint. Without a feature model it may propose a provisional
+taxonomy. Unknown IDs/citations and malformed/truncated answers are rejected. Model
+proposals remain unverified; the UI can copy a selected proposal to draft context,
+then requires another deterministic analysis. No automatic source change occurs.
+No PMem-specific defaults or credentials were added.
+
+Validation includes synthetic repositories in unrelated folders/languages,
+feature constraints, exact function scope, OpenAPI privacy/ambiguity, session
+isolation and mocked provider failures. Browser verification used synthetic source
+and real local APIs: OpenAPI upload, configured mapping, invalid product diagnosis,
+lexical draft acceptance, stale-result blocking, rerun, function evidence selection
+and session cleanup passed. No new live provider request or PMem refactor ran.
+
+Final classification validation: full backend/core suite 438 passed; focused final classification/optimizer suite 30 passed; frontend suite 59 passed. TypeScript, ESLint and production build passed. Existing pytest cache/dependency deprecation and large vendor-chunk advisories remain. Feature-profile groups use exact configured feature sets; they do not assert semantic equivalence.
+
+
+## Completion verification (2026-11-09)
+
+Fixed AI context omission of existing capability identifiers and central
+capability-only context fallback. API and CLI now share standalone report/chart
+artifact generation and central product-context/unit defaults. Approved API exports
+include the full report and current/projected file-group chart as well as matrices,
+call evidence and receipts. Source approval remains distinct from feature-model
+correctness, and model proposals are not automatically promoted or exported.
+
+Validation: 440 backend/core tests and 59 frontend tests passed; TypeScript, ESLint,
+production build and diff whitespace checks passed. An actual CLI run against an
+independent synthetic Python/JavaScript source folder used central product context
+and offline OpenAPI, mapped two files, left one unresolved, checked two declared
+products, verified all six artifact hashes and left source unchanged. The running
+localhost API rejected pending export, accepted exact source approval, exported
+all six hashed artifacts and then ended the disposable session. No new live model
+request, PMem source change, credential copy, commit or push was performed.
+Existing cache/dependency deprecation and vendor chunk-size advisories remain.
+
+
+## Visual business report (2026-11-09)
+
+Replaced the JSON-led report with a self-contained visual HTML assessment:
+current/projected differences, dependency-coefficient heatmap, declaration-fingerprint
+code-overlap coefficients, identical-sample before/after matrix charts, similarity
+network, file-cluster cards and explicit complete-link formation decisions. CSVs
+remain optional engineering evidence with their distinct purposes explained.
+The API and CLI use this shared report for any configured supported source.
+
+Code similarity is Jaccard overlap of distinct parser declaration fingerprints,
+not semantic equivalence. Comparison is bounded to 200 fingerprinted files,
+prioritizing retained duplicate candidates then declaration count; positive pairs
+are ranked and the top 100 retained (20 displayed). Uncompared files and missing
+fingerprints are disclosed rather than scored zero. Dependency coefficients remain
+separate and drive cell formation at the configured threshold. Matrix ordering
+changes presentation only and is not a source refactor or savings claim.
+
+Existing PMem and independent-validation reports were regenerated from captured
+analysis evidence, with receipt hashes updated; no source scan, model request or
+PMem modification occurred. Browser inspection verified charts, heatmap, matrix
+previews and graph labels. Full suite: 443 backend/core tests passed. Final focused
+render/export checks cover hashes, escaping, coefficient arithmetic, missing evidence
+and bounded comparison behavior. Existing test/dependency advisory warnings remain.
+
+
+## In-app visual report preview (2026-11-09)
+
+Added a direct Open visual report action and a native modal viewer inside the
+product-line workspace. The same report generator powers the session-owned preview
+endpoint and approved export. A separate analysis run/download is not required.
+Pending sources show a draft label; the server still gates export on exact source
+approval. Assumption/context/contract changes invalidate cached previews. The
+viewer isolates generated HTML in a sandboxed inline document with restrictive CSP,
+no script or same-origin privileges, internal-only section navigation and disabled
+supporting-file links. A close action restores focus to the report trigger.
+
+Validation: 445 backend/core tests and 61 frontend tests passed, plus TypeScript,
+ESLint and production build. Actual local API/browser checks verified pending and
+approved controls, in-frame charts and section links, close/opener focus, toolbar
+Escape, stale-assumption blocking and regeneration. The synthetic session and
+preview fixture were removed. No PMem changes or new model requests occurred.
+Existing advisory warnings remain; changes are local and uncommitted.
+
+
+## Reduction projections and model recommendations (2026-11-09)
+
+Added prominent low/planning/upper reduction quantities, remaining size and
+percentage columns, with formulas and measured/illustrative similarity examples.
+Optional report AI advice now shares the configured provider transport with
+classification, includes existing capability context there, and validates a
+bounded recommendation schema and candidate/evidence references. Computed
+projections are never replaced by model output. Preview/export respects the
+include_llm option; approval is checked before export calls a provider. Reports
+show failed/disabled/not-requested model status without claiming a model review.
+Historical saved reports retain their prior accepted advisory; regeneration in
+this pass changed presentation only and invoked no live model or source scan.
+
+Validation: 449 backend/core tests and 61 frontend tests passed; TypeScript,
+ESLint and production build passed. Controlled fixtures verify projection
+immutability, rejected invented references, report/export inclusion, opt-out,
+approval gating and small percentage arithmetic. Browser verified reduction
+charts and actual worked examples. No live Ollama test or new external model
+request was performed. Existing advisory warnings remain.
+
+
+## Pre-push review (2026-11-09)
+
+Scope: pending product-line assessment/report/classification changes, extraction
+metadata additions, workspace/API integration, tests and documentation. This is a
+review of the change set, not a claim of a new whole-application or live-provider
+audit. Generated customer reports, runtime data and private configuration are not
+part of the commit.
+
+Confirmed and fixed:
+
+- OPT-A01 (Medium, API/reliability): report/ZIP rendering previously ran after the
+  analysis worker was released, and export did not recheck session validity after
+  serialization. Rendering/compression now stays inside the worker reservation;
+  source-session validity and the total deadline are checked before returning.
+  Regression tests end the session during ZIP rendering (401), verify the worker
+  remains occupied, and advance the render clock beyond its deadline (504).
+- OPT-A02 (Medium, AI/reliability): a model could consume the entire request budget,
+  leaving no time to produce the evidence report. Model deadlines now reserve the
+  configured final-answer allowance (capped at one quarter of the parent request)
+  for rendering and response preparation. Request deadline checks still apply.
+
+Validation: 451 backend/core tests and 61 frontend tests passed; TypeScript, ESLint,
+production build and whitespace checks passed. Provider tests use controlled mocks;
+no live Ollama or new external model request was performed. Existing pytest cache
+permissions/dependency deprecation warnings and large vendor-chunk advisory remain.
+Bounded parser coverage, unverified semantic recommendations and projected (not
+achieved) reductions remain explicit product limitations.

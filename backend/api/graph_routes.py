@@ -139,7 +139,7 @@ def build_graph_from_files(request: LocalGraphRequest) -> Dict[str, Any]:
     if not summary['files']:
         raise HTTPException(422, 'No supported source files were selected')
     digest = hashlib.sha256(json.dumps(sorted((file.path, hashlib.sha256(file.content.encode()).hexdigest()) for file in request.files)).encode()).hexdigest()
-    result = _serialize_graph(graph, {**summary, "source_digest": digest, "source": "local_folder", "analysis_profile": request.profile, "selected_files": len(request.files), "selected_bytes": payload_size, "source_paths": [file.path for file in request.files]})
+    result = _serialize_graph(graph, {**summary, "source_digest": digest, "source": "local_folder", "analysis_profile": request.profile, "selected_files": len(request.files), "selected_bytes": payload_size, "source_paths": [file.path for file in request.files], "source_file_digests": {file.path: hashlib.sha256(file.content.encode()).hexdigest() for file in request.files}})
     from api.quality_routes import assess_graph_quality
     from api.security_routes import scan_local_source
     scanned_paths = {node['properties']['path'] for node in result['nodes'] if node['type'] == 'file'}

@@ -21,12 +21,13 @@ const AnalysisPage = lazy(() => import('../components/AnalysisPage'))
 const QualityPage = lazy(() => import('../components/QualityPage'))
 const SecurityPage = lazy(() => import('../components/SecurityPage'))
 const SupplyChainPanel = lazy(() => import('./SupplyChainPanel'))
+const ProductLinePanel = lazy(() => import('./ProductLinePanel'))
 const ChangeWorkbench = lazy(() => import('./ChangeWorkbench'))
 import './workspace.css'
 import './siemens-ui.css'
 import './graphContext.css'
 
-type View = 'graph' | 'resources' | 'activity' | 'review' | 'connections' | 'admin' | 'analysis' | 'quality' | 'security' | 'supplychain' | 'changes'
+type View = 'graph' | 'resources' | 'activity' | 'review' | 'connections' | 'admin' | 'analysis' | 'quality' | 'security' | 'supplychain' | 'changes' | 'optimization'
 export default function Workspace() {
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [source, setSource] = useState('')
@@ -103,7 +104,7 @@ export default function Workspace() {
   const explorerActive = ['graph', 'resources', 'analysis', 'quality', 'security'].includes(view)
   const hasOverview = ['analysis', 'quality', 'security'].includes(view) || (view === 'resources' && resourceDomain !== 'ALL')
   const selectResource = (node: TraceNode | null) => { setSelected(node); if (node) setCompanionOpen(true) }
-  const heading = view === 'changes' ? 'Change workbench' : view === 'supplychain' ? 'Supply-chain lineage' : view === 'analysis' ? 'Source analysis' : view === 'quality' ? 'Quality assessment'
+  const heading = view === 'optimization' ? 'Product-line optimization' : view === 'changes' ? 'Change workbench' : view === 'supplychain' ? 'Supply-chain lineage' : view === 'analysis' ? 'Source analysis' : view === 'quality' ? 'Quality assessment'
     : view === 'security' ? 'Security patterns' : view === 'resources' ? (resourceDomain === 'ALL' ? 'Resource index' : `${resourceDomain} lifecycle context`)
       : view === 'review' ? 'Review center' : view === 'connections' ? 'Connections' : view === 'admin' ? 'Administration'
         : view === 'activity' ? 'Change & delivery' : 'Graph explorer'
@@ -136,6 +137,7 @@ export default function Workspace() {
       </IxMenuCategory>
       <IxMenuCategory label="Source analysis" icon={iconCode}>
         <IxMenuItem active={view === 'analysis'} onClick={() => navigate('analysis')}>Source overview</IxMenuItem>
+        <IxMenuItem active={view === 'optimization'} onClick={() => navigate('optimization')}>Product-line optimization</IxMenuItem>
         <IxMenuItem active={view === 'quality'} onClick={() => navigate('quality')}>Quality assessment</IxMenuItem>
         <IxMenuItem active={view === 'security'} onClick={() => navigate('security')}>Security patterns</IxMenuItem>
       </IxMenuCategory>
@@ -153,6 +155,7 @@ export default function Workspace() {
         {graph && connectors.some((item: any) => item.status !== 'ready') && <div className="workspace-alert caution"><AlertCircle size={16} /><span>Some lifecycle connections are partial or unavailable. Review connection evidence before making impact claims.</span><button onClick={() => navigate('connections')}>View status</button></div>}
         <Suspense fallback={<p role="status">Loading workspace tools...</p>}>
         {changesActivated && <div hidden={view !== 'changes'}><ChangeWorkbench graph={graph} review={review} catalog={catalog} selected={selected} active={view === 'changes'} /></div>}
+        {view === 'optimization' && <ProductLinePanel key={review ? `${review.sessionToken}:${review.id}:${review.result_digest}` : 'empty'} review={review} catalog={catalog} onSelect={node => { selectResource(node); setView('graph'); setExplorerMode('graph') }} />}
         {view === 'supplychain' && <SupplyChainPanel key={review ? `${review.sessionToken}:${review.id}:${graph?.metadata.snapshot_id}` : 'empty'} graph={graph} review={review} />}
         <div className={'explorer-grid' + (!companionOpen ? ' companion-closed' : '')} style={{ display: explorerActive ? undefined : 'none' }}><div className="explorer-left">
           <div className="evidence-tab-row"><EvidenceTabs value={explorerMode} onChange={setExplorerMode} overview={hasOverview ? view === 'security' ? 'Findings' : view === 'quality' ? 'Assessment' : 'Overview' : undefined} /><IxButton variant="tertiary" aria-pressed={companionOpen} onClick={() => setCompanionOpen(value => !value)}>{companionOpen ? 'Hide companion' : 'Agent & inspector'}</IxButton></div>

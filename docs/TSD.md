@@ -156,3 +156,51 @@ evidence-mode resources are labeled observed context. Deterministic text bounds
 metadata, escapes imported citation-like labels, and truncates without splitting
 citation markers. These checks establish identifier grounding, not the semantic
 truth of arbitrary model claims. Live model/gateway verification remains separate.
+
+
+## Custom GT / cellular / SPLE assessment
+
+`services/product_line_optimizer.py` implements CT-GT-CELL-1: deterministic dependency traversal, file/unit and function/unit incidence, bounded binary rank-order clustering, complete-link overlap cells, and conservative duplicate fingerprint projections. File-derived function membership is distinct from observed callable reachability. Parser and unresolved-edge coverage remain visible. Whole-file and declaration spans are de-duplicated; entrypoints and package initializers are protected from file removal. Tests/fixtures are excluded from estimates by default.
+
+`POST /api/v1/workspace/optimization/analyze` operates on the session-owned retained review graph. Export requires that exact review to be approved and returns bounded ZIP artifacts with SHA256 receipts. Preview truncation is disclosed. `OPTIMIZATION_UNITS`, `OPTIMIZATION_MAX_FILES`, `OPTIMIZATION_MAX_CANDIDATES` and `OPTIMIZATION_MAX_EXPORT_BYTES` are centrally configurable. Directory units are fallback proxies, never deployment evidence.
+
+The SPLE plan separates domain engineering and application engineering, records supplied feature labels without inventing constraints, and requires owner review, configuration regression and an assembly recipe. See [SEI variability guidance](https://www.sei.cmu.edu/library/variability-in-software-product-lines/) and [production-plan guidance](https://sei.cmu.edu/library/guidelines-for-developing-a-product-line-production-plan/). Cells and similarity do not prove substitutability. Additional extraction/configuration/test scaffolding is outside duplicate projections and may erase any estimated savings.
+
+`scripts/product_line_analysis.py` runs against any supported source folder with output outside that folder. Optional model review uses an explicitly selected dotenv privately and sends bounded analysis metadata, never full source or dotenv contents; approval for a specific external destination remains required where applicable. The model remains advisory and cannot modify source or numerical projections. Per-file digests identify captured evidence, not an atomic clean checkout.
+
+
+## Structured product classification
+
+`services/product_classification.py` separates supplied product models, observed
+contract/source evidence, lexical proposals and optional AI proposals. It validates
+feature references and declared product constraints without asserting domain truth.
+Mappings can target supported files in any folder or exact extracted functions.
+Feature-set Jaccard coefficients are separate from deployment-footprint grouping.
+Mapping growth is bounded at 20,000 and API previews disclose original totals.
+OpenAPI documents are capped, external references never fetched, and only hashes
+plus sanitized operation metadata survive in assessment output. No source bodies
+are retained by classification.
+
+`POST /api/v1/workspace/optimization/classify-ai` requires the same session-owned
+review as analysis and shares worker capacity and total deadlines. Optional model
+calls use registered session Ollama or central OpenAI-compatible configuration,
+without redirects or inherited proxies. Suggestions can propose a provisional
+capability/feature taxonomy; all IDs/references/citations are validated against
+bounded supplied evidence. Evidence-ID grounding does not establish semantic truth.
+No model tool calls, source modifications or automatic feature promotion occur.
+The UI provides explicit draft acceptance; it does not equate source approval with
+approval of a feature model. Model proposals are not retained by export.
+
+
+`POST /api/v1/workspace/optimization/report` renders the complete retained snapshot
+using the same report generator as export. It returns HTML, its SHA256 and the
+analysis/source receipt. Session isolation, worker capacity, source identity,
+preview byte limit and post-render session validity apply. Preview is read-only;
+approval is required independently at `/optimization/export`. Embedded links are
+restricted to in-document sections; supporting artifact links are disabled.
+`VisualReportPreview.tsx` renders the HTML in a native modal dialog with an empty
+iframe sandbox and no-referrer policy. Scripts, same-origin access and external
+resources are not allowed. Source identity is checked before display. Assumption
+changes discard the cached report; modal close restores focus to the open action.
+
+`services/reduction_advisor.py` produces bounded, schema-checked recommendations for report preview/export through the existing configured transport. Advice is attached under llm_review and included in the receipt digest, while numeric projections remain deterministic. include_llm=false avoids model calls. Export approval is enforced before inference. Model references are identifier-validated, not semantic proof; provider failure is explicit. Preview/export regenerations may yield different advisory prose.
