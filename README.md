@@ -309,7 +309,7 @@ Arrows mean **consumer → dependency**. Repository inventory membership never c
 ### Custom group technology, cellular grouping and product-line optimization
 
 Open **Source analysis → Product-line optimization** after analyzing any supported
-configured folder. The custom `CT-GT-CELL-1` algorithm builds a file/function × unit
+configured folder. The custom `CT-GT-CELL-2` algorithm builds a file/function × unit
 incidence matrix, alternates binary row/column ranks to a stable order (maximum
 20 passes), and suggests cells using complete-link dependency overlap. It uses
 its own deterministic traversal/clustering code; generic community detection and
@@ -318,7 +318,10 @@ LLM-generated savings are not used. Cells are candidates for human domain review
 Set `OPTIMIZATION_UNITS` in root `.env.local` or supply units in the page's JSON
 controls. Each unit has an ID, exact relative `entrypoints`, optional `features`,
 and a `kind` of `deployment` or `product_variant`. Explicit callable graph IDs can
-be used as roots for observed call membership. Without units, directory groups
+be used as roots for resolved static call reachability. Declared FastAPI routes and
+Python main-guard calls seed callable reachability within explicit unit dependency
+closures; other frameworks and tool registries require explicit callable IDs.
+No runtime execution is observed. Without units, directory groups
 are disclosed as structural proxies. Unresolved entrypoints are reported instead
 of being interpreted as proof of zero dependencies. Feature labels are not a
 validated mandatory/optional/alternative/requires/excludes feature model.
@@ -336,7 +339,7 @@ incidence/exact-file evidence, but no unsupported callable-equivalence claim.
 
 Approve the exact source snapshot before exporting full CSV matrices, call evidence,
 analysis JSON and a receipt with artifact hashes. File-derived function incidence
-is separate from observed callable reachability. No code is rewritten or deleted;
+is separate from resolved static callable reachability. No code is rewritten or deleted;
 a projection is not measured performance, safe semantic equivalence, completed
 refactoring or actual savings. Every proposal needs contract/security/transaction
 review and a product-configuration test matrix.

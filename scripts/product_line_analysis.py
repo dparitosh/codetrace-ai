@@ -117,7 +117,7 @@ def main():
     try: revision=subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],stderr=subprocess.DEVNULL,text=True).strip()
     except (OSError,subprocess.CalledProcessError):revision=None
     result['scan_context']={'source':str(source),'base_commit_not_exact_snapshot':revision,
-        'excluded_directories':settings.SOURCE_EXCLUDES,'selected_extensions':sorted({Path(p).suffix for p in paths}),'skipped':graph['metadata'].get('skipped',{}),
+        'source_selection':graph['metadata'].get('source_coverage',{}),'excluded_directories':settings.SOURCE_EXCLUDES,'captured_extensions':sorted({Path(p).suffix for p in paths}),'skipped':graph['metadata'].get('skipped',{}),
         'snapshot_semantics':'Captured per-file hashes, not an atomic checkout or verified clean commit.',
         'source_files_written':0,'source_tests_run':False}
     if args.llm_env:

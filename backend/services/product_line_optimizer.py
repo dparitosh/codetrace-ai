@@ -7,14 +7,16 @@ import csv
 import hashlib
 import io
 import json
-from collections import defaultdict, deque
+import sys
+import builtins
+from collections import Counter, defaultdict, deque
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from fastapi import HTTPException
 from core.config import settings
 from core.optimization_models import OptimizationOptions, ProductUnit
 
-VERSION = 'CT-GT-CELL-1'
+VERSION = 'CT-GT-CELL-2'
 CALLABLES = {'function', 'method'}
 
 def engineering_plan():
@@ -108,7 +110,8 @@ def analyze(graph, options=None, result_digest=None):
             matches = aliases.get(name, set())
             if len(matches)==1: node_path[key]=next(iter(matches))
     dependency, call_graph = defaultdict(set), defaultdict(set)
-    unresolved=[]; calls=[]
+    internal_roots={alias.split('.')[0] for alias in aliases}
+    unresolved=[]; calls=[]; import_count=0; resolved_import_count=0
     for edge in graph['edges']:
         # Only scanner-owned predicates, never a foreign lifecycle URI with the same local name.
         kind = edge['type']
@@ -119,6 +122,7 @@ def analyze(graph, options=None, result_digest=None):
         resolved_paths={target_path} if target_path in paths else set()
         properties=edge.get('properties',{})
         if kind=='imports' and source_path in paths:
+            import_count+=1
             name=str(properties.get('name',''))
             level=properties.get('relative_level',0)
             if level:
@@ -131,6 +135,7 @@ def analyze(graph, options=None, result_digest=None):
                 for imported in properties.get('imported_names',[]):
                     children=aliases.get(name+'.'+imported,set())
                     if len(children)==1: resolved_paths.update(children)
+            resolved_import_count+=bool(resolved_paths)
         if source_path in paths:
             dependency[source_path].update(p for p in resolved_paths if p!=source_path)
         if kind=='calls':
@@ -138,7 +143,19 @@ def analyze(graph, options=None, result_digest=None):
             if resolved: call_graph[source].add(target)
             calls.append({'source':source,'target':target,'resolved':resolved,'basis':edge.get('properties',{}).get('resolution','scanner_call_edge')})
         if source_path in paths and not resolved_paths:
-            unresolved.append({'source':source_path,'target':target,'kind':kind})
+            name=str(properties.get('name') or nodes.get(target,{}).get('label') or target.rsplit(':',1)[-1])
+            root=name.split('.')[0]
+            if kind=='imports':
+                category=('unresolved_internal' if properties.get('relative_level') or root in internal_roots
+                          else 'standard_library' if root in sys.stdlib_module_names else 'external_or_missing_package')
+            else:
+                category=('builtin' if properties.get('builtin_candidate') and name in vars(builtins)
+                          else 'imported_symbol' if properties.get('binding')=='import'
+                          else 'dynamic_or_local_dispatch' if properties.get('binding')=='local'
+                          else 'unclassified_call')
+            unresolved.append({'source':source_path,'target':target,'kind':kind,'category':category,
+                               'import_scope':properties.get('import_scope'),'lazy':properties.get('lazy'),
+                               'conditional':properties.get('conditional')})
     units=options.units
     if not units:
         groups=defaultdict(list)
@@ -162,6 +179,9 @@ def analyze(graph, options=None, result_digest=None):
         if missing: diagnostics.append({'unit':unit.id,'status':'unresolved_entrypoints','entrypoints':missing})
         if unit.kind!='structural_directory': protected_paths.update(roots)
         coverage[unit.id]=walk(dependency,roots) & paths
+        if unit.kind!='structural_directory':
+            function_roots.update(key for key,node in nodes.items() if node_path.get(key) in coverage[unit.id]
+                                  and node['properties'].get('static_entrypoint'))
         callable_coverage[unit.id]=walk(call_graph,function_roots)
     memberships={path:{u for u,covered in coverage.items() if path in covered} for path in sorted(paths)}
     row_order,col_order,passes,converged=rank_order_clustering(memberships,coverage)
@@ -169,11 +189,23 @@ def analyze(graph, options=None, result_digest=None):
     def overlap(a,b):
         x,y=coverage[a]&eligible,coverage[b]&eligible
         return len(x&y)/len(x|y) if x|y else 0
-    cells=[]
+    cells=[]; formation_steps=[]
     for unit in col_order:
-        match=next((cell for cell in cells if all(overlap(unit,other)>=options.cell_similarity for other in cell)),None)
+        match=None; considered=[]
+        for index,cell in enumerate(cells):
+            checks=[{'unit':other,'coefficient':overlap(unit,other)} for other in cell]
+            accepted=all(check['coefficient']>=options.cell_similarity for check in checks)
+            considered.append({'cell':'cell-'+str(index+1),'accepted':accepted,'checks':checks,
+                               'reason':'all_pairs_meet_threshold' if accepted else 'pair_below_threshold_or_missing_inventory'})
+            if accepted:
+                match=cell
+                break
         if match is None: cells.append([unit])
         else: match.append(unit)
+        formation_steps.append({'unit':unit,'cell':'cell-'+str(cells.index(match)+1 if match is not None else len(cells)),
+            'action':'joined' if match is not None else 'created','considered_cells':considered,
+            'checks':considered[-1]['checks'] if considered else [],
+            'reason':'first_acceptable_cell' if match is not None else 'no_existing_cell_passed' if considered else 'no_existing_cells'})
     cell_for={unit:i for i,cell in enumerate(cells) for unit in cell}
     matrix=[{'path':p,'node_id':files[p]['id'],'lines':int(files[p]['properties'].get('loc',0)),
              'file_text_sha256':files[p]['properties'].get('file_text_sha256'),
@@ -186,7 +218,10 @@ def analyze(graph, options=None, result_digest=None):
         functions.append({'id':key,'name':n['label'],'path':path,'start':n['properties'].get('start'),
             'end':n['properties'].get('end'),'lines':n['properties'].get('declaration_lines'),
             'fingerprint':n['properties'].get('implementation_sha256'),'basis':n['properties'].get('fingerprint_basis'),
-            'file_derived_units':sorted(memberships[path]),'observed_call_units':sorted(u for u,ids in callable_coverage.items() if key in ids),
+            'file_derived_units':sorted(memberships[path]),
+            'resolved_static_call_units':sorted(u for u,ids in callable_coverage.items() if key in ids),
+            'observed_call_units':[],
+            'static_entrypoint':n['properties'].get('static_entrypoint'),
             'eligible':path in eligible and nodes.get(n['properties'].get('owner'),{}).get('type') not in CALLABLES})
     file_groups=defaultdict(list)
     for path in sorted(eligible):
@@ -253,12 +288,19 @@ def analyze(graph, options=None, result_digest=None):
         'matrices':{'files':matrix,'functions':functions,'calls':calls},
         'cells':[{'id':'cell-'+str(i+1),'units':cell} for i,cell in enumerate(cells)],
         'roc':{'passes':passes,'converged':converged,'columns':col_order,'rows':row_order},
+        'cell_formation':{'steps':formation_steps,'order':col_order,'method':'greedy_first_acceptable_complete_link',
+                          'order_dependent':True,'ordering_basis':'ROC orders incidence; greedy assignment forms cells separately'},
         'candidates':candidates,'candidate_count':total_candidates,'candidates_truncated':total_candidates>len(candidates),
         'recommendations':recommendations,'diagnostics':diagnostics,
         'coverage':{'unresolved_dependency_count':len(unresolved),'unresolved_dependencies':unresolved[:200],
+            'source_selection':graph.get('metadata',{}).get('source_coverage',{
+                'status':'submitted_files_only; omitted filesystem files cannot be inventoried',
+                'captured_extensions':sorted({PurePosixPath(path).suffix for path in paths})}),
+            'unresolved_by_category':dict(Counter(item['category'] for item in unresolved)),
+            'imports_total':import_count,'imports_resolved':resolved_import_count,
             'unresolved_preview_truncated':len(unresolved)>200,'fingerprinted_functions':sum(bool(f['fingerprint']) for f in functions),
             'calls_resolved':sum(c['resolved'] for c in calls),'calls_total':len(calls)},
-        'limitations':['File-derived membership is not observed function execution; actual call membership requires explicit callable entrypoints.',
+        'limitations':['File-derived membership and resolved static call reachability are not observed execution. Seeds are explicit callable IDs, declared FastAPI routes and Python main-guard calls; other frameworks/tool registries require explicit callable IDs. The legacy observed_call_units field is empty without runtime traces.',
             'Directory units are structural proxies, not discovered deployment services or business features.',
             'Unsupported/heuristic languages can contribute file incidence and exact-file evidence; declaration projections require parser fingerprints.',
             'ROC cells and SPLE recommendations suggest ownership/commonality, not semantic equivalence or valid feature configurations.',
@@ -278,7 +320,7 @@ def analyze(graph, options=None, result_digest=None):
 def csv_matrix(result, kind):
     stream=io.StringIO(newline='');columns=[u['id'] for u in result['units']]
     rows=result['matrices'][kind]
-    fields=['path','node_id','lines','eligible','file_text_sha256','input_sha256','parse_status']+columns if kind=='files' else ['id','name','path','start','end','lines','basis','observed_call_units']+columns
+    fields=['path','node_id','lines','eligible','file_text_sha256','input_sha256','parse_status']+columns if kind=='files' else ['id','name','path','start','end','lines','basis','resolved_static_call_units','observed_call_units','static_entrypoint']+columns
     writer=csv.DictWriter(stream,fieldnames=fields,extrasaction='ignore');writer.writeheader()
     def safe(value):
         value=str(value) if value is not None else ''

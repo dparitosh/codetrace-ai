@@ -358,3 +358,63 @@ no live Ollama or new external model request was performed. Existing pytest cach
 permissions/dependency deprecation warnings and large vendor-chunk advisory remain.
 Bounded parser coverage, unverified semantic recommendations and projected (not
 achieved) reductions remain explicit product limitations.
+
+
+## Independent assessment review remediation (2026-11-09)
+
+The independent review correctly identified omissions in the previous assessment.
+Passing tests did not establish complete mapping or safe consolidation. This work
+repairs assessment evidence; it does not refactor the analyzed application.
+
+| Review ID | Severity | Disposition and evidence |
+| --- | --- | --- |
+| R1 | High | Fixed: Python import extraction traverses local/class/conditional scopes and records static, lazy and conditional provenance. Regression fixture resolves a handler-local relative import through another relative import. |
+| R2 | Medium | Corrected and partly extended: explicit callable IDs plus recognized FastAPI route declarations and direct main-guard calls seed resolved static reachability. File membership remains separate. Legacy observed execution membership stays empty. Dynamic registrations, other frameworks and actual execution remain unverified. |
+| R3 | Medium | Fixed: the assignment loop records considered/rejected cells, complete pair scores and decisions. The report distinguishes ROC ordering from order-dependent greedy complete-link assignment. A disconnected fixture verifies rejected comparisons appear. |
+| R4 | Medium | Fixed for the reported subset issue: all fingerprinted files enter an inverted index. Search has an explicit 200,000 posting-pair event budget, 100 retained positive pairs and separate completion/truncation flags. Tests cover an overlap outside the old 200-file universe and budget exhaustion. |
+| R5 | Medium | Partially addressed: configured/captured extensions and excluded-extension counts are disclosed without opening excluded contents; coverage is propagated into managed snapshots. JSX/TS/TSX were already allowed. JSON/PowerShell/deployment contract parsing remains pending; counting exclusions is not contract validation. |
+| R6 | Low | Fixed for the reported conflation: import/call denominators are separate and unresolved edges have evidence-based categories, including stdlib, builtins, external-or-missing packages, imported symbols, unknown dispatch and evidenced unresolved internal imports. External-or-missing is deliberately not asserted to be installed. |
+| A1 | Medium | External PMem finding, not changed here: export no-clobber publication race. Track in that project's remediation queue. Conditional arbitrary-path/JSON-LD risks still require actual registration and authorization review. |
+
+Locations: `codegraph_core/codegraph_core/core.py::_scan_python_file`,
+`backend/services/product_line_optimizer.py::analyze`,
+`backend/services/optimization_visuals.py::grouping_evidence`,
+`backend/services/business_report.py::report_html`,
+`backend/api/graph_routes.py::build_graph_from_directory`, and
+`backend/services/workspace_service.py::build_managed_snapshot` (metadata propagation).
+Regression evidence: `backend/tests/test_assessment_review_regressions.py`,
+`backend/tests/test_optimization_visuals.py`, and
+`backend/tests/test_product_line_optimizer.py`.
+
+A fresh read-only assessment used the earlier deployment-unit roots/exclusions.
+All 1,380 captured input hashes matched the previous assessment and a subsequent
+read of the source. This verifies those captured files only: it is not an atomic
+snapshot, inventory of excluded directory contents or proof about uncaptured files.
+
+| Assessment measure | Before | After |
+| --- | ---: | ---: |
+| Captured / eligible files | 1,380 / 748 | 1,380 / 748 |
+| Unmapped eligible files | 534 | 397 |
+| Functions with static callable-unit reachability | 0 | 622 |
+| Fingerprinted files included in similarity search | 200 of 452 | 452 of 452 |
+| Positive fingerprint-overlap pairs discovered | 118 in selected subset | 124, index search complete |
+| Proposed structural cells | 12 | 6 |
+| Planning / upper declaration-line reduction | 11 / 22 | 11 / 22 |
+| Projected whole-file removal | 0 | 0 |
+
+The changed cells are consequences of corrected dependency evidence, not validated
+business capability boundaries. Optional/lazy imports contribute conservative static
+closure; route declarations do not prove mounting or execution. The fresh report
+does not reuse the earlier model advice against changed evidence and sends no new
+external model request. No PMem source files were modified or PMem tests executed.
+
+Validation: 460 backend/core tests and 61 frontend tests passed, as did TypeScript,
+ESLint and production build. Existing dependency deprecation and vendor-chunk
+advisories remain. No live Ollama/provider integration was tested.
+
+Pending before consolidation approval: deployment/configuration contract ingestion,
+explicit roots for unrecognized frameworks/tools, owner-reviewed read versus
+write/governance feature families, representative transaction/security contracts,
+runtime/performance baselines, and a measured pilot including scaffolding cost.
+397 unmapped files and 296 eligible files without comparable fingerprints remain;
+neither set is evidence of dead code or safe removal.

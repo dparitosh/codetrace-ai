@@ -49,8 +49,9 @@ def test_function_membership_is_not_inferred_from_file_imports():
     graph=snapshot();function=next(n['id'] for n in graph['nodes'] if n['type']=='function' and n['properties']['path']=='shared/a.py')
     result=analyze(graph,OptimizationOptions(units=[ProductUnit(id='callable',entrypoints=[function])]))
     selected=next(row for row in result['matrices']['functions'] if row['id']==function)
-    assert selected['observed_call_units']==['callable']
-    assert all(not row['observed_call_units'] for row in result['matrices']['functions'] if row['id']!=function)
+    assert selected['resolved_static_call_units']==['callable']
+    assert selected['observed_call_units']==[]
+    assert all(not row['resolved_static_call_units'] for row in result['matrices']['functions'] if row['id']!=function)
 
 
 def test_unresolved_entrypoints_are_explicit_and_duplicate_ids_rejected():

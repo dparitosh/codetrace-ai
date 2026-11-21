@@ -202,6 +202,7 @@ class CodeGraph:
         self.g.add_edge(file_id, module_id, "defines")
         functions: List[Tuple[str, ast.AST]] = []
         function_by_name: Dict[str, str] = {}
+        lexical_owners = {id(tree): module_id}
 
         def add_variable(owner: str, name: str, line: int, scope: str) -> None:
             variable_id = f"variable:{p.as_posix()}::{owner}::{name}"
@@ -225,6 +226,7 @@ class CodeGraph:
             if owner == module_id:
                 function_by_name[node.name] = function_id
             functions.append((function_id, node))
+            lexical_owners[id(node)] = function_id
             for argument in (*node.args.posonlyargs, *node.args.args, *node.args.kwonlyargs):
                 add_variable(function_id, argument.arg, argument.lineno, "parameter")
             if node.args.vararg:
@@ -238,18 +240,12 @@ class CodeGraph:
             return function_id
 
         for node in _scope_statements(tree.body):
-            if isinstance(node, ast.Import):
-                for item in node.names:
-                    self.g.add_edge(module_id, "module:" + item.name, "imports", name=item.name)
-            elif isinstance(node, ast.ImportFrom):
-                name = node.module or ''
-                self.g.add_edge(module_id, "module:" + ('.' * node.level) + name, "imports",
-                                   name=name, relative_level=node.level, imported_names=[item.name for item in node.names])
-            elif isinstance(node, ast.ClassDef):
+            if isinstance(node, ast.ClassDef):
                 class_id = f"class:{p.as_posix()}::{node.name}"
                 self.g.upsert_node(class_id, "class", name=node.name, path=p.as_posix(), start=node.lineno,
                                    language="python", owner=module_id, docstring=ast.get_docstring(node) or "")
                 self.g.add_edge(module_id, class_id, "defines")
+                lexical_owners[id(node)] = class_id
                 for base in node.bases:
                     if isinstance(base, ast.Name):
                         self.g.add_edge(class_id, "symbol:" + base.id, "inherits_from", name=base.id)
@@ -265,12 +261,87 @@ class CodeGraph:
                 for target in _assigned_names(node):
                     add_variable(module_id, target, node.lineno, "module")
 
+        # Imports are static dependencies even when lazy or conditional. Traverse
+        # every lexical scope without attributing nested imports to module execution.
+        class ImportVisitor(ast.NodeVisitor):
+            def __init__(visitor):
+                visitor.owner = module_id
+                visitor.scope = 'module'
+                visitor.conditional = 0
+                visitor.function_depth = 0
+                visitor.lexical_scope = []
+
+            def generic_visit(visitor, node):
+                previous = visitor.owner, visitor.scope, visitor.conditional, visitor.function_depth, visitor.lexical_scope
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+                    visitor.owner = lexical_owners.get(id(node), visitor.owner)
+                    visitor.scope = 'class' if isinstance(node, ast.ClassDef) else 'function'
+                    visitor.function_depth += int(not isinstance(node, ast.ClassDef))
+                    visitor.lexical_scope = visitor.lexical_scope + [getattr(node, 'name', '<lambda>')]
+                conditional = isinstance(node, (ast.If, ast.Try, ast.For, ast.AsyncFor, ast.While, ast.Match, ast.ExceptHandler))
+                if conditional:
+                    visitor.conditional += 1
+                super().generic_visit(node)
+                visitor.owner, visitor.scope, visitor.conditional, visitor.function_depth, visitor.lexical_scope = previous
+
+            def visit_Import(visitor, node):
+                for item in node.names:
+                    visitor.record(node, item.name, 0, [], item.asname or item.name.split('.')[0])
+
+            def visit_ImportFrom(visitor, node):
+                visitor.record(node, node.module or '', node.level, [item.name for item in node.names], None)
+
+            def record(visitor, node, name, level, imported, alias):
+                self.g.add_edge(visitor.owner, 'module:' + '.' * level + name, 'imports', name=name,
+                                relative_level=level, imported_names=imported, start=node.lineno,
+                                import_scope=visitor.scope, lazy=visitor.function_depth>0,
+                                lexical_scope='.'.join(visitor.lexical_scope) or '<module>',
+                                conditional=bool(visitor.conditional), execution='static_not_observed', alias=alias)
+
+        ImportVisitor().visit(tree)
+
+        # Recognize only routes on statically constructed FastAPI/APIRouter objects;
+        # arbitrary @object.get decorators are not evidence of an API entrypoint.
+        factories = set()
+        namespaces = set()
+        for node in tree.body:
+            if isinstance(node, ast.ImportFrom) and node.module == 'fastapi' and not node.level:
+                factories.update(item.asname or item.name for item in node.names if item.name in {'FastAPI','APIRouter'})
+            elif isinstance(node, ast.Import):
+                namespaces.update(item.asname or item.name for item in node.names if item.name == 'fastapi')
+        routers = set()
+        for node in tree.body:
+            if isinstance(node, (ast.Assign, ast.AnnAssign)) and isinstance(node.value, ast.Call):
+                factory = node.value.func
+                recognized = (isinstance(factory, ast.Name) and factory.id in factories) or (
+                    isinstance(factory, ast.Attribute) and isinstance(factory.value, ast.Name)
+                    and factory.value.id in namespaces and factory.attr in {'FastAPI','APIRouter'})
+                if recognized:
+                    routers.update(_assigned_names(node))
+        for function_id, function in functions:
+            for decorator in function.decorator_list:
+                target = decorator.func if isinstance(decorator, ast.Call) else decorator
+                if (isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name)
+                        and target.value.id in routers and target.attr in {'get','post','put','patch','delete','options','head','api_route','websocket'}):
+                    self.g.nodes[function_id].attrs['static_entrypoint'] = 'fastapi_route_declaration'
+        for statement in tree.body:
+            if (isinstance(statement, ast.If) and isinstance(statement.test, ast.Compare)
+                    and isinstance(statement.test.left, ast.Name) and statement.test.left.id == '__name__'
+                    and len(statement.test.ops) == 1 and isinstance(statement.test.ops[0], ast.Eq)
+                    and len(statement.test.comparators) == 1 and isinstance(statement.test.comparators[0], ast.Constant)
+                    and statement.test.comparators[0].value == '__main__'):
+                for call in _function_body_nodes(statement):
+                    if isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id in function_by_name:
+                        self.g.nodes[function_by_name[call.func.id]].attrs['static_entrypoint'] = 'python_main_guard_call'
+
         scopes = {}
         def collect_scopes(table):
             for child in table.get_children():
                 scopes[(child.get_name(), child.get_lineno())] = child
                 collect_scopes(child)
         collect_scopes(symbol_table)
+        module_bindings = {symbol.get_name() for symbol in symbol_table.get_symbols()
+                           if symbol.is_assigned() or symbol.is_imported() or symbol.is_namespace()}
         for function_id, function_node in functions:
             scope = scopes[(function_node.name, function_node.lineno)]
             for call in _function_body_nodes(function_node):
@@ -281,7 +352,9 @@ class CodeGraph:
                               if binding.is_global() else f'symbol:{function_id}::{call.func.id}')
                     if target not in self.g.nodes:
                         self.g.upsert_node(target, "external_symbol", name=call.func.id, language="python")
-                    self.g.add_edge(function_id, target, "calls", name=call.func.id)
+                    self.g.add_edge(function_id, target, "calls", name=call.func.id,
+                                    binding='import' if binding.is_imported() else 'local' if binding.is_local() else 'global',
+                                    builtin_candidate=binding.is_global() and call.func.id not in module_bindings)
 
 
 

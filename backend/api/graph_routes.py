@@ -162,6 +162,7 @@ def build_graph_from_directory(directory: Path, source: str, project_url: Option
     files = []
     total = 0
     skipped = {'unsupported': 0, 'non_utf8': 0, 'symlinks': 0, 'excluded_directories': 0}
+    unsupported_extensions = {}
     def unreadable_directory(error):
         raise HTTPException(422, 'Source folder contains an unreadable directory') from error
     for current, directories, names in os.walk(directory, followlinks=False, onerror=unreadable_directory):
@@ -177,6 +178,9 @@ def build_graph_from_directory(directory: Path, source: str, project_url: Option
                 continue
             if path.suffix.lower() not in config.allowed_extensions():
                 skipped['unsupported'] += 1
+                extension = path.suffix.lower() or '(no extension)'
+                # Counts only: never open or retain excluded configuration contents.
+                unsupported_extensions[extension] = unsupported_extensions.get(extension, 0) + 1
                 continue
             try:
                 if path.stat().st_size > config.max_file_size:
@@ -200,6 +204,14 @@ def build_graph_from_directory(directory: Path, source: str, project_url: Option
         raise HTTPException(status_code=422, detail="No supported UTF-8 source files found")
     graph = build_graph_from_files(LocalGraphRequest(files=files))
     graph['metadata'].update(source=source, project_url=project_url, skipped=skipped)
+    graph['metadata']['source_coverage'] = {
+        'configured_extensions': sorted(config.allowed_extensions()),
+        'captured_extensions': sorted({Path(file.path).suffix.lower() for file in files}),
+        'unsupported_extension_counts': dict(sorted(unsupported_extensions.items())),
+        'excluded_directories': sorted(config.excludes),
+        'excluded_directory_contents_inventoried': False,
+        'configuration_contract_analysis': 'not_performed; explicit OpenAPI artifacts are classified separately',
+    }
     return graph
 
 

@@ -37,7 +37,9 @@ def test_code_overlap_scope_is_bounded_without_inventing_uncompared_scores():
         'matrices':{'files':[{'path':str(i),'eligible':True,'memberships':[]} for i in range(count)],
             'functions':[{'path':str(i),'eligible':True,'basis':'test','fingerprint':'same'} for i in range(count)]}}
     evidence=grouping_evidence(result)
-    assert evidence['code_scope']['compared_files']==200
+    assert evidence['code_scope']['compared_files']==210
+    assert evidence['code_scope']['search_complete']
+    assert evidence['code_scope']['pairs_checked']==210*209//2
     assert evidence['code_scope']['files_with_fingerprints']==210
     assert evidence['code_scope']['truncated']
     assert len(evidence['code_similarity'])==100

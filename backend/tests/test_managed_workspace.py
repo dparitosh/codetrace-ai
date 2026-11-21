@@ -54,7 +54,9 @@ def managed(tmp_path, monkeypatch):
 
 
 def test_managed_snapshot_combines_code_and_correct_oslc_domains(managed):
+    (managed / 'deployment.ps1').write_text('excluded source content')
     graph = build_managed_snapshot('managed')
+    assert graph['metadata']['source_coverage']['unsupported_extension_counts']['.ps1'] == 1
     nodes = {node['id']: node for node in graph['nodes']}
     assert nodes['urn:test:req:1']['properties']['domain'] == 'RM'
     assert nodes['urn:test:architecture:1']['properties']['domain'] == 'AM'
