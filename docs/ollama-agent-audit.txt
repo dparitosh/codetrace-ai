@@ -212,3 +212,27 @@ The test branch is e0e1513 plus these Ollama-only corrections, not byte-identica
 to e0e1513. The original base remains unchanged in Git history.
 Local branch codex/baseline-e0e1513 preserves the exact original commit; only
 codex/test-e0e1513 receives these corrections. No remote branch is updated here.
+
+
+RE-AUDIT OF 4bc2aaf — 2026-11-21
+Maintained offline suite: 423 passed. One additional Medium/P2 issue was
+reproduced and remains unresolved; the passing suite does not cover this case.
+
+OT-04 | Medium / P2 | agent_workspace.py:358-362, GraphAgent.run
+A native httpx.ReadTimeout at the planning sub-deadline does not activate the
+reserved final-answer phase. needs_final is set only for selected ValueError
+messages. With parent deadline 20 seconds, reserve 5 seconds and a controlled
+transport timeout at time 16, the agent makes only one model request and returns
+deterministic evidence despite four seconds remaining. The mocked final request
+would return a valid cited answer but is never issued. An early timeout at time
+4 correctly falls back without retry. Offline diagnostic: one boundary case
+failed, one early-timeout control passed. No live model behavior is inferred.
+
+Required correction: retain the planning deadline and allow the existing single
+no-tools final attempt for a transport timeout reaching that boundary, only while
+the parent budget and session remain valid. Keep early failures, authentication
+errors and forbidden tools out of blanket retries. Verify parent/session expiry,
+final-call failure and bounded citation-valid fallback before marking this fixed.
+
+No application code changed in this re-audit. Family-analysis modules/routes and
+configuration remain absent. The original e0e1513 baseline remains unchanged.
