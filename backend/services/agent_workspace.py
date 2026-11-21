@@ -330,7 +330,19 @@ class GraphAgent:
                             except (ValueError, TypeError) as error:
                                 failure, needs_final = error, True
                             break
-                        messages.append({'role': 'assistant', 'content': str(message.get('content', ''))[:2000], 'tool_calls': calls})
+                        content = message.get('content', '')
+                        if content is None:
+                            content = ''
+                        thinking = message.get('thinking')
+                        if not isinstance(content, str) or (thinking is not None and not isinstance(thinking, str)):
+                            raise ValueError('Invalid chat response')
+                        # Native tool follow-ups retain the returned protocol
+                        # context. Never truncate it silently or expose thinking
+                        # in traces/results; request() enforces the full byte cap.
+                        assistant = {'role': 'assistant', 'content': content, 'tool_calls': calls}
+                        if thinking is not None:
+                            assistant['thinking'] = thinking
+                        messages.append(assistant)
                         for call in calls:
                             if len(self.trace) >= settings.AI_AGENT_MAX_STEPS * 3:
                                 raise ValueError('Tool budget exhausted')

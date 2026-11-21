@@ -154,6 +154,7 @@ class OllamaREST:
                     content.extend(chunk)
         self.check()
         result = json.loads(content)
+        self.check()
         if not isinstance(result, dict):
             raise ValueError('Expected an Ollama JSON object')
         return result
@@ -207,6 +208,10 @@ class OllamaREST:
             raise ValueError('Invalid chat response')
         if result.get('done_reason') == 'length':
             raise ValueError('Model output reached AI_MAX_OUTPUT_TOKENS')
+        # Native non-streaming responses must be complete. Some compatible
+        # gateways omit this field; an explicitly false/invalid flag is different.
+        if 'done' in result and result['done'] is not True:
+            raise ValueError('Invalid chat response')
         message = result.get('message')
         if not isinstance(message, dict) or message.get('role', 'assistant') != 'assistant':
             raise ValueError('Invalid chat response')

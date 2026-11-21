@@ -147,3 +147,68 @@ REMEDIATION ORDER
 3. OA-02: retain relationship evidence through deterministic fallback.
 4. OA-04: split discovery/connectivity outcomes; separately assess tool capability.
 All four corrections remain pending. No application changes, commit or push in this pass.
+
+
+HISTORICAL TEST BRANCH FOLLOW-UP — 2026-11-21
+Branch: codex/test-e0e1513
+Base: e0e1513b554943f53d7dceb00bbfc4e7f92c4f80
+
+The earlier "pending" statements above describe that historical audit pass, not
+the current base. The e0e1513 base already includes the tool-schema alignment,
+relationship fallback, invalid embedding handling, discovery separation, final
+answer reserve, strict citation contract and bounded-summary corrections.
+Its complete offline baseline suite passed: 408 backend/core tests.
+
+This follow-up confirms and corrects three additional narrow gaps:
+
+OT-01 | Medium | ai_connection.py::OllamaREST.chat
+An HTTP-successful non-streaming response with explicit done=false (or an invalid
+completion flag) was accepted as a completed message. A controlled response with
+otherwise valid answer JSON reproduced acceptance. Explicit incomplete/invalid
+flags are now rejected. Omitted flags remain supported for compatible gateways;
+done=true works. Existing length-exhaustion diagnostics remain separate.
+
+OT-02 | Medium | agent_workspace.py::GraphAgent.run
+Tool follow-ups dropped the returned thinking field and silently truncated content
+at 2,000 characters, departing from Ollama's native tool-loop examples. Controlled
+two-turn tests reproduced the lost fields. Follow-ups now preserve string content
+and optional thinking internally, validate their types and enforce the existing
+full request byte cap. Thinking is never included in returned answers, evidence,
+traces or dossier results. The protocol mismatch is confirmed; failure of a
+particular customer's installed model was not reproduced or asserted.
+
+OT-03 | Low | ai_connection.py::OllamaREST.request
+The total-deadline guard ran before JSON decoding, but not after it. A controlled
+clock advanced beyond the deadline during decoding and the method still returned.
+A post-decoding guard now rejects that late response and rechecks session access.
+This remains cooperative cancellation, not hard preemption of a blocked operation.
+
+Regression file: backend/tests/test_ollama_branch_regressions.py.
+It also verifies the existing byte budget, malformed tool-context fallback,
+HTTP port 1434, native operation URL normalization, preserved gateway prefixes,
+HTTP allowed by default and explicit HTTPS enforcement. All provider responses
+are mocked; live HTTP transport is prohibited in these new tests.
+Final validation: 423 backend/core tests passed (408 baseline plus 15 new cases).
+The existing upstream Starlette/httpx deprecation warning remains. No frontend
+implementation or dependency manifest was changed by this follow-up.
+
+Scope exclusion verified: no product-line/part-family optimizer modules,
+classification AI, ProductLinePanel, VisualReportPreview, optimization API routes,
+GT/ROC/cell-formation configuration or feature imports exist on this branch.
+Existing general quality/security analysis, lifecycle tracing, graph similarity
+retrieval and SBOM lineage remain; they are not the later family optimizer.
+
+References:
+https://docs.ollama.com/api/chat
+https://docs.ollama.com/capabilities/tool-calling
+https://docs.ollama.com/capabilities/structured-outputs
+
+Limitations: no live Ollama chat, tags, embeddings, model download or customer
+endpoint was called. Tests do not establish that an installed model supports
+native tools, responds within configured budgets or always emits valid grounded
+JSON. Unavailable, malformed, ungrounded and over-budget outputs must still use
+the explicit deterministic fallback. No claim of zero remaining bugs is made.
+The test branch is e0e1513 plus these Ollama-only corrections, not byte-identical
+to e0e1513. The original base remains unchanged in Git history.
+Local branch codex/baseline-e0e1513 preserves the exact original commit; only
+codex/test-e0e1513 receives these corrections. No remote branch is updated here.
