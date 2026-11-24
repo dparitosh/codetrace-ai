@@ -153,7 +153,10 @@ class OllamaREST:
                         raise ValueError('AI response exceeded the configured byte budget')
                     content.extend(chunk)
         self.check()
-        result = json.loads(content)
+        try:
+            result = json.loads(content)
+        except RecursionError:
+            raise ValueError('Expected an Ollama JSON object') from None
         self.check()
         if not isinstance(result, dict):
             raise ValueError('Expected an Ollama JSON object')

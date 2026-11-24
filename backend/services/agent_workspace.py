@@ -10,7 +10,7 @@ from core.config import settings
 from graph.traceability import neighborhood, node_domain
 from services.evidence_algorithms import tokens, similar_resources
 from services.companion_service import evidence_answer
-from services.answer_contract import validate_answer, inline_citations, bounded_summary
+from services.answer_contract import AnswerValidationError, validate_answer, inline_citations, bounded_summary
 from services.agent_configuration import TOOL_DESCRIPTIONS, configured_agent
 
 AGENTS = [
@@ -24,6 +24,8 @@ METADATA = {'http://open-services.net/ns/core#instanceShape', 'http://open-servi
 
 def model_failure_warning(error):
     """Classify failures without returning provider bodies, URLs or credentials."""
+    if isinstance(error, AnswerValidationError):
+        return f'Model output failed answer or citation validation ({error.code}). {error.detail}'
     if isinstance(error, httpx.TimeoutException):
         return 'Model request timed out. Check service responsiveness and AI_TIMEOUT_SECONDS / AI_AGENT_DEADLINE_SECONDS.'
     if isinstance(error, httpx.HTTPStatusError):
@@ -315,10 +317,12 @@ class GraphAgent:
         if self.rest.connection.enabled and not initial_failed:
             needs_final = False
             failure = None
+            planning_deadline = None
             try:
                 # The last phase cannot invoke tools and shares the original total
                 # deadline. At most MAX_STEPS planning calls plus one final call.
                 with self.rest.budget(settings.AI_AGENT_DEADLINE_SECONDS, settings.AI_FINAL_ANSWER_RESERVE_SECONDS):
+                    planning_deadline = self.rest.deadline
                     for _ in range(settings.AI_AGENT_MAX_STEPS):
                         message = self.rest.chat(messages, [tool_schema(name, self.rest.connection) for name in self.agent['tools']])
                         calls = message.get('tool_calls', [])
@@ -350,7 +354,10 @@ class GraphAgent:
                             name = function.get('name', '')
                             arguments = function.get('arguments', {})
                             if isinstance(arguments, str):
-                                arguments = json.loads(arguments)
+                                try:
+                                    arguments = json.loads(arguments)
+                                except RecursionError:
+                                    raise ValueError('Invalid tool-call batch') from None
                             output = self.tool(name, arguments)
                             messages.append({'role': 'tool', 'tool_name': name, 'content': json.dumps(output)})
                     else:
@@ -359,11 +366,21 @@ class GraphAgent:
                 failure = error
                 needs_final = isinstance(error, ValueError) and str(error) in {
                     'AI operation reached its total deadline', 'Model output reached AI_MAX_OUTPUT_TOKENS', 'Tool budget exhausted'}
+                # A socket read timeout may be how the planning sub-budget ends.
+                # Use the already-reserved final phase only at that boundary;
+                # early connection/read failures do not receive blanket retries.
+                if (isinstance(error, httpx.ReadTimeout) and planning_deadline is not None
+                        and time.monotonic() >= planning_deadline):
+                    needs_final = True
             if not answer and needs_final:
                 try:
                     self.rest.check()
                     messages.append({'role': 'user', 'content': 'Finish now without tools. Return only JSON with answer and citation_ids, using observed [E#] references from this run. '
-                        f'Keep the answer within {settings.AI_MAX_ANSWER_CHARACTERS} characters. Explain limits; never invent missing evidence.'})
+                        f'Keep the answer within {settings.AI_MAX_ANSWER_CHARACTERS} characters. Explain limits; never invent missing evidence. '
+                        + json.dumps({'validation_feedback': model_failure_warning(failure) if failure else 'Planning step budget reached.',
+                            'allowed_citation_ids': [item['citation_id'] for item in self.evidence.values()],
+                            'required_fields': {'answer': 'Nonempty text with inline [E#] references.',
+                                'citation_ids': 'Array containing every inline reference; only allowed IDs from this turn.'}})})
                     final = self.rest.chat(messages)
                     if final.get('tool_calls'):
                         raise ValueError('Final answer requested more tools')

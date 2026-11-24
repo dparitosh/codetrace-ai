@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from core.config import settings
 from services.ai_connection import AIConnection, OllamaREST
 from services.agent_workspace import GraphAgent
-from services.answer_contract import validate_answer, inline_citations
+from services.answer_contract import AnswerValidationError, validate_answer, inline_citations
 
 
 @pytest.fixture(autouse=True)
@@ -165,3 +165,76 @@ def test_final_phase_cannot_extend_total_deadline():
             result = GraphAgent(graph(), instance).run('Explain', 'r')
     assert chat.call_count == 1 and result['mode'] == 'evidence'
     assert instance.deadline == 20 and 'AI_AGENT_DEADLINE_SECONDS' in result['warning']
+
+
+@pytest.mark.parametrize('payload,code', [
+    ([], 'invalid_shape'),
+    ({'answer':42,'citation_ids':['E1']}, 'invalid_answer'),
+    ({'answer':'Observed [E1]','citations_ids':['E1']}, 'missing_citation_ids'),
+    ({'answer':'Observed [E1]','citation_ids':'E1'}, 'invalid_citation_ids'),
+    ({'answer':'No reference','citation_ids':['E1']}, 'missing_inline_citations'),
+    ({'answer':'Observed [E1]','citation_ids':[]}, 'unlisted_inline_citations'),
+    ({'answer':'Unknown [E999]','citation_ids':['E999']}, 'unknown_citations'),
+])
+def test_validation_reports_static_specific_reasons_without_echoing_output(payload,code):
+    from services.agent_workspace import model_failure_warning
+    with pytest.raises(AnswerValidationError) as error:
+        validate_answer(json.dumps(payload),[{'citation_id':'E1'}])
+    assert error.value.code==code
+    assert code in model_failure_warning(error.value)
+    assert json.dumps(payload) not in model_failure_warning(error.value)
+
+
+def test_overlong_answer_has_a_length_diagnostic(monkeypatch):
+    monkeypatch.setattr(settings,'AI_MAX_ANSWER_CHARACTERS',8)
+    with pytest.raises(AnswerValidationError) as error:
+        validate_answer(final('PRIVATE_MODEL_OUTPUT [E1]')['content'],[{'citation_id':'E1'}])
+    assert error.value.code=='answer_too_long'
+    assert 'PRIVATE_MODEL_OUTPUT' not in error.value.detail
+
+
+def test_single_repair_receives_failure_reason_and_current_observed_ids():
+    instance=rest()
+    responses=[]
+    def respond(messages,tools=None):
+        responses.append(1)
+        if len(responses)==1:
+            return {'content':json.dumps({'answer':'PRIVATE_MODEL_OUTPUT [E1]','citations_ids':['E1']})}
+        repair=messages[-1]['content']
+        assert tools is None
+        assert 'missing_citation_ids' in repair
+        assert '"allowed_citation_ids": ["E1", "E2"]' in repair
+        assert '"required_fields"' in repair
+        assert 'PRIVATE_MODEL_OUTPUT' not in repair
+        return final()
+    with patch.object(instance,'chat',side_effect=respond):
+        result=GraphAgent(graph(),instance).run('Explain','r')
+    assert len(responses)==2 and result['mode']=='agent'
+    assert result['citation_ids']==['E1'] and result['warning'] is None
+
+
+def test_repeated_unknown_citations_remain_rejected_with_specific_warning():
+    instance=rest()
+    with patch.object(instance,'chat',return_value=final('PRIVATE_MODEL_OUTPUT [E999]',['E999'])) as chat:
+        result=GraphAgent(graph(),instance).run('Explain','r')
+    assert chat.call_count==2 and result['mode']=='evidence'
+    assert 'unknown_citations' in result['warning']
+    assert 'PRIVATE_MODEL_OUTPUT' not in json.dumps(result)
+    assert '[E999]' not in result['answer']
+    assert inline_citations(result['answer'])<=set(result['citation_ids'])<= {'E1','E2'}
+
+
+def test_excessively_nested_answer_is_repairable_instead_of_a_server_error():
+    instance=rest()
+    with patch.object(instance,'chat',side_effect=[{'content':'['*10000+'0'+']'*10000},final()]) as chat:
+        result=GraphAgent(graph(),instance).run('Explain','r')
+    assert chat.call_count==2 and result['mode']=='agent'
+
+
+def test_excessively_nested_tool_arguments_fail_without_execution():
+    instance=rest()
+    message={'tool_calls':[{'function':{'name':'inspect_resource','arguments':'['*10000+'0'+']'*10000}}]}
+    with patch.object(instance,'chat',return_value=message) as chat:
+        result=GraphAgent(graph(),instance).run('Explain','r')
+    assert chat.call_count==1 and result['mode']=='evidence'
+    assert len(result['trace'])==1 and 'invalid tool-call batch' in result['warning']

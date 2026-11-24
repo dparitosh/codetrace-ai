@@ -113,3 +113,67 @@ def test_https_is_optional_by_default_and_enforced_when_configured(monkeypatch):
     monkeypatch.setattr(settings,'AI_REQUIRE_HTTPS',True)
     with pytest.raises(ValueError,match='HTTPS'):
         connection()
+
+
+@pytest.mark.parametrize("elapsed,expected_calls,expected_mode",[(4.,1,"evidence"),(16.,2,"agent"),(21.,1,"evidence")])
+def test_transport_timeout_respects_available_final_reserve(monkeypatch,elapsed,expected_calls,expected_mode):
+    clock=[0.];calls=[]
+    monkeypatch.setattr(settings,"AI_FINAL_ANSWER_RESERVE_SECONDS",5)
+    graph={"nodes":[{"id":"f","type":"function","label":"Fixture","properties":{"domain":"CODE"}}],"edges":[],"metadata":{"snapshot_id":"offline","coverage":{}}}
+    factory=httpx.Client
+    def respond(request):
+        calls.append(json.loads(request.content))
+        if len(calls)==1:
+            clock[0]=elapsed
+            raise httpx.ReadTimeout("Controlled planning timeout",request=request)
+        return httpx.Response(200,json={"done":True,"message":{"role":"assistant","content":json.dumps({"answer":"Observed [E1]","citation_ids":["E1"]})}})
+    with patch("services.ai_connection.time.monotonic",side_effect=lambda:clock[0]),patch("services.ai_connection.httpx.Client",side_effect=lambda **kw:factory(transport=httpx.MockTransport(respond),**kw)):
+        rest=OllamaREST(AIConnection(base_url=settings.AI_BASE_URL,model="offline-fixture",embeddings_enabled=False),deadline=20.)
+        result=GraphAgent(graph,rest).run("Explain","f")
+    assert rest.deadline==20.
+    assert len(calls)==expected_calls, (len(calls),result["warning"])
+    assert result["mode"]==expected_mode
+
+
+def test_timeout_recovery_is_single_attempt_and_final_failure_stays_bounded(monkeypatch):
+    clock=[0.];calls=[]
+    monkeypatch.setattr(settings,'AI_FINAL_ANSWER_RESERVE_SECONDS',5)
+    graph={'nodes':[{'id':'f','type':'function','label':'Fixture','properties':{'domain':'CODE'}}],
+           'edges':[],'metadata':{'snapshot_id':'offline','coverage':{}}}
+    def respond(*args):
+        calls.append(1);clock[0]=16.+len(calls)
+        raise httpx.ReadTimeout('PRIVATE_TRANSPORT_ERROR')
+    with patch('services.ai_connection.time.monotonic',side_effect=lambda:clock[0]):
+        rest=OllamaREST(connection(),deadline=20.)
+        with patch.object(rest,'chat',side_effect=respond):
+            result=GraphAgent(graph,rest).run('Explain','f')
+    assert len(calls)==2 and result['mode']=='evidence'
+    assert result['citation_ids']==['E1']
+    assert len(result['answer'])<=settings.AI_MAX_ANSWER_CHARACTERS
+    assert 'PRIVATE_TRANSPORT_ERROR' not in json.dumps(result)
+
+
+def test_session_expiry_at_planning_boundary_prevents_final_request(monkeypatch):
+    from fastapi import HTTPException
+    clock=[0.]
+    monkeypatch.setattr(settings,'AI_FINAL_ANSWER_RESERVE_SECONDS',5)
+    graph={'nodes':[{'id':'f','type':'function','label':'Fixture','properties':{'domain':'CODE'}}],
+           'edges':[],'metadata':{'snapshot_id':'offline','coverage':{}}}
+    def guard():
+        if clock[0]>=16.:raise HTTPException(401,'Expired session')
+    def respond(*args):
+        clock[0]=16.
+        raise httpx.ReadTimeout('Controlled boundary timeout')
+    with patch('services.ai_connection.time.monotonic',side_effect=lambda:clock[0]):
+        rest=OllamaREST(connection(),guard=guard,deadline=20.)
+        with patch.object(rest,'chat',side_effect=respond) as chat:
+            with pytest.raises(HTTPException) as error:GraphAgent(graph,rest).run('Explain','f')
+    assert error.value.status_code==401 and chat.call_count==1
+
+
+def test_excessively_nested_provider_json_is_a_controlled_rejection():
+    factory=httpx.Client
+    transport=httpx.MockTransport(lambda request:httpx.Response(200,content=('['*10000+'0'+']'*10000).encode()))
+    with patch('services.ai_connection.httpx.Client',side_effect=lambda **kw:factory(transport=transport,**kw)):
+        with pytest.raises(ValueError,match='Expected an Ollama JSON object'):
+            OllamaREST(connection()).request('tags')

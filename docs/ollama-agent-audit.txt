@@ -236,3 +236,57 @@ final-call failure and bounded citation-valid fallback before marking this fixed
 
 No application code changed in this re-audit. Family-analysis modules/routes and
 configuration remain absent. The original e0e1513 baseline remains unchanged.
+
+
+CUSTOMER WARNING FOLLOW-UP — 2026-11-24
+Scope: codex/test-e0e1513 only. Customer installation is separate from this
+machine. Customer described the model as "offline ollama 3"; the exact installed
+model tag, Ollama version, application commit and rejected response are unknown.
+No customer endpoint, source, credentials or live model was accessed. No Ollama
+installation or model download was performed here.
+
+OT-04 is now corrected. The planning sub-deadline is retained, and a native
+ReadTimeout reaching that boundary can use the existing one-shot no-tools final
+phase. Early read timeouts do not retry. Parent expiry and session expiry prevent
+further requests; final failure returns bounded evidence without recursive retry.
+The previously failing offline transport boundary regression now passes.
+
+Answer diagnostics now distinguish invalid JSON shape, missing/invalid answer,
+answer length, missing/invalid citation_ids, absent inline citations, unlisted
+inline references and unknown observed IDs. Diagnostics contain only static
+application-owned reasons, never rejected model output, URLs or credentials.
+The single existing repair attempt receives the rejection reason, required fields
+and current-turn allowed citation IDs. Its final request still uses JSON format;
+strict observed-evidence and character-limit validation remains in force. No
+citation is fabricated, renamed or added to make an invalid response pass.
+
+Additional confirmed defect: sufficiently nested JSON could raise uncaught
+RecursionError in provider-body parsing, answer parsing or string tool arguments.
+Three offline cases reproduced those failures before correction. Each is now a
+controlled validation failure: answers may use the one bounded repair attempt;
+malformed tool calls do not execute and invalid provider bodies are rejected.
+
+Validation: 441 backend/core tests passed, including 18 additional cases beyond
+the previous 423-test suite. Existing dependency deprecation warning remains.
+No frontend implementation or dependency manifest changed. Main development
+checkout is unchanged; part-family/product-line analysis remains absent here.
+
+Customer interpretation and next verification:
+- This warning means a response did not satisfy the grounded output contract;
+  it does not by itself establish that a model is offline or that HTTP is wrong.
+- The corrected customer build must be installed/restarted before its warnings
+  can include the new reason code. Record its commit and exact installed model
+  tag locally. Do not send source text, API keys or raw private model output.
+- Native tool support is model/template dependent. The library names llama3
+  and llama3.1 refer to different models; no capability is inferred from the
+  ambiguous description "ollama 3". Do not silently change/download a model.
+- Empty observed_resources cannot support valid evidence citations; synchronize
+  the source and confirm retrieved context before interpreting model output.
+- Invalid/ungrounded model output still correctly falls back to evidence. No
+  customer-runtime resolution, semantic truth or zero-bug guarantee is claimed.
+
+Primary references checked:
+https://docs.ollama.com/capabilities/tool-calling
+https://docs.ollama.com/capabilities/structured-outputs
+https://ollama.com/library/llama3
+https://ollama.com/library/llama3.1
