@@ -238,3 +238,12 @@ def test_excessively_nested_tool_arguments_fail_without_execution():
         result=GraphAgent(graph(),instance).run('Explain','r')
     assert chat.call_count==1 and result['mode']=='evidence'
     assert len(result['trace'])==1 and 'invalid tool-call batch' in result['warning']
+
+def test_truncated_evidence_summary_retains_observed_citation(monkeypatch):
+    from services.answer_contract import bounded_summary
+
+    monkeypatch.setattr(settings, 'AI_MAX_ANSWER_CHARACTERS', 80)
+    summary = bounded_summary('Observed evidence ' * 10 + '[E1]')
+    assert len(summary) <= 80
+    assert inline_citations(summary) == {'E1'}
+    assert 'Summary truncated' in summary

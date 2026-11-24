@@ -76,4 +76,8 @@ def bounded_summary(answer):
         return (marker + ('…' if len(marker) < limit else '')) if len(marker) <= limit else '…'[:limit]
     prefix = answer[:max(0, limit - len(note))]
     prefix = re.sub(r'\[E\d*$', '', prefix)
-    return (prefix + note)[:limit]
+    if marker and not inline_citations(prefix):
+        prefix = prefix[:max(0, limit - len(note) - len(marker) - 1)].rstrip()
+        prefix = re.sub(r'\[E\d*$', '', prefix).rstrip()
+        prefix = f'{prefix} {marker}' if prefix else marker
+    return prefix + note

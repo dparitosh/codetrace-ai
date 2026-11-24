@@ -70,7 +70,12 @@ export default function ChangeWorkbench({ graph, review, catalog, selected, acti
       if (preserveEdits) setError('Saved state refreshed. Your unsaved edits are retained; compare them with saved state before saving or explicitly discard them.')
       if (clearQuestion) setQuestion('')
       if (reset) { setContextId(data.selected_id || ''); setContextQuery(''); setQuestion(''); setNote(''); setTab('conversation'); setAdvanced(false) }
-      await loadQueue()
+      try {
+        const items = await changeRequest<QueueItem[]>()
+        if (version === generation.current) setQueue(items)
+      } catch {
+        if (version === generation.current) setError('The dossier action succeeded, but the queue could not be refreshed.')
+      }
     } catch (cause) { if (version === generation.current) setError(cause instanceof Error ? cause.message : 'Change workflow failed') }
     finally { if (version === generation.current) setBusy(false) }
   }

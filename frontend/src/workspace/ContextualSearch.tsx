@@ -23,8 +23,8 @@ export default function ContextualSearch({ review, graph, onSelect, onHighlight,
     const current = ++generation.current
     setBusy(true); setError(''); setResult(null)
     try {
-      const profile = await aiRequest<AIProfile>('config')
-      const answer = await workspaceRequest<Result>('search', { review_id: review.id, query, semantic, limit: 20, domain }, profile.request_timeout_seconds || 125, review.sessionToken)
+      const profile = semantic ? await aiRequest<AIProfile>('config') : undefined
+      const answer = await workspaceRequest<Result>('search', { review_id: review.id, query, semantic, limit: 20, domain }, profile?.request_timeout_seconds || __APP_CONFIG__.controlTimeout, review.sessionToken)
       if (current !== generation.current) return
       setResult(answer); onHighlight(answer.results.map(node => node.node_id))
     } catch (cause) { if (current === generation.current) setError(cause instanceof Error ? cause.message : 'Search failed') }

@@ -50,6 +50,7 @@ export default function AISettings() {
     <h2>AI connection</h2>
     <p>Configure this session’s models and agents. Credentials stay on the server; source catalogs and endpoint allowlists are managed in .env.local.</p>
     {!profile ? <IxButton disabled={busy} onClick={() => run(load)}>Start session and load AI settings</IxButton> : <>
+      <fieldset disabled={busy} aria-label="AI connection settings" style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <label><input type="checkbox" checked={profile.enabled} onChange={event => setProfile({ ...profile, enabled: event.target.checked })} />Enable Ollama agent execution</label>
       <div className="ai-settings-grid">
         <label>Ollama REST URL<input aria-label="Ollama REST URL" value={profile.base_url} maxLength={2048} onChange={event => setProfile({ ...profile, base_url: event.target.value })} placeholder="Configured AI_BASE_URL" /></label>
@@ -79,7 +80,8 @@ export default function AISettings() {
         {profile.registered_tools?.map(tool => <label key={tool.id}>{tool.id}<textarea aria-label={`${tool.id} description`} rows={3} maxLength={2000} value={profile.tool_configuration?.[tool.id]?.description ?? tool.description} onChange={event => setProfile({ ...profile, tool_configuration: { ...profile.tool_configuration, [tool.id]: { description: event.target.value } } })} /></label>)}
       </details>
       <details><summary>Legacy companion instructions</summary><label>Companion system prompt<textarea aria-label="Companion system prompt" rows={6} maxLength={12000} value={profile.companion_system_prompt ?? ''} onChange={event => setProfile({ ...profile, companion_system_prompt: event.target.value })} /></label><p>The legacy companion has no executable tools.</p></details>
-      <IxButton variant="tertiary" disabled={busy} onClick={() => run(async () => { await aiRequest('config', 'PUT', { enabled: profile.enabled, base_url: profile.base_url, model: profile.model, embedding_model: profile.embedding_model, key_header: profile.key_header, embeddings_enabled: profile.embeddings_enabled, discovery_enabled: profile.discovery_enabled, keep_key: true, agent_configuration: {}, tool_configuration: {} }); await load(); window.dispatchEvent(new Event('codetrace:ai-config')); setMessage('Agent prompts and tools restored to defaults. Connection and saved key retained.') })}>Restore agent and tool defaults</IxButton>
+      </fieldset>
+      <IxButton variant="tertiary" disabled={busy} onClick={() => run(async () => { await aiRequest('config', 'PUT', { enabled: profile.enabled, base_url: profile.base_url, model: profile.model, embedding_model: profile.embedding_model, key_header: profile.key_header, embeddings_enabled: profile.embeddings_enabled, discovery_enabled: profile.discovery_enabled, keep_key: true, agent_configuration: {}, tool_configuration: {}, companion_system_prompt: profile.companion_system_prompt }); await load(); window.dispatchEvent(new Event('codetrace:ai-config')); setMessage('Agent prompts and tools restored to defaults. Connection and saved key retained.') })}>Restore agent and tool defaults</IxButton>
       <p className="ai-settings-note">Allowed server bases: {profile.allowed_base_urls?.join(', ')}. Additional REST bases require AI_ALLOWED_BASE_URLS in .env.local. Saving settings does not download models.</p>
       <div className="ai-action-row">
         <IxButton disabled={busy} onClick={() => run(async () => { await save(); setMessage('Session AI settings saved.') })}>Save AI connection</IxButton>

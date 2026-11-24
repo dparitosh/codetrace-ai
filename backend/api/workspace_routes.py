@@ -142,8 +142,11 @@ def test_ai(x_codetrace_session: Optional[str] = Header(default=None)):
                 'warning': ((discovery.get('warning', '') + ' ') if discovery.get('warning') else '') +
                            'Connectivity is verified; native tool calling is not tested by this check and is validated during agent execution.'}
     except (httpx.HTTPError, ValueError, TypeError, KeyError) as error:
+        guidance = model_failure_warning(error)
+        if isinstance(error, httpx.HTTPStatusError) and error.response.status_code == 404 and stage == 'embeddings':
+            guidance = 'Embedding model or route was not found. Check the installed embedding model and the native /api/embed route.'
         raise HTTPException(502, f'Ollama {stage} test failed (discovery: {discovery["status"]}; chat: {"ready" if chat_ready else "not verified"}). '
-                            + model_failure_warning(error)) from None
+                            + guidance) from None
     finally:
         store.workers.release()
 
@@ -162,7 +165,7 @@ def search_workspace(request: SearchQuery, x_codetrace_session: Optional[str] = 
         raise HTTPException(429, 'Search capacity is busy')
     try:
         graph = reviewed_graph(x_codetrace_session, request.review_id)
-        rest = OllamaREST(connection_for(store, x_codetrace_session), ai_guard(x_codetrace_session))
+        rest = OllamaREST(connection_for(store, x_codetrace_session), ai_guard(x_codetrace_session)) if request.semantic else None
         result = GraphSearch(graph, rest).search(request.query, request.domain, request.limit, request.semantic)
         store.info(x_codetrace_session, touch=False)
         return result

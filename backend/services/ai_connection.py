@@ -81,8 +81,8 @@ class AIConnection(BaseModel):
     @field_validator('api_key')
     @classmethod
     def valid_key(cls, value):
-        if any(ord(char) < 32 or ord(char) == 127 for char in value.get_secret_value()):
-            raise ValueError('Invalid API key characters')
+        if any(ord(char) < 32 or ord(char) > 126 for char in value.get_secret_value()):
+            raise ValueError('API key must contain only printable ASCII characters')
         return value
 
     def private(self):
