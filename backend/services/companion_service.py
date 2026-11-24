@@ -9,6 +9,8 @@ from graph.traceability import node_domain
 from services.oslc_service import server_secret
 from services.evidence_algorithms import similar_resources, recommendations
 from services.answer_contract import validate_answer, inline_citations, display_value, bounded_summary
+from services.model_errors import model_failure_warning
+from services.ai_connection import AIConnection, OllamaREST
 
 
 def context_evidence(graph, question, selected_id=None):
@@ -122,26 +124,22 @@ def answer_question(graph, question, selected_id=None, system_prompt=None, conne
                               for item in graph['metadata'].get('connectors', [])[:20]],
                'limitations': [str(item)[:300] for item in graph['metadata'].get('limitations', [])[:6]]}
     messages = ([{'role': 'system', 'content': system_prompt}] if system_prompt else []) + [{'role': 'system', 'content': system}, {'role': 'user', 'content': json.dumps(context, ensure_ascii=False)}]
-    base = settings.AI_BASE_URL.rstrip('/')
-    headers = {}
-    token = server_secret(settings.AI_TOKEN_ENV)
-    if token:
-        headers[settings.AI_KEY_HEADER] = ('Bearer ' + token) if settings.AI_KEY_HEADER == 'Authorization' else token
-    if settings.AI_PROVIDER == 'ollama':
-        url = base + '/api/chat'
-        payload = {'model': settings.AI_MODEL, 'messages': messages, 'stream': False, 'format': 'json',
-                   'options': {'temperature': 0.15, 'num_predict': settings.AI_MAX_OUTPUT_TOKENS}}
-    else:
-        url = base + '/chat/completions'
-        payload = {'model': settings.AI_MODEL, 'messages': messages, 'temperature': 0.15,
-                   'max_tokens': settings.AI_MAX_OUTPUT_TOKENS, 'response_format': {'type': 'json_object'}}
     try:
         if len(json.dumps(messages).encode()) > settings.AI_CONTEXT_MAX_BYTES:
             raise ValueError('AI context exceeded the configured byte limit')
-        if connection is not None:
-            from services.ai_connection import OllamaREST
+        if connection is not None or settings.AI_PROVIDER == 'ollama':
+            if connection is None:
+                connection = AIConnection(base_url=settings.AI_BASE_URL, model=settings.AI_MODEL,
+                    api_key=server_secret(settings.AI_TOKEN_ENV) or '', key_header=settings.AI_KEY_HEADER)
             text = OllamaREST(connection, guard).chat(messages)['content']
         else:
+            # Compatible providers keep their own URL/payload contract. Native
+            # requests always use the canonical normalized, bounded transport.
+            url = settings.AI_BASE_URL.rstrip('/') + '/chat/completions'
+            token = server_secret(settings.AI_TOKEN_ENV)
+            headers = {settings.AI_KEY_HEADER: ('Bearer ' + token) if settings.AI_KEY_HEADER == 'Authorization' else token} if token else {}
+            payload = {'model': settings.AI_MODEL, 'messages': messages, 'temperature': 0.15,
+                       'max_tokens': settings.AI_MAX_OUTPUT_TOKENS, 'response_format': {'type': 'json_object'}}
             with httpx.Client(timeout=settings.AI_TIMEOUT_SECONDS, follow_redirects=False, trust_env=False) as client:
                 with client.stream('POST', url, json=payload, headers=headers) as response:
                     response.raise_for_status()
@@ -151,12 +149,15 @@ def answer_question(graph, question, selected_id=None, system_prompt=None, conne
                         if len(content) + len(chunk) > settings.AI_MAX_RESPONSE_BYTES:
                             raise ValueError('AI response exceeded the configured limit')
                         content.extend(chunk)
-            body = json.loads(content)
-            text = body['message']['content'] if settings.AI_PROVIDER == 'ollama' else body['choices'][0]['message']['content']
+            try:
+                body = json.loads(content)
+            except RecursionError:
+                raise ValueError('Invalid provider JSON response') from None
+            text = body['choices'][0]['message']['content']
         answer, used = validate_answer(text, citations)
         result.update(answer=answer, mode='ollama' if connection is not None else settings.AI_PROVIDER,
                       model=connection.model if connection is not None else settings.AI_MODEL,
                       citation_ids=sorted(used), citations=[citation for citation in citations if citation['citation_id'] in used])
-    except (httpx.HTTPError, ValueError, TypeError, KeyError, IndexError):
-        result['warning'] = 'The configured AI service is unavailable or returned an invalid grounded answer. Showing graph evidence instead.'
+    except (httpx.HTTPError, ValueError, TypeError, KeyError, IndexError) as error:
+        result['warning'] = model_failure_warning(error) + ' Showing graph evidence instead.'
     return result

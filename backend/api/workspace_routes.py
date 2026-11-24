@@ -127,7 +127,10 @@ def test_ai(x_codetrace_session: Optional[str] = Header(default=None)):
         stage = 'chat'
         message = rest.chat([{'role': 'user', 'content': 'Return JSON {"ready":true}.'}])
         import json
-        readiness = json.loads(message.get('content', ''))
+        try:
+            readiness = json.loads(message.get('content', ''))
+        except RecursionError:
+            raise ValueError('Chat readiness response was invalid') from None
         if not isinstance(readiness, dict) or readiness.get('ready') is not True:
             raise ValueError('Chat readiness response was invalid')
         chat_ready = True

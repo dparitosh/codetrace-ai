@@ -290,3 +290,29 @@ https://docs.ollama.com/capabilities/tool-calling
 https://docs.ollama.com/capabilities/structured-outputs
 https://ollama.com/library/llama3
 https://ollama.com/library/llama3.1
+
+24 November 2026 — Whole Ollama audit remediation (OW-01 through OW-05)
+
+- Contained recursive model JSON in chat readiness; failure is a safe HTTP 502
+  and the AI worker is released.
+- Direct native companion calls now use AIConnection/OllamaREST, sharing native
+  URL normalization, completion checks, byte limits and execution guards. Roots
+  and operation URLs preserve gateway prefixes. No extra model calls or retries.
+- Compatible-provider URLs and request contracts remain separate; malformed
+  outer JSON now returns retained evidence rather than escaping the fallback.
+- Moved the existing safe error classifier to services/model_errors.py so agents
+  and the legacy companion report the same owned diagnostics without circular
+  imports or exposure of provider text, endpoint secrets or raw model answers.
+- Added test_companion_transport.py: 15 offline cases cover the six audit probes,
+  successful completed/field-omitting gateway replies, compatible-provider auth
+  and URL semantics, failure privacy, worker cleanup and disabled execution.
+- Updated the old recommendation-budget fixture to specify an explicit mock
+  model; canonical transport correctly rejects an unset model before requesting.
+
+Validation: all 456 maintained backend/core tests passed in 20.48 seconds.
+The six formerly failing audit probes also passed after the corrections.
+One upstream Starlette/httpx deprecation warning remains. git diff --check passed.
+No live model/customer endpoint was contacted, no model was installed/downloaded,
+and no frontend code or dependency manifest changed. Frontend draft races and
+customer-runtime compatibility remain unverified. Changes are local until an
+explicit commit/push; the historical baseline branch remains unchanged.

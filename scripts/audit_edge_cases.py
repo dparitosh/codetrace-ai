@@ -173,7 +173,8 @@ def recommendation_budget():
         def stream(self, *_, **kwargs):
             captured.append(json.loads(kwargs['json']['messages'][1]['content']))
             raise httpx.ConnectError('fixture offline')
-    with patch.object(settings, 'AI_PROVIDER', 'ollama'), patch('services.companion_service.httpx.Client', AIClient):
+    with patch.object(settings, 'AI_PROVIDER', 'ollama'), patch.object(settings, 'AI_MODEL', 'offline-fixture'), \
+            patch('services.companion_service.httpx.Client', AIClient):
         answer_question(data, 'coverage')
     expect(len(captured[0]['coverage']['unlinked_requirements']) <= settings.AI_CONTEXT_NODES, 'entire gap-ID list bypasses the AI evidence budget')
 
